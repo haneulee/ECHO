@@ -6,9 +6,8 @@ import type { ReactNode } from "react";
 
 const navItems = [
   { href: "/today", label: "Today" },
-  { href: "/profile", label: "Echo" },
+  { href: "/profile", label: "My Echo" },
   { href: "/archive", label: "Archive" },
-  { href: "/evolution", label: "Evolve" },
   { href: "/sound-test", label: "Sound" },
 ];
 
@@ -19,15 +18,20 @@ type AppShellProps = {
   intro?: string;
 };
 
-export function AppShell({ children, eyebrow, title, intro }: AppShellProps) {
+export function AppShell({
+  children,
+  eyebrow,
+  title,
+  intro,
+}: AppShellProps) {
   const pathname = usePathname();
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-7xl px-6 pb-28 pt-6 text-text sm:px-8 lg:px-12 lg:pb-16 lg:pt-32">
+    <main className="mx-auto min-h-screen w-full min-w-0 max-w-7xl overflow-x-hidden px-6 pb-24 pt-6 text-text sm:px-8 lg:px-12 lg:pb-20 lg:pt-32">
       <nav className="fixed inset-x-0 top-0 z-30 hidden bg-white/82 px-12 py-6 backdrop-blur-xl lg:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <Link className="font-display text-2xl leading-7" href="/today">
-          Echo
+            Echo
           </Link>
           <div className="flex items-center gap-8">
             {navItems.map((item) => {
@@ -52,7 +56,7 @@ export function AppShell({ children, eyebrow, title, intro }: AppShellProps) {
         </div>
       </nav>
 
-      <header className="mb-8 grid gap-6 lg:mb-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.55fr)] lg:items-end">
+      <header className="relative z-10 mb-8 grid gap-5 bg-white sm:mb-10 sm:gap-6 lg:mb-14 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.55fr)] lg:items-end">
         <div>
           {eyebrow ? (
             <p className="mb-3 font-body text-xs uppercase tracking-[0.32em] text-text-muted">
@@ -75,7 +79,7 @@ export function AppShell({ children, eyebrow, title, intro }: AppShellProps) {
       {children}
 
       <nav className="fixed inset-x-0 bottom-4 z-20 mx-auto w-[min(390px,calc(100%-32px))] rounded-full bg-white/88 p-2 shadow-quiet backdrop-blur lg:hidden">
-        <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-4 gap-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
 

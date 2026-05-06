@@ -9,7 +9,7 @@ export default function SoundTestPage() {
       intro="Slow string-like tones expand harmonically as closeness rises. Use headphones at a low volume."
       title="Hear distance thicken."
     >
-      <section className="mb-10 lg:max-w-3xl">
+      <section className="mb-14 lg:max-w-3xl">
         <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
           {mockSoundProfile.scale}
         </p>
@@ -23,7 +23,7 @@ export default function SoundTestPage() {
         </p>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-3">
         {mockSoundVoices.map((voice) => (
           <SoundTestVoice key={voice.id} voice={voice} />
         ))}

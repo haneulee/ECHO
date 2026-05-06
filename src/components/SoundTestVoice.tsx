@@ -113,7 +113,7 @@ export function SoundTestVoice({ voice }: SoundTestVoiceProps) {
 
   return (
     <section className="py-6">
-      <div className="flex items-start justify-between gap-4 lg:min-h-28 lg:block">
+      <div className="flex items-start justify-between gap-4 lg:min-h-28">
         <div>
           <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
             {zone.replace("_", " ")}
@@ -123,7 +123,8 @@ export function SoundTestVoice({ voice }: SoundTestVoiceProps) {
           </h2>
         </div>
         <button
-          className="rounded-full bg-nav-active px-5 py-3 font-body text-sm text-white lg:mt-5 lg:w-full"
+          aria-label={isPlaying ? "Stop" : "Play"}
+          className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-nav-active text-lg text-white"
           onClick={() => {
             if (isPlaying) {
               void stopVoice();
@@ -133,7 +134,7 @@ export function SoundTestVoice({ voice }: SoundTestVoiceProps) {
           }}
           type="button"
         >
-          {isPlaying ? "Stop" : "Play"}
+          {isPlaying ? "■" : "▶"}
         </button>
       </div>
 

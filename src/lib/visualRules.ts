@@ -2,9 +2,9 @@ import type { EchoType } from "./types";
 
 export function getEchoColorPalette(echoType: EchoType) {
   const palettes = {
-    light: ["#44DDE6", "#F8D95A", "#9DE8C7"],
-    deep: ["#233B8F", "#7B4BCE", "#EF6F7A"],
-    halo: ["#F45BC5", "#FF8D6B", "#B98CFF"],
+    shy: ["#A8D8EA", "#C7CEEA", "#E8E0D5"],
+    messy: ["#E85D75", "#7B68EE", "#FFB347"],
+    bounce: ["#FF6B9D", "#FFD93D", "#6BCB77"],
   } satisfies Record<EchoType, string[]>;
 
   return palettes[echoType];

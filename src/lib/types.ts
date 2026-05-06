@@ -1,4 +1,4 @@
-export type EchoType = "light" | "deep" | "halo";
+export type EchoType = "shy" | "messy" | "bounce";
 
 export type ProximityZone = "far" | "near" | "close" | "very_close";
 
@@ -15,9 +15,9 @@ export type EchoDevice = {
     calmness: number;
     densityBias: number;
     influences: {
-      light: number;
-      deep: number;
-      halo: number;
+      shy: number;
+      messy: number;
+      bounce: number;
     };
   };
   lastSyncedAt: string;
@@ -92,7 +92,6 @@ export type DailyMemory = {
   totalDurationSec: number;
   dominantZone: ProximityZone;
   dominantEchoType: EchoType;
-  memoryPhrase: string;
   composition: {
     style: string;
     tempoBpm: number;

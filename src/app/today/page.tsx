@@ -1,6 +1,7 @@
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
 import { EncounterSoundArchive } from "@/components/EncounterSoundArchive";
+import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
 import { mockDailyMemory, mockEncounters } from "@/lib/mockData";
 
 export default function TodayPage() {
@@ -11,31 +12,32 @@ export default function TodayPage() {
         month: "long",
         day: "numeric",
       })}
-      intro="The Station has turned nearby traces into a quiet daily sound memory."
-      title="Today's ring."
+      intro="The Station has turned nearby traces into a quiet daily sound memory. What was your day like?"
+      title="Your day in sound"
     >
-      <section className="relative min-h-[620px] overflow-visible lg:min-h-[760px]">
-        <div className="absolute left-1/2 top-0 -z-0 w-[min(92vw,760px)] -translate-x-1/2 lg:top-[-40px]">
-          <AbstractMemoryVisual
-            composition={mockDailyMemory.composition}
-            encounters={mockEncounters}
-            showMutation
-            size={760}
-            {...mockDailyMemory.visualization}
-          />
-        </div>
-
-        <div className="relative z-10 flex min-h-[620px] flex-col justify-end pb-10 lg:min-h-[760px] lg:pb-20">
-          <p className="max-w-3xl font-display text-[48px] leading-[52px] tracking-[-0.04em] text-white mix-blend-difference sm:text-[64px] sm:leading-[68px] lg:text-[96px] lg:leading-[98px]">
-            {mockDailyMemory.memoryPhrase}
-          </p>
-          <p className="mt-8 max-w-md font-body text-base leading-6 text-text-muted">
-            {mockDailyMemory.composition.tempoBpm} BPM ·{" "}
-            {mockDailyMemory.composition.scale}. The day is not counted here;
-            it is held as pigment, closeness, and borrowed melody.
-          </p>
+      <section className="relative isolate overflow-visible sm:min-h-[520px] lg:min-h-[660px]">
+        <div className="relative z-0 mx-auto mt-2 w-full max-w-[720px] sm:absolute sm:left-1/2 sm:top-2 sm:mt-0 sm:-translate-x-1/2 lg:top-0">
+          <div className="relative">
+            <AbstractMemoryVisual
+              composition={mockDailyMemory.composition}
+              encounters={mockEncounters}
+              showMutation
+              size={720}
+              {...mockDailyMemory.visualization}
+            />
+          </div>
         </div>
       </section>
+
+      <div className="relative z-20 -mt-1 w-full sm:-mt-6 lg:-mt-10">
+        <SoundMemoryPlayer
+          melody={mockDailyMemory.composition.voices.flatMap(
+            (voice) => voice.melody,
+          )}
+          title="Today"
+          variant="controlRow"
+        />
+      </div>
 
       <EncounterSoundArchive
         composition={mockDailyMemory.composition}

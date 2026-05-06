@@ -15,15 +15,15 @@ export const mockUser: MockUser = {
 };
 
 export const echoTypeLabels: Record<EchoType, string> = {
-  light: "Light String",
-  deep: "Deep String",
-  halo: "Halo String",
+  shy: "Shy",
+  messy: "Messy",
+  bounce: "Bounce",
 };
 
 export const echoTypeDescriptions: Record<EchoType, string> = {
-  light: "Upper melodic voice",
-  deep: "Grounding low voice",
-  halo: "Floating response voice",
+  shy: "Soft, hesitant melodies—quiet until proximity draws them out.",
+  messy: "Overlapping harmonics and playful harmonic tangles.",
+  bounce: "Bright, elastic phrases that leap when others get close.",
 };
 
 export const mockEchoDevice: EchoDevice = {
@@ -31,7 +31,7 @@ export const mockEchoDevice: EchoDevice = {
   userId: mockUser.id,
   serialNumber: "ECHO-LS-0428",
   echoName: "Namu",
-  echoType: "light",
+  echoType: "shy",
   currentSoundProfileId: "ambient3_meditation_v1",
   currentState: {
     melody: ["E4", "G4", "A4", "C5", "D5", "A4", "G4", "E4"],
@@ -39,9 +39,9 @@ export const mockEchoDevice: EchoDevice = {
     calmness: 0.82,
     densityBias: 0.44,
     influences: {
-      light: 0.46,
-      deep: 0.22,
-      halo: 0.32,
+      shy: 0.46,
+      messy: 0.22,
+      bounce: 0.32,
     },
   },
   lastSyncedAt: "2026-05-06T20:48:00+09:00",
@@ -152,24 +152,33 @@ function makeVoice(
 }
 
 export const mockSoundVoices: SoundVoice[] = [
-  makeVoice(
-    "voice_light_string",
-    "Light String",
-    "melody",
-    ["E4", "G4", "A4", "C5", "A4", "G4", "E4", "D4"],
-  ),
-  makeVoice(
-    "voice_deep_string",
-    "Deep String",
-    "bass",
-    ["A2", "E3", "G3", "E3", "D3", "E3"],
-  ),
-  makeVoice(
-    "voice_halo_string",
-    "Halo String",
-    "halo",
-    ["C4", "D4", "E4", "G4", "E4", "D4", "C4"],
-  ),
+  makeVoice("voice_shy", "Shy", "melody", [
+    "E4",
+    "G4",
+    "A4",
+    "C5",
+    "A4",
+    "G4",
+    "E4",
+    "D4",
+  ]),
+  makeVoice("voice_messy", "Messy", "bass", [
+    "A2",
+    "E3",
+    "G3",
+    "E3",
+    "D3",
+    "E3",
+  ]),
+  makeVoice("voice_bounce", "Bounce", "halo", [
+    "C4",
+    "D4",
+    "E4",
+    "G4",
+    "E4",
+    "D4",
+    "C4",
+  ]),
 ];
 
 export const mockEncounters: Encounter[] = [
@@ -177,7 +186,7 @@ export const mockEncounters: Encounter[] = [
     id: "enc_01",
     deviceId: mockEchoDevice.id,
     otherEchoHash: "echo:74a9",
-    otherEchoType: "halo",
+    otherEchoType: "bounce",
     startedAt: "2026-05-06T08:18:00+09:00",
     endedAt: "2026-05-06T08:28:00+09:00",
     durationSec: 612,
@@ -192,7 +201,7 @@ export const mockEncounters: Encounter[] = [
     id: "enc_02",
     deviceId: mockEchoDevice.id,
     otherEchoHash: "echo:1bc2",
-    otherEchoType: "deep",
+    otherEchoType: "messy",
     startedAt: "2026-05-06T11:44:00+09:00",
     endedAt: "2026-05-06T11:49:00+09:00",
     durationSec: 286,
@@ -207,7 +216,7 @@ export const mockEncounters: Encounter[] = [
     id: "enc_03",
     deviceId: mockEchoDevice.id,
     otherEchoHash: "echo:8e10",
-    otherEchoType: "light",
+    otherEchoType: "shy",
     startedAt: "2026-05-06T15:02:00+09:00",
     endedAt: "2026-05-06T15:14:00+09:00",
     durationSec: 721,
@@ -222,7 +231,7 @@ export const mockEncounters: Encounter[] = [
     id: "enc_04",
     deviceId: mockEchoDevice.id,
     otherEchoHash: "echo:502f",
-    otherEchoType: "halo",
+    otherEchoType: "bounce",
     startedAt: "2026-05-06T18:31:00+09:00",
     endedAt: "2026-05-06T18:34:00+09:00",
     durationSec: 180,
@@ -237,7 +246,7 @@ export const mockEncounters: Encounter[] = [
     id: "enc_05",
     deviceId: mockEchoDevice.id,
     otherEchoHash: "echo:29fd",
-    otherEchoType: "deep",
+    otherEchoType: "messy",
     startedAt: "2026-05-06T19:12:00+09:00",
     endedAt: "2026-05-06T19:21:00+09:00",
     durationSec: 548,
@@ -252,7 +261,7 @@ export const mockEncounters: Encounter[] = [
     id: "enc_06",
     deviceId: mockEchoDevice.id,
     otherEchoHash: "echo:c14b",
-    otherEchoType: "light",
+    otherEchoType: "shy",
     startedAt: "2026-05-06T20:02:00+09:00",
     endedAt: "2026-05-06T20:06:00+09:00",
     durationSec: 232,
@@ -267,7 +276,7 @@ export const mockEncounters: Encounter[] = [
     id: "enc_07",
     deviceId: mockEchoDevice.id,
     otherEchoHash: "echo:91aa",
-    otherEchoType: "halo",
+    otherEchoType: "bounce",
     startedAt: "2026-05-06T20:34:00+09:00",
     endedAt: "2026-05-06T20:47:00+09:00",
     durationSec: 774,
@@ -282,7 +291,7 @@ export const mockEncounters: Encounter[] = [
     id: "enc_08",
     deviceId: mockEchoDevice.id,
     otherEchoHash: "echo:6e31",
-    otherEchoType: "light",
+    otherEchoType: "shy",
     startedAt: "2026-05-06T21:08:00+09:00",
     endedAt: "2026-05-06T21:11:00+09:00",
     durationSec: 166,
@@ -308,27 +317,26 @@ export const mockDailyMemory: DailyMemory = {
     0,
   ),
   dominantZone: "close",
-  dominantEchoType: "halo",
-  memoryPhrase: "Namu kept a pale ring of voices from the afternoon.",
+  dominantEchoType: "bounce",
   composition: {
     style: "Ambient proximity meditation",
     tempoBpm: 52,
     scale: "A minor pentatonic",
     voices: [
       {
-        echoType: "light",
+        echoType: "shy",
         presence: 0.36,
         melody: ["E4", "G4", "A4", "C5"],
         averageCloseness: 0.91,
       },
       {
-        echoType: "deep",
+        echoType: "messy",
         presence: 0.2,
         melody: ["A2", "E3", "G3"],
         averageCloseness: 0.55,
       },
       {
-        echoType: "halo",
+        echoType: "bounce",
         presence: 0.44,
         melody: ["C4", "D4", "E4", "G4"],
         averageCloseness: 0.61,
@@ -353,9 +361,13 @@ export const mockArchive: DailyMemory[] = [
     totalEncounters: 7,
     totalDurationSec: 2512,
     dominantZone: "near",
-    dominantEchoType: "deep",
-    memoryPhrase: "A low blue thread stayed beside Namu after rain.",
-    visualization: { seed: 912, density: 0.54, brightness: 0.58, movement: 0.28 },
+    dominantEchoType: "messy",
+    visualization: {
+      seed: 912,
+      density: 0.54,
+      brightness: 0.58,
+      movement: 0.28,
+    },
   },
   {
     ...mockDailyMemory,
@@ -364,9 +376,13 @@ export const mockArchive: DailyMemory[] = [
     totalEncounters: 3,
     totalDurationSec: 1030,
     dominantZone: "far",
-    dominantEchoType: "light",
-    memoryPhrase: "Only a few yellow notes crossed the morning room.",
-    visualization: { seed: 3140, density: 0.36, brightness: 0.72, movement: 0.2 },
+    dominantEchoType: "shy",
+    visualization: {
+      seed: 3140,
+      density: 0.36,
+      brightness: 0.72,
+      movement: 0.2,
+    },
   },
 ];
 

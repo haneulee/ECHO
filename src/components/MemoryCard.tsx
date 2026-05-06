@@ -1,6 +1,7 @@
 import { echoTypeLabels, mockEncounters } from "@/lib/mockData";
 import type { DailyMemory } from "@/lib/types";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";
+import { SoundMemoryPlayer } from "./SoundMemoryPlayer";
 
 type MemoryCardProps = {
   memory: DailyMemory;
@@ -10,7 +11,7 @@ export function MemoryCard({ memory }: MemoryCardProps) {
   return (
     <article className="relative min-h-[360px] overflow-visible">
       <div className="absolute left-1/2 top-0 -translate-x-1/2">
-        <div className="grid h-56 w-56 shrink-0 place-items-center md:h-72 md:w-72">
+        <div className="relative grid h-56 w-56 shrink-0 place-items-center md:h-72 md:w-72">
           <AbstractMemoryVisual
             composition={memory.composition}
             encounters={mockEncounters.slice(
@@ -19,6 +20,11 @@ export function MemoryCard({ memory }: MemoryCardProps) {
             )}
             size={280}
             {...memory.visualization}
+          />
+          <SoundMemoryPlayer
+            melody={memory.composition.voices.flatMap((voice) => voice.melody)}
+            title="Play memory"
+            variant="visualOverlay"
           />
         </div>
       </div>
@@ -30,9 +36,7 @@ export function MemoryCard({ memory }: MemoryCardProps) {
             day: "numeric",
           })}
         </p>
-        <h2 className="mt-2 font-display text-[32px] leading-[36px] tracking-[-0.03em]">
-          {memory.memoryPhrase}
-        </h2>
+
         <div className="mt-5 flex justify-between font-body text-sm leading-5 text-text-muted">
           <span>{memory.totalEncounters} encounters</span>
           <span>{echoTypeLabels[memory.dominantEchoType]}</span>
