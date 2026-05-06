@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #fffcf7;
+  --surface-soft: #f1eee8;
+  --border: #e1dcd2;
+  --text: #26231f;
+  --text-muted: #8a8379;
+  --nav-active: #26231f;
+  --nav-inactive: #8a8379;
+  --pearl-pink: rgba(255, 182, 193, 0.12);
+  --pearl-blue: rgba(173, 216, 230, 0.12);
+  --pearl-violet: rgba(221, 160, 221, 0.1);
+  background: var(--bg);
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--bg);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: #ffffff;
+  font-family: "Helvetica Neue", system-ui, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+@font-face {
+  font-family: "Francesco";
+  src: url("/fonts/francescoweb-regular.woff") format("woff");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Francesco";
+  src: url("/fonts/francescoweb-italic.woff") format("woff");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+.pearl-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, var(--surface) 0%, #fffefa 42%, var(--surface) 100%);
+}
+
+.pearl-surface::before {
+  position: absolute;
+  inset: -24%;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  background:
+    radial-gradient(circle at 18% 18%, var(--pearl-pink), transparent 32%),
+    radial-gradient(circle at 82% 8%, var(--pearl-blue), transparent 34%),
+    radial-gradient(circle at 62% 88%, var(--pearl-violet), transparent 36%);
+  filter: blur(14px);
+  mix-blend-mode: soft-light;
+  opacity: 0.68;
+  transform: translate3d(0, 0, 0);
+  animation: pearl-shimmer 32s ease-in-out infinite alternate;
+}
+
+.pearl-surface::after {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.2),
+    transparent 38%,
+    rgba(255, 255, 255, 0.08)
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.22;
+}
+
+.pearl-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+.memory-breathe {
+  animation: memory-breathe 8s ease-in-out infinite;
+}
+
+.memory-drift {
+  animation: memory-drift 14s ease-in-out infinite alternate;
+}
+
+@keyframes memory-breathe {
+  0%,
+  100% {
+    transform: scale(0.985);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.015);
+    opacity: 1;
+  }
+}
+
+@keyframes memory-drift {
+  0% {
+    transform: rotate(-1.5deg) translate3d(-1px, 1px, 0);
+  }
+  100% {
+    transform: rotate(1.5deg) translate3d(1px, -1px, 0);
+  }
+}
+
+@keyframes pearl-shimmer {
+  0% {
+    transform: translate3d(-1.2%, -0.8%, 0) rotate(-0.4deg);
+  }
+  100% {
+    transform: translate3d(1.2%, 0.8%, 0) rotate(0.4deg);
+  }
+}
