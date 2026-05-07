@@ -5,6 +5,7 @@ import {
   getOpacityFromCloseness,
   getRingThicknessFromDensity,
   seededRandom,
+  svgRound,
 } from "@/lib/visualRules";
 
 export type AbstractMemoryVisualProps = {
@@ -29,9 +30,9 @@ export function AbstractMemoryVisual({
   showMutation = false,
 }: AbstractMemoryVisualProps) {
   const random = seededRandom(seed);
-  const center = size / 2;
-  const baseRadius = size * 0.29;
-  const ringThickness = getRingThicknessFromDensity(density);
+  const center = svgRound(size / 2);
+  const baseRadius = svgRound(size * 0.29);
+  const ringThickness = svgRound(getRingThicknessFromDensity(density));
   const safeEncounters = encounters.length > 0 ? encounters : [];
   const id = `memory-${seed}`;
   const duration = `${Math.max(9, 18 - movement * 10)}s`;
@@ -48,14 +49,18 @@ export function AbstractMemoryVisual({
         (random() - 0.5) * 0.7;
       const orbitalWobble = (random() - 0.5) * ringThickness * 1.15;
       const radius = baseRadius + orbitalWobble;
-      const x = center + Math.cos(angle) * radius;
-      const y = center + Math.sin(angle) * radius;
-      const blobRadius =
-        getBlobSizeFromDuration(encounter.durationSec) * (0.72 + random() * 0.68);
+      const x = svgRound(center + Math.cos(angle) * radius);
+      const y = svgRound(center + Math.sin(angle) * radius);
+      const blobRadius = svgRound(
+        getBlobSizeFromDuration(encounter.durationSec) * (0.72 + random() * 0.68),
+      );
       const color = palette[Math.floor(random() * palette.length)];
       const secondaryColor = palette[Math.floor(random() * palette.length)];
-      const opacity =
-        getOpacityFromCloseness(encounter.closenessAvg) * (0.7 + brightness * 0.4);
+      const opacity = svgRound(
+        getOpacityFromCloseness(encounter.closenessAvg) *
+          (0.7 + brightness * 0.4),
+        6,
+      );
 
       return {
         key: `${encounter.id}-${repeatIndex}`,
@@ -115,7 +120,7 @@ export function AbstractMemoryVisual({
         cy={center}
         fill={`url(#${id}-paper)`}
         filter={`url(#${id}-paper-soften)`}
-        r={size * 0.46}
+        r={svgRound(size * 0.46)}
       />
       <g
         className="memory-drift"
@@ -126,19 +131,20 @@ export function AbstractMemoryVisual({
       >
         <ellipse
           cx={center}
-          cy={center + size * 0.006}
+          cy={svgRound(center + size * 0.006)}
           fill="none"
           opacity="0.12"
-          rx={baseRadius * 1.08}
-          ry={baseRadius * 0.92}
+          rx={svgRound(baseRadius * 1.08)}
+          ry={svgRound(baseRadius * 0.92)}
           stroke="#CFC7BA"
           strokeDasharray="1 18"
           strokeLinecap="round"
-          strokeWidth={Math.max(10, ringThickness * 0.62)}
+          strokeWidth={svgRound(Math.max(10, ringThickness * 0.62))}
         />
         {composition.voices.map((voice, index) => {
-          const radius = baseRadius + (index - 1) * ringThickness * 0.42;
-          const circumference = 2 * Math.PI * radius;
+          const radius = svgRound(baseRadius + (index - 1) * ringThickness * 0.42);
+          const circumference = svgRound(2 * Math.PI * radius);
+          const dash = svgRound(circumference * voice.presence);
 
           return (
             <circle
@@ -146,12 +152,14 @@ export function AbstractMemoryVisual({
               cy={center}
               fill="none"
               key={`${voice.echoType}-ring`}
-              opacity={0.14 + voice.presence * 0.24}
+              opacity={svgRound(0.14 + voice.presence * 0.24, 6)}
               r={radius}
               stroke={`url(#${id}-voice-${index})`}
-              strokeDasharray={`${circumference * voice.presence} ${circumference}`}
+              strokeDasharray={`${dash} ${circumference}`}
               strokeLinecap="round"
-              strokeWidth={ringThickness * (0.7 + voice.averageCloseness * 0.46)}
+              strokeWidth={svgRound(
+                ringThickness * (0.7 + voice.averageCloseness * 0.46),
+              )}
               transform={`rotate(${index * 84 - 24} ${center} ${center})`}
             />
           );

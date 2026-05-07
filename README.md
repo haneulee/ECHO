@@ -114,6 +114,12 @@ The visual language uses circular chromatography-inspired traces:
 - warm off-white background
 - no charts, bars, waveforms, or dashboard styling
 
+## Todo
+
+- [ ] Prototype / test sonic visuals in p5.js
+- [ ] Echo logo and preview imagery
+- [ ] Map personality controls to sound (personality tuning → sound matching)
+
 ## Future Integration
 
 The mock data is shaped to be compatible with future database tables:

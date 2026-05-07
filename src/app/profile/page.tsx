@@ -19,20 +19,28 @@ export default function ProfilePage() {
       title={mockEchoDevice.echoName}
     >
       <section className="relative isolate overflow-visible sm:min-h-[540px] lg:min-h-[660px]">
-        <div className="relative z-10 grid max-w-xl grid-cols-1 gap-8 font-body text-sm leading-5 text-text-muted sm:grid-cols-3 sm:gap-x-10 sm:gap-y-6">
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em]">Name</p>
-            <p className="mt-2 text-text">{mockEchoDevice.echoName}</p>
+        <div className="relative z-10 flex max-w-xl flex-row justify-between gap-3 font-body text-sm leading-5 text-text-muted sm:grid sm:grid-cols-3 sm:justify-start sm:gap-x-10 sm:gap-y-0">
+          <div className="min-w-0 flex-1 sm:block sm:flex-none">
+            <p className="text-[10px] uppercase tracking-[0.22em] sm:text-xs">
+              Name
+            </p>
+            <p className="mt-1 truncate text-text sm:mt-2">
+              {mockEchoDevice.echoName}
+            </p>
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em]">Model</p>
-            <p className="mt-2 text-text">
+          <div className="min-w-0 flex-1 text-center sm:block sm:flex-none sm:text-left">
+            <p className="text-[10px] uppercase tracking-[0.22em] sm:text-xs">
+              Model
+            </p>
+            <p className="mt-1 truncate text-text sm:mt-2">
               {echoTypeLabels[mockEchoDevice.echoType]}
             </p>
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em]">Synced</p>
-            <p className="mt-2 text-text">
+          <div className="min-w-0 flex-1 text-right sm:block sm:flex-none sm:text-left">
+            <p className="text-[10px] uppercase tracking-[0.22em] sm:text-xs">
+              Synced
+            </p>
+            <p className="mt-1 whitespace-nowrap text-text sm:mt-2">
               {new Date(mockEchoDevice.lastSyncedAt).toLocaleTimeString("en", {
                 hour: "numeric",
                 minute: "2-digit",
@@ -41,8 +49,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="relative z-0 mx-auto mt-10 w-full max-w-[720px] sm:absolute sm:left-1/2 sm:top-12 sm:mt-0 sm:-translate-x-1/2 lg:top-0">
-          <div className="relative">
+        <div className="relative z-0 mx-auto mt-10 flex w-full max-w-[720px] justify-center sm:absolute sm:left-1/2 sm:top-12 sm:mt-0 sm:block sm:-translate-x-1/2 lg:top-0">
+          <div className="relative flex justify-center">
             <AbstractMemoryVisual
               composition={mockDailyMemory.composition}
               encounters={mockEncounters}

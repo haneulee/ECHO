@@ -22,6 +22,12 @@ export function getRingThicknessFromDensity(density: number) {
   return Math.min(48, Math.max(16, 16 + density * 32));
 }
 
+/** Rounds floats for SVG props so SSR and the browser match (avoids hydration mismatches). */
+export function svgRound(n: number, precision = 5): number {
+  const factor = 10 ** precision;
+  return Math.round(n * factor) / factor;
+}
+
 export function seededRandom(seed: number) {
   let state = seed % 2147483647;
   if (state <= 0) state += 2147483646;
