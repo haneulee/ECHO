@@ -1,15 +1,10 @@
-import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
 import { EchoPersonalitySliders } from "@/components/EchoPersonalitySliders";
 import { EvolutionCard } from "@/components/EvolutionCard";
+import { EchoPointCloudHero } from "@/components/profile/EchoPointCloudHero";
 import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
-import {
-  echoTypeLabels,
-  mockDailyMemory,
-  mockEchoDevice,
-  mockEncounters,
-  mockEvolutions,
-} from "@/lib/mockData";
+import { echoTypeToPointCloudVisual } from "@/lib/echoPointCloudMapping";
+import { echoTypeLabels, mockEchoDevice, mockEvolutions } from "@/lib/mockData";
 
 export default function ProfilePage() {
   return (
@@ -49,14 +44,12 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="relative z-0 mx-auto mt-10 flex w-full max-w-[720px] justify-center sm:absolute sm:left-1/2 sm:top-12 sm:mt-0 sm:block sm:-translate-x-1/2 lg:top-0">
-          <div className="relative flex justify-center">
-            <AbstractMemoryVisual
-              composition={mockDailyMemory.composition}
-              encounters={mockEncounters}
-              showMutation
-              size={720}
-              {...mockDailyMemory.visualization}
+        <div className="relative z-0 mx-auto mt-10 w-full max-w-[720px] sm:absolute sm:left-1/2 sm:top-12 sm:mt-0 sm:-translate-x-1/2 lg:top-0">
+          <div className="relative aspect-square w-full overflow-hidden rounded-[2px]">
+            <EchoPointCloudHero
+              personality={
+                echoTypeToPointCloudVisual[mockEchoDevice.echoType]
+              }
             />
           </div>
         </div>

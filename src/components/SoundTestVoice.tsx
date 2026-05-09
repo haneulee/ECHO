@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import * as Tone from "tone";
 import { enrichMelodyNote, getProximityZone } from "@/lib/soundRules";
 import type { SoundVoice } from "@/lib/types";
 import { DistanceSlider } from "./DistanceSlider";
@@ -32,7 +33,6 @@ export function SoundTestVoice({ voice }: SoundTestVoiceProps) {
   async function ensureSynth() {
     if (synthRef.current) return synthRef.current;
 
-    const Tone = await import("tone");
     Tone.Transport.bpm.value = 52;
 
     const reverb = new Tone.Reverb({
@@ -58,7 +58,6 @@ export function SoundTestVoice({ voice }: SoundTestVoiceProps) {
   }
 
   async function playVoice() {
-    const Tone = await import("tone");
     await Tone.start();
     const synth = await ensureSynth();
 
@@ -93,7 +92,6 @@ export function SoundTestVoice({ voice }: SoundTestVoiceProps) {
   }
 
   async function stopVoice() {
-    const Tone = await import("tone");
     if (eventIdRef.current !== null) {
       Tone.Transport.clear(eventIdRef.current);
       eventIdRef.current = null;

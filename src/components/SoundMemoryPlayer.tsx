@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import * as Tone from "tone";
 import { RotaryKnob } from "./RotaryKnob";
 
 /** Maps UI volume 0–100 linearly to Tone `Volume` decibels (0 ≈ silent, 100 = loudest). */
@@ -46,7 +47,6 @@ export function SoundMemoryPlayer({
   async function ensureSynth() {
     if (synthRef.current) return synthRef.current;
 
-    const Tone = await import("tone");
     const reverb = new Tone.Reverb({
       decay: 8,
       preDelay: 0.06,
@@ -68,7 +68,6 @@ export function SoundMemoryPlayer({
   }
 
   async function play() {
-    const Tone = await import("tone");
     await Tone.start();
     const synth = await ensureSynth();
     (
