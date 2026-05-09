@@ -15,29 +15,29 @@ export const PERSONALITY_BUILD: Record<
   ImageParticleBuildConfig
 > = {
   drift: {
-    maxParticles: 6_200,
-    strideMul: 1.52,
-    depthNoiseAmp: 0.34,
+    maxParticles: 16_000,
+    strideMul: 1.08,
+    depthNoiseAmp: 0.16,
     planeHalfHeight: 5.35,
     luminanceFloor: 0.004,
   },
   ripple: {
-    maxParticles: 9_000,
-    strideMul: 1.12,
-    depthNoiseAmp: 0.24,
+    maxParticles: 20_000,
+    strideMul: 0.92,
+    depthNoiseAmp: 0.13,
     planeHalfHeight: 5.42,
     luminanceFloor: 0.004,
   },
   bloom: {
-    maxParticles: 14_500,
-    strideMul: 0.98,
-    depthNoiseAmp: 0.29,
+    maxParticles: 26_000,
+    strideMul: 0.82,
+    depthNoiseAmp: 0.15,
     planeHalfHeight: 5.55,
     luminanceFloor: 0.004,
   },
 };
 
-export const ABS_MAX_PARTICLES = 28_000;
+export const ABS_MAX_PARTICLES = 32_000;
 
 /** Ecology plates (RGB). */
 export const PERSONALITY_IMAGE: Record<EchoPersonalityVisual, string> = {
@@ -123,7 +123,7 @@ export async function buildParticlesFromImage(
   const depthImg =
     depthUrl != null ? await tryLoadImage(depthUrl) : null;
 
-  const maxDim = 680;
+  const maxDim = 920;
   const scale = maxDim / Math.max(img.width, img.height);
   const cw = Math.max(1, Math.floor(img.width * scale));
   const ch = Math.max(1, Math.floor(img.height * scale));
@@ -186,7 +186,7 @@ export async function buildParticlesFromImage(
       }
 
       depth01 = THREE.MathUtils.clamp(
-        depth01 + (Math.random() - 0.5) * cfg.depthNoiseAmp * 0.38,
+        depth01 + (Math.random() - 0.5) * cfg.depthNoiseAmp * 0.22,
         0.008,
         1,
       );
@@ -199,7 +199,7 @@ export async function buildParticlesFromImage(
 
       const zBase = (depth01 - 0.5) * zExtent * 2.45;
       const zJitter =
-        (Math.random() - 0.5) * cfg.depthNoiseAmp * zExtent * 0.42;
+        (Math.random() - 0.5) * cfg.depthNoiseAmp * zExtent * 0.28;
       const pz = zBase + zJitter;
 
       const nxOriginal = (xi / cw - 0.5) * 2;
@@ -212,7 +212,7 @@ export async function buildParticlesFromImage(
       const uNorm = xi / cwSafe;
       const vNorm = yi / chSafe;
       const distToEdge = Math.min(uNorm, vNorm, 1 - uNorm, 1 - vNorm);
-      const EDGE_SOFT = 0.22;
+      const EDGE_SOFT = 0.12;
       const edgeFade = THREE.MathUtils.smootherstep(0, EDGE_SOFT, distToEdge);
 
       positions.push(px, py, pz);

@@ -1,12 +1,13 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { sampleEchoAudioBands } from "@/lib/echoAudioAnalyser";
 import {
   ABS_MAX_PARTICLES,
   buildParticlesFromImage,
   type EchoPersonalityVisual,
 } from "@/three/imageParticleSystem";
 
-/** Sprite modulation — soft circle so PointsMaterial reads clearly (vs harsh squares). */
+/** Sprite modulation — tight falloff so dots read as fine points, not mushy clouds. */
 function createParticleSpriteTexture(): THREE.CanvasTexture {
   const size = 128;
   const canvas = document.createElement("canvas");
@@ -25,20 +26,25 @@ function createParticleSpriteTexture(): THREE.CanvasTexture {
     size / 2,
   );
   g.addColorStop(0, "rgba(255,255,255,1)");
-  g.addColorStop(0.45, "rgba(255,255,255,0.45)");
+  g.addColorStop(0.82, "rgba(255,255,255,1)");
+  g.addColorStop(0.93, "rgba(255,255,255,0.28)");
   g.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
   return tex;
 }
 
 const POINT_SIZE: Record<EchoPersonalityVisual, number> = {
-  drift: 3.6,
-  ripple: 3.2,
-  bloom: 4.4,
+  drift: 0.42,
+  ripple: 0.38,
+  bloom: 0.48,
 };
+
+const AUDIO_SMOOTH = 0.16;
 
 /** Canvas-plane mouse smoothing — lower = heavier / slower response (Drift). */
 const MOUSE_LERP_CANVAS = {
@@ -53,8 +59,8 @@ const UNDERWATER_CLEAR: Record<EchoPersonalityVisual, number> = {
   bloom: 0x0a0614,
 };
 
-/** Paper/cream canvas — pointillism gallery mode (`OrbitControls` profile hero). */
-const GALLERY_CLEAR = 0xf7f5f0;
+/** Gallery backdrop (`OrbitControls` profile hero). */
+const GALLERY_CLEAR = 0xffffff;
 
 const ORBIT_HOVER_YAW_GAIN = 0.62;
 const ORBIT_HOVER_PITCH_GAIN = 0.48;
@@ -93,6 +99,18 @@ export class EchoParticleScene {
   private readonly pointsMaterial: THREE.PointsMaterial;
   private readonly particleMap: THREE.CanvasTexture;
   private points: THREE.Points | null = null;
+
+  /** Snapshot of `position` after build — jitter is added relative to this each frame. */
+  private restPositions: Float32Array | null = null;
+
+  /** Base point diameter before audio modulation (personality). */
+  private basePointSize = POINT_SIZE.drift;
+  private readonly audioSmooth = {
+    bass: 0,
+    mid: 0,
+    high: 0,
+    level: 0,
+  };
 
   private currentPersonality: EchoPersonalityVisual | null = null;
   private planeHalfWidth = 5.5;
@@ -260,6 +278,7 @@ export class EchoParticleScene {
       this.points.geometry.dispose();
       this.points = null;
     }
+    this.restPositions = null;
     this.orbitControls?.dispose();
     this.orbitControls = null;
     if (this.fade.resolve) {
@@ -318,7 +337,8 @@ export class EchoParticleScene {
   }
 
   private applyPersonalityUniforms(p: EchoPersonalityVisual) {
-    this.pointsMaterial.size = POINT_SIZE[p];
+    this.basePointSize = POINT_SIZE[p];
+    this.pointsMaterial.size = this.basePointSize;
 
     if (this.interaction !== EchoParticleInteraction.OrbitControls) {
       this.renderer.setClearColor(UNDERWATER_CLEAR[p], 1);
@@ -347,6 +367,13 @@ export class EchoParticleScene {
       this.points.frustumCulled = false;
       this.points.renderOrder = 1;
       this.scene.add(this.points);
+    }
+
+    const posAttr = built.geometry.getAttribute("position");
+    if (posAttr?.array) {
+      this.restPositions = new Float32Array(
+        posAttr.array as Float32Array | ArrayLike<number>,
+      );
     }
 
     built.geometry.computeBoundingSphere();
@@ -396,6 +423,64 @@ export class EchoParticleScene {
     this.orbitControls.minDistance = r * 0.42;
     this.orbitControls.maxDistance = r * 12;
     this.orbitControls.update();
+  }
+
+  /** Per-vertex jitter from FFT; mesh transform stays identity so OrbitControls-only camera motion. */
+  private applyOrbitAudioPointJitter(t: number) {
+    if (!this.points || !this.restPositions) return;
+
+    const geom = this.points.geometry;
+    const posAttr = geom.getAttribute("position") as THREE.BufferAttribute | null;
+    const rndAttr = geom.getAttribute("aRandom") as THREE.BufferAttribute | null;
+    if (!posAttr?.array || !rndAttr?.array) return;
+
+    const arr = posAttr.array as Float32Array;
+    const rest = this.restPositions;
+    const rnd = rndAttr.array as Float32Array;
+    const n = Math.min(rest.length / 3, arr.length / 3, rnd.length);
+
+    const B = this.audioSmooth.bass;
+    const M = this.audioSmooth.mid;
+    const H = this.audioSmooth.high;
+    const L = this.audioSmooth.level;
+
+    const drive = THREE.MathUtils.clamp(
+      B * 0.42 + M * 0.36 + H * 0.34 + L * 0.28,
+      0,
+      1,
+    );
+
+    if (drive < 0.002) {
+      arr.set(rest);
+      posAttr.needsUpdate = true;
+      return;
+    }
+
+    const amp = drive * 0.26;
+
+    for (let i = 0; i < n; i++) {
+      const i3 = i * 3;
+      const r = rnd[i] ?? 0.5;
+      const phase = r * 6283.185;
+
+      const fx = 4.2 + r * 12 + M * 7;
+      const fy = 5.1 + r * 10 + H * 8;
+      const fz = 3.6 + r * 11 + B * 9;
+
+      const ax =
+        Math.sin(t * fx + phase) * Math.cos(t * fx * 0.29 + r * 54.3);
+      const ay =
+        Math.cos(t * fy + phase * 1.09) * Math.sin(t * fy * 0.31 + r * 41.7);
+      const az =
+        Math.sin(t * fz + phase * 0.87) * (0.42 + r * 0.58);
+
+      const w = amp * (0.38 + r * 0.62);
+      arr[i3] = rest[i3]! + ax * w;
+      arr[i3 + 1] = rest[i3 + 1]! + ay * w;
+      arr[i3 + 2] = rest[i3 + 2]! + az * w * 0.52;
+    }
+
+    posAttr.needsUpdate = true;
   }
 
   private tick = () => {
@@ -465,9 +550,23 @@ export class EchoParticleScene {
     const bobX = Math.sin(t * 0.068) * 0.085;
     const bobY = Math.cos(t * 0.052) * 0.055;
 
-    if (useDomOrbit) {
-      /* Camera + target owned by OrbitControls */
-    } else if (isOrbit) {
+    if (useDomOrbit && this.points) {
+      this.points.scale.setScalar(1);
+      this.points.rotation.set(0, 0, 0);
+      this.points.position.set(0, 0, 0);
+
+      const raw = sampleEchoAudioBands();
+      const k = AUDIO_SMOOTH;
+      this.audioSmooth.bass += (raw.bass - this.audioSmooth.bass) * k;
+      this.audioSmooth.mid += (raw.mid - this.audioSmooth.mid) * k;
+      this.audioSmooth.high += (raw.high - this.audioSmooth.high) * k;
+      this.audioSmooth.level += (raw.level - this.audioSmooth.level) * k;
+
+      this.pointsMaterial.size = this.basePointSize;
+      this.applyOrbitAudioPointJitter(t);
+    }
+
+    if (!useDomOrbit && isOrbit) {
       const hoverYaw = this.viewportNdcSmooth.x * ORBIT_HOVER_YAW_GAIN;
       const hoverPitch = this.viewportNdcSmooth.y * ORBIT_HOVER_PITCH_GAIN;
 
@@ -496,7 +595,7 @@ export class EchoParticleScene {
         Math.sin(pitchTot * 0.28) * 0.32,
         0,
       );
-    } else {
+    } else if (!useDomOrbit) {
       const parallaxScale =
         personality === "drift" ? 0.14 : personality === "ripple" ? 0.42 : 0.34;
 

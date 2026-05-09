@@ -44,7 +44,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="relative z-0 mx-auto mt-10 w-full max-w-[720px] sm:absolute sm:left-1/2 sm:top-12 sm:mt-0 sm:-translate-x-1/2 lg:top-0">
+        <div className="relative z-0 mt-10 -mx-6 w-[calc(100%+3rem)] max-w-none sm:absolute sm:left-1/2 sm:top-12 sm:mt-0 sm:mx-0 sm:w-screen sm:max-w-[100vw] sm:-translate-x-1/2 lg:top-0">
           <div className="relative aspect-square w-full overflow-hidden rounded-[2px]">
             <EchoPointCloudHero
               personality={

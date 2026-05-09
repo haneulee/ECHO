@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
+import { registerEchoToneAnalyser } from "@/lib/echoAudioAnalyser";
 import { RotaryKnob } from "./RotaryKnob";
 
 /** Maps UI volume 0–100 linearly to Tone `Volume` decibels (0 ≈ silent, 100 = loudest). */
@@ -34,12 +35,16 @@ export function SoundMemoryPlayer({
   /** Output level 0–100 (matches knob `aria-valuenow`). */
   const [volumePercent, setVolumePercent] = useState(62);
   const synthRef = useRef<unknown>(null);
+  const analyserRef = useRef<Tone.Analyser | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stepRef = useRef(0);
 
   useEffect(() => {
     return () => {
       stop();
+      analyserRef.current?.dispose();
+      analyserRef.current = null;
+      registerEchoToneAnalyser(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -47,11 +52,18 @@ export function SoundMemoryPlayer({
   async function ensureSynth() {
     if (synthRef.current) return synthRef.current;
 
+    const analyser = new Tone.Analyser("fft", 256);
+    analyser.smoothing = 0.72;
+    analyserRef.current = analyser;
+    registerEchoToneAnalyser(analyser);
+
     const reverb = new Tone.Reverb({
       decay: 8,
       preDelay: 0.06,
       wet: 0.64,
-    }).toDestination();
+    });
+    await reverb.ready;
+
     const synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "triangle" },
       envelope: {
@@ -61,7 +73,11 @@ export function SoundMemoryPlayer({
         release: 3.8,
       },
       volume: volumePercentToDb(volumePercent),
-    }).connect(reverb);
+    });
+
+    synth.connect(reverb);
+    reverb.connect(analyser);
+    analyser.toDestination();
 
     synthRef.current = synth;
     return synth;
