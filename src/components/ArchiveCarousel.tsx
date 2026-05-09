@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { mockEncounters } from "@/lib/mockData";
 import type { DailyMemory } from "@/lib/types";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";
@@ -10,146 +10,143 @@ type ArchiveCarouselProps = {
   memories: DailyMemory[];
 };
 
-/** Slide width and SVG sizes stay in sync with translate math; tightened on small viewports for no-scroll layout. */
-function useArchiveLayoutSizes() {
-  const [{ slotWidth, activeSize, inactiveSize }, setSizes] = useState({
-    slotWidth: 320,
-    activeSize: 280,
-    inactiveSize: 200,
-  });
+/** Sonic visual size — single centered instance; scales slightly by breakpoint. */
+function useArchiveVisualSize() {
+  const [size, setSize] = useState(320);
 
   useEffect(() => {
     function apply() {
       const w = window.innerWidth;
-      if (w >= 1024) {
-        setSizes({ slotWidth: 460, activeSize: 420, inactiveSize: 300 });
-      } else if (w >= 640) {
-        setSizes({ slotWidth: 380, activeSize: 340, inactiveSize: 250 });
-      } else {
-        setSizes({ slotWidth: 300, activeSize: 260, inactiveSize: 190 });
-      }
+      if (w >= 1024) setSize(420);
+      else if (w >= 640) setSize(340);
+      else setSize(280);
     }
     apply();
     window.addEventListener("resize", apply);
     return () => window.removeEventListener("resize", apply);
   }, []);
 
-  return { slotWidth, activeSize, inactiveSize };
+  return size;
 }
 
 export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const { slotWidth, activeSize, inactiveSize } = useArchiveLayoutSizes();
+  const visualSize = useArchiveVisualSize();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [segmentPx, setSegmentPx] = useState(0);
+
   const activeMemory = memories[activeIndex];
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const [viewportWidth, setViewportWidth] = useState(0);
 
-  const measureViewport = useCallback(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    setViewportWidth(el.getBoundingClientRect().width);
-  }, []);
-
-  const setViewportRef = useCallback((node: HTMLDivElement | null) => {
-    viewportRef.current = node;
-    if (node) {
-      setViewportWidth(node.getBoundingClientRect().width);
-    } else {
-      setViewportWidth(0);
-    }
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const h = el.clientHeight;
+      if (h > 0) setSegmentPx(h);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
-    const el = viewportRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => measureViewport());
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [measureViewport]);
+    const el = scrollRef.current;
+    if (!el || segmentPx <= 0) return;
 
-  function move(direction: -1 | 1) {
-    setActiveIndex((current) =>
-      (current + direction + memories.length) % memories.length,
-    );
-  }
+    const onScroll = () => {
+      const idx = Math.min(
+        memories.length - 1,
+        Math.max(0, Math.round(el.scrollTop / segmentPx)),
+      );
+      setActiveIndex(idx);
+    };
 
-  const slideCenterPx = activeIndex * slotWidth + slotWidth / 2;
-  /** `translateX(50%)` is 50% of the track width, not the viewport — use measured width. */
-  const trackTranslateX =
-    viewportWidth > 0 ? viewportWidth / 2 - slideCenterPx : 0;
+    el.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [memories.length, segmentPx]);
+
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  /** Overlay UI sits above the scroll layer; wheel on controls must still move the scroll container. */
+  useEffect(() => {
+    const section = sectionRef.current;
+    const scrollEl = scrollRef.current;
+    if (!section || !scrollEl) return;
+
+    const onWheel = (e: WheelEvent) => {
+      const t = e.target;
+      if (!(t instanceof Node)) return;
+      if (scrollEl.contains(t)) return;
+      scrollEl.scrollTop += e.deltaY;
+      e.preventDefault();
+    };
+
+    section.addEventListener("wheel", onWheel, { passive: false });
+    return () => section.removeEventListener("wheel", onWheel);
+  }, []);
+
+  const segmentStyle =
+    segmentPx > 0
+      ? { minHeight: segmentPx }
+      : { minHeight: "min(85dvh, 720px)" };
 
   return (
-    <section className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="relative min-h-0 flex-1 overflow-hidden">
-        <div
-          className="pointer-events-none absolute inset-0 flex items-center overflow-x-clip overflow-y-hidden"
-          ref={setViewportRef}
-        >
+    <section
+      ref={sectionRef}
+      className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden"
+    >
+      {/* Scroll layer: full-height segments drive active memory (below overlay). */}
+      <div
+        ref={scrollRef}
+        className="absolute inset-0 z-0 touch-pan-y overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] snap-y snap-mandatory scroll-smooth"
+      >
+        {memories.map((memory) => (
           <div
-            className="flex h-full max-h-[min(42vh,520px)] min-h-[160px] w-max items-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:max-h-[min(46vh,580px)] sm:min-h-[200px] lg:max-h-none lg:min-h-[280px]"
-            style={{
-              transform: `translateX(${trackTranslateX}px)`,
-            }}
-          >
-            {memories.map((memory, index) => {
-              const isActive = index === activeIndex;
-
-              return (
-                <div
-                  className="relative grid shrink-0 place-items-center"
-                  key={memory.id}
-                  style={{
-                    opacity: isActive ? 1 : 0.34,
-                    transform: `scale(${isActive ? 1 : 0.78})`,
-                    transition: "opacity 700ms ease, transform 700ms ease",
-                    width: slotWidth,
-                    minWidth: slotWidth,
-                  }}
-                >
-                  <div className="relative">
-                    <AbstractMemoryVisual
-                      composition={memory.composition}
-                      encounters={mockEncounters.slice(
-                        0,
-                        Math.max(1, memory.totalEncounters),
-                      )}
-                      showMutation={isActive}
-                      size={isActive ? activeSize : inactiveSize}
-                      {...memory.visualization}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+            aria-hidden
+            className="w-full shrink-0 snap-start snap-always"
+            key={memory.id}
+            style={segmentStyle}
+          />
+        ))}
       </div>
 
-      <div className="relative z-10 flex shrink-0 flex-col gap-4 pb-1 pt-2 sm:gap-5 lg:gap-6 lg:pb-3 lg:pt-4">
-        <div className="max-w-xl">
-          <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
-            {new Date(activeMemory.date).toLocaleDateString("en", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-          <h2 className="mt-2 font-display text-[clamp(1.5rem,6vw,2.75rem)] leading-[1.1] tracking-[-0.04em] sm:mt-3 sm:text-[40px] sm:leading-[44px] lg:text-[clamp(2.25rem,4vw,4.25rem)] lg:leading-[1.05]">
-            {activeMemory.totalEncounters} echoes passed near.
-          </h2>
+      {/* Fixed presentation: centered sonic visual + info swap with scroll index */}
+      <div className="relative z-[1] flex min-h-0 flex-1 flex-col pointer-events-none">
+        <div className="flex min-h-0 flex-1 items-center justify-center px-4 pt-2">
+          <div className="max-w-[min(100%,520px)]">
+            <AbstractMemoryVisual
+              composition={activeMemory.composition}
+              encounters={mockEncounters.slice(
+                0,
+                Math.max(1, activeMemory.totalEncounters),
+              )}
+              key={activeMemory.id}
+              showMutation
+              size={visualSize}
+              {...activeMemory.visualization}
+            />
+          </div>
         </div>
 
-        <div className="flex w-full items-center justify-center gap-2">
-          <button
-            aria-label="Previous archive memory"
-            className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#26231F] text-xl text-white transition hover:scale-[1.03] lg:h-16 lg:w-16"
-            onClick={() => move(-1)}
-            type="button"
-          >
-            ←
-          </button>
-          <div className="min-w-0 flex-1">
+        <div className="shrink-0 space-y-4 pb-1 pt-2 sm:gap-5 sm:pb-2 sm:pt-3 lg:gap-6 lg:pb-3 lg:pt-4">
+          <div className="max-w-xl">
+            <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+              {new Date(activeMemory.date).toLocaleDateString("en", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+            <h2 className="mt-2 font-display text-[clamp(1.5rem,6vw,2.75rem)] leading-[1.1] tracking-[-0.04em] sm:mt-3 sm:text-[40px] sm:leading-[44px] lg:text-[clamp(2.25rem,4vw,4.25rem)] lg:leading-[1.05]">
+              {activeMemory.totalEncounters} echoes passed near.
+            </h2>
+          </div>
+
+          <div className="flex w-full justify-center">
             <SoundMemoryPlayer
+              key={activeMemory.id}
               melody={activeMemory.composition.voices.flatMap(
                 (voice) => voice.melody,
               )}
@@ -160,18 +157,10 @@ export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
               variant="controlRow"
             />
           </div>
-          <button
-            aria-label="Next archive memory"
-            className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#26231F] text-xl text-white transition hover:scale-[1.03] lg:h-16 lg:w-16"
-            onClick={() => move(1)}
-            type="button"
-          >
-            →
-          </button>
-        </div>
-        <div className="flex justify-center font-body text-xs tabular-nums tracking-[0.2em] text-text-muted">
-          {String(activeIndex + 1).padStart(2, "0")} /{" "}
-          {String(memories.length).padStart(2, "0")}
+          <div className="flex justify-center font-body text-xs tabular-nums tracking-[0.2em] text-text-muted">
+            {String(activeIndex + 1).padStart(2, "0")} /{" "}
+            {String(memories.length).padStart(2, "0")}
+          </div>
         </div>
       </div>
     </section>
