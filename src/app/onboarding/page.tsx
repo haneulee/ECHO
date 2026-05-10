@@ -3,7 +3,7 @@ import { OnboardingFlow } from "@/components/OnboardingFlow";
 
 export default function OnboardingPage() {
   return (
-    <AppShell eyebrow="Onboarding" viewportLocked>
+    <AppShell hideChrome viewportLocked>
       <OnboardingFlow />
     </AppShell>
   );

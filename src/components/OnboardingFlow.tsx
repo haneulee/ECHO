@@ -75,12 +75,12 @@ export function OnboardingFlow() {
     <div className="mx-auto flex min-h-0 w-full flex-1 flex-col">
       <p
         aria-live="polite"
-        className="order-1 mb-3 shrink-0 text-center font-body text-xs tabular-nums tracking-[0.24em] text-text-muted sm:mb-4 lg:order-2 lg:mt-0 lg:pt-1"
+        className="mb-3 shrink-0 text-center font-body text-xs tabular-nums tracking-[0.24em] text-text-muted sm:mb-4"
       >
         Step {step + 1} of {TOTAL_STEPS}
       </p>
 
-      <div className="order-2 flex min-h-0 flex-1 flex-col overflow-hidden lg:order-3">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {step === 0 ? (
           <div className="mx-auto flex max-w-lg flex-1 flex-col items-center justify-center gap-10 pb-8 text-center">
             <h2 className="max-w-md font-display text-[40px] leading-[44px] tracking-[-0.03em] sm:text-[48px] sm:leading-[52px]">
@@ -181,10 +181,10 @@ export function OnboardingFlow() {
         ) : null}
       </div>
 
-      {/* Mobile: pinned to bottom of the viewport column (above tab bar padding); lg: under header */}
+      {/* Pinned to bottom on all breakpoints (above mobile tab bar when visible). */}
       <div
         className={[
-          "pointer-events-auto order-3 mt-auto flex shrink-0 flex-row gap-3 bg-white/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 lg:order-1 lg:mb-4 lg:mt-0 lg:bg-transparent lg:pb-0 lg:pt-0 lg:backdrop-blur-none",
+          "pointer-events-auto mt-auto flex shrink-0 flex-row gap-3 bg-white/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 lg:bg-transparent lg:pb-[max(0.35rem,env(safe-area-inset-bottom))] lg:pt-4 lg:backdrop-blur-none",
         ].join(" ")}
       >
         {step === 0 ? (

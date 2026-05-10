@@ -52,7 +52,7 @@ export function EchoPersonalitySliders({
   return (
     <section className="mt-12 max-w-2xl">
       <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
-        Personality
+        Quiet tuning
       </p>
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
         {traits.map((trait) => (
