@@ -69,7 +69,7 @@ export class ShellEcologyExperience {
     this.scene.fog = null;
 
     this.camera = new THREE.PerspectiveCamera(45, 1, 0.08, 220);
-    this.camera.position.set(0, 0.45, 12.5);
+    this.camera.position.set(0, 0.45, 11.2);
 
     const oc = new OrbitControls(this.camera, canvas);
     oc.enableDamping = true;

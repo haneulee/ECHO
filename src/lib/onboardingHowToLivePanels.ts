@@ -15,8 +15,8 @@ export type HowToLivePanel = {
 export const HOW_TO_LIVE_PANELS: HowToLivePanel[] = [
   {
     id: "day",
-    chapter: "Day",
-    body: "Wear Echo while you move. When another Echo is nearby, yours borrows their melody—distance shapes harmonics, not volume.",
+    chapter: "While the city moves",
+    body: "Let Echo ride your ordinary hours. When another leans into range, the weave thickens—you need not trade words to share the weather of the room.",
     emphasizeEchoType: "bounce",
     visualization: {
       seed: 2104,
@@ -27,8 +27,8 @@ export const HOW_TO_LIVE_PANELS: HowToLivePanel[] = [
   },
   {
     id: "night",
-    chapter: "Night",
-    body: "Dock Echo on the Station. It uploads the day's encounters and turns them into a single sound memory you can open in the app.",
+    chapter: "Where the nest receives",
+    body: "Set Echo down like a cup. The day’s crossings settle into a single hush of sound, and a pale mirroring on glass—open whenever your hands are empty.",
     emphasizeEchoType: "shy",
     visualization: {
       seed: 8842,
@@ -39,8 +39,8 @@ export const HOW_TO_LIVE_PANELS: HowToLivePanel[] = [
   },
   {
     id: "app",
-    chapter: "App",
-    body: "Open Today for the latest memory, Archive for past days, and My Echo to tune personality and hear your melody.",
+    chapter: "What the glass remembers",
+    body: "This day’s pour · older ripples kept side by side · and the place where their temperament breathes and their tune asks you to stay a moment longer.",
     emphasizeEchoType: "messy",
     visualization: {
       seed: 5510,

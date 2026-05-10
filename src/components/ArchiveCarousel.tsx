@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { mockEncounters } from "@/lib/mockData";
 import type { DailyMemory } from "@/lib/types";
+import { archiveCarousel } from "@/lib/uiPoetics";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";
 import { SoundMemoryPlayer } from "./SoundMemoryPlayer";
 
@@ -140,22 +141,24 @@ export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
               })}
             </p>
             <h2 className="mt-2 font-display text-[clamp(1.5rem,6vw,2.75rem)] leading-[1.1] tracking-[-0.04em] sm:mt-3 sm:text-[40px] sm:leading-[44px] lg:text-[clamp(2.25rem,4vw,4.25rem)] lg:leading-[1.05]">
-              {activeMemory.totalEncounters} echoes passed near.
+              {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
             </h2>
           </div>
 
-          <div className="flex w-full justify-center">
-            <SoundMemoryPlayer
-              key={activeMemory.id}
-              melody={activeMemory.composition.voices.flatMap(
-                (voice) => voice.melody,
-              )}
-              title={new Date(activeMemory.date).toLocaleDateString("en", {
-                month: "short",
-                day: "numeric",
-              })}
-              variant="controlRow"
-            />
+          <div className="flex w-full justify-center px-4">
+            <div className="pointer-events-auto rounded-full border border-[#26231F]/[0.08] bg-white/95 px-4 py-2.5 shadow-[0_12px_48px_rgba(38,35,31,0.14)] backdrop-blur-md">
+              <SoundMemoryPlayer
+                key={activeMemory.id}
+                melody={activeMemory.composition.voices.flatMap(
+                  (voice) => voice.melody,
+                )}
+                title={new Date(activeMemory.date).toLocaleDateString("en", {
+                  month: "short",
+                  day: "numeric",
+                })}
+                variant="controlRow"
+              />
+            </div>
           </div>
           <div className="flex justify-center font-body text-xs tabular-nums tracking-[0.2em] text-text-muted">
             {String(activeIndex + 1).padStart(2, "0")} /{" "}

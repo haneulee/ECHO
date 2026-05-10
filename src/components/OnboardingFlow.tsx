@@ -16,6 +16,7 @@ import {
 import { randomTwoWordEchoName } from "@/lib/onboardingNames";
 import type { EchoType } from "@/lib/types";
 import { mockDailyMemory, mockEncounters } from "@/lib/mockData";
+import { onboarding } from "@/lib/uiPoetics";
 
 /** Welcome → model → name → Day → Night → App */
 const TOTAL_STEPS = 6;
@@ -77,18 +78,17 @@ export function OnboardingFlow() {
         aria-live="polite"
         className="mb-3 shrink-0 text-center font-body text-xs tabular-nums tracking-[0.24em] text-text-muted sm:mb-4"
       >
-        Step {step + 1} of {TOTAL_STEPS}
+        {onboarding.stepCounter(step, TOTAL_STEPS)}
       </p>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {step === 0 ? (
           <div className="mx-auto flex max-w-lg flex-1 flex-col items-center justify-center gap-10 pb-8 text-center">
             <h2 className="max-w-md font-display text-[40px] leading-[44px] tracking-[-0.03em] sm:text-[48px] sm:leading-[52px]">
-              Welcome to Echo
+              {onboarding.welcomeTitle}
             </h2>
             <p className="max-w-md font-body text-base leading-7 text-text-muted">
-              Echo listens through proximity, not surveillance. Take a quiet
-              moment to wake your companion and shape its first gentle voice.
+              {onboarding.welcomeBody}
             </p>
           </div>
         ) : null}
@@ -117,13 +117,13 @@ export function OnboardingFlow() {
                   className="font-body text-xs uppercase tracking-[0.22em] text-text-muted"
                   htmlFor="echo-name"
                 >
-                  Echo name
+                  {onboarding.nameFieldLabel}
                 </label>
                 <input
                   className="mt-3 w-full border-b border-border bg-transparent pb-2 font-display text-2xl leading-8 text-text outline-none placeholder:text-text-muted/45 focus:border-text"
                   id="echo-name"
                   onChange={(event) => setEchoName(event.target.value)}
-                  placeholder="Name your Echo"
+                  placeholder={onboarding.namePlaceholder}
                   type="text"
                   value={echoName}
                 />
@@ -155,12 +155,11 @@ export function OnboardingFlow() {
               <div className="mx-auto w-full max-w-xl">
                 <div>
                   <p className="h-4 font-display text-xs uppercase leading-4 tracking-[0.28em] text-text-muted">
-                    How to live with Echo
+                    {onboarding.howToLiveEyebrow}
                   </p>
                   {step === 3 ? (
                     <p className="mt-2 max-w-lg font-body text-sm leading-6 text-text-muted">
-                      A few quiet habits help the archive stay true to your
-                      days.
+                      {onboarding.howToLiveLeadStep3}
                     </p>
                   ) : null}
                   <h2
@@ -194,17 +193,17 @@ export function OnboardingFlow() {
               onClick={backFromWelcome}
               type="button"
             >
-              Back
+              {onboarding.back}
             </button>
             <button className={primaryBtn} onClick={next} type="button">
-              Setup your Echo
+              {onboarding.primaryWelcome}
             </button>
           </>
         ) : null}
         {step === 1 ? (
           <>
             <button className={secondaryBtn} onClick={back} type="button">
-              Back
+              {onboarding.back}
             </button>
             <button
               className={primaryBtn}
@@ -214,14 +213,14 @@ export function OnboardingFlow() {
               }}
               type="button"
             >
-              Continue
+              {onboarding.primaryContinue}
             </button>
           </>
         ) : null}
         {step === 2 ? (
           <>
             <button className={secondaryBtn} onClick={back} type="button">
-              Back
+              {onboarding.back}
             </button>
             <button
               className={primaryBtn}
@@ -229,14 +228,14 @@ export function OnboardingFlow() {
               onClick={next}
               type="button"
             >
-              Continue
+              {onboarding.primaryContinue}
             </button>
           </>
         ) : null}
         {step >= 3 && step <= 5 ? (
           <>
             <button className={secondaryBtn} onClick={back} type="button">
-              Back
+              {onboarding.back}
             </button>
             <button
               className={primaryBtn}
@@ -249,7 +248,9 @@ export function OnboardingFlow() {
               }}
               type="button"
             >
-              {step < 5 ? "Next" : "Enter Echo"}
+              {step < 5
+                ? onboarding.nextChapter
+                : onboarding.primaryFinish}
             </button>
           </>
         ) : null}

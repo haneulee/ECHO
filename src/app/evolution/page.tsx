@@ -1,13 +1,14 @@
 import { AppShell } from "@/components/AppShell";
 import { EvolutionCard } from "@/components/EvolutionCard";
-import { mockEvolutions } from "@/lib/mockData";
+import { mockEchoDevice, mockEvolutions } from "@/lib/mockData";
+import { evolutionPageHero } from "@/lib/uiPoetics";
 
 export default function EvolutionPage() {
   return (
     <AppShell
-      eyebrow="Evolution"
-      intro="When two Echoes remain very close, tiny melodic fragments can cross between them."
-      title="What Namu kept."
+      eyebrow={evolutionPageHero.eyebrow}
+      intro={evolutionPageHero.intro}
+      title={evolutionPageHero.title(mockEchoDevice.echoName)}
     >
       <div className="grid gap-4 lg:grid-cols-2">
         {mockEvolutions.map((evolution) => (

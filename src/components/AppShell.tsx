@@ -4,12 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-const navItems = [
-  { href: "/today", label: "Today" },
-  { href: "/profile", label: "My Echo" },
-  { href: "/archive", label: "Archive" },
-  { href: "/sound-test", label: "Sound" },
-];
+import { navItems } from "@/lib/uiPoetics";
 
 type AppShellProps = {
   children: ReactNode;

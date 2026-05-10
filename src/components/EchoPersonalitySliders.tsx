@@ -11,31 +11,31 @@ type EchoPersonalitySlidersProps = {
 const traits = [
   {
     id: "mood",
-    label: "Mood",
-    left: "sad",
-    right: "hopeful",
-    note: "matched to Namu's melodic lift",
+    label: "Light",
+    left: "dusk",
+    right: "ember",
+    note: "how brightness pools in the line",
   },
   {
     id: "motion",
-    label: "Motion",
-    left: "still",
-    right: "awake",
-    note: "changes the spacing between notes",
+    label: "Pulse",
+    left: "held",
+    right: "adrift",
+    note: "breath when bodies draw in",
   },
   {
     id: "density",
-    label: "Density",
-    left: "single",
-    right: "full",
-    note: "leans into harmonic color",
+    label: "Weft",
+    left: "sheer",
+    right: "heavy",
+    note: "threads crowding the room",
   },
   {
     id: "softness",
-    label: "Softness",
-    left: "dry",
-    right: "glow",
-    note: "softens the edge of the melody",
+    label: "Edge",
+    left: "blade",
+    right: "mist",
+    note: "where melody meets hush",
   },
 ];
 
@@ -52,7 +52,7 @@ export function EchoPersonalitySliders({
   return (
     <section className="mt-12 max-w-2xl">
       <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
-        Quiet tuning
+        Twisting the voice
       </p>
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
         {traits.map((trait) => (

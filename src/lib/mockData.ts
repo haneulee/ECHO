@@ -21,9 +21,9 @@ export const echoTypeLabels: Record<EchoType, string> = {
 };
 
 export const echoTypeDescriptions: Record<EchoType, string> = {
-  shy: "Soft, hesitant melodies—quiet until proximity draws them out.",
-  messy: "Overlapping harmonics and playful harmonic tangles.",
-  bounce: "Bright, elastic phrases that leap when others get close.",
+  shy: "Tender and backward until warmth crosses the threshold—then it unfurls.",
+  messy: "Knots and overlaps—when many gather, the air forgets whose line is whose.",
+  bounce: "Sun through leaves—always leaning toward where bodies crowd.",
 };
 
 export const mockEchoDevice: EchoDevice = {
@@ -51,7 +51,7 @@ export const mockSoundProfile: SoundProfile = {
   id: "ambient3_meditation_v1",
   name: "Meditation Strings",
   description:
-    "Slow melodic fragments that gain harmonic density through proximity.",
+    "Long phrases that drink color from whoever stands close—distance paints, it does not shout.",
   engineType: "tonejs",
   scale: "A minor pentatonic",
   tempoBpm: 52,

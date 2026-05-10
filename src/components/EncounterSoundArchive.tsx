@@ -1,5 +1,6 @@
 import { echoTypeLabels } from "@/lib/mockData";
 import type { DailyMemory, Encounter } from "@/lib/types";
+import { encounterArchive, proximityWhisper } from "@/lib/uiPoetics";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";
 
 type EncounterSoundArchiveProps = {
@@ -18,10 +19,10 @@ export function EncounterSoundArchive({
       <div className="mb-8 flex items-end justify-between gap-6">
         <div>
           <p className="font-body text-xs uppercase tracking-[0.32em] text-text-muted">
-            Encounter traces
+            {encounterArchive.eyebrow}
           </p>
           <h2 className="mt-3 font-display text-[40px] leading-[44px] tracking-[-0.03em] lg:text-[64px] lg:leading-[68px]">
-            Nearby voices, kept as color.
+            {encounterArchive.title}
           </h2>
         </div>
       </div>
@@ -63,8 +64,12 @@ export function EncounterSoundArchive({
                     hour: "numeric",
                     minute: "2-digit",
                   })}{" "}
-                  · {encounter.proximityZone.replace("_", " ")} ·{" "}
-                  {Math.round(encounter.durationSec / 60)} min
+                  · {proximityWhisper[encounter.proximityZone]} ·{" "}
+                  {Math.round(encounter.durationSec / 60) === 0
+                    ? "a thin minute"
+                    : Math.round(encounter.durationSec / 60) === 1
+                      ? "one minute held open"
+                      : `${Math.round(encounter.durationSec / 60)} minutes held open`}
                 </p>
               </div>
             </article>

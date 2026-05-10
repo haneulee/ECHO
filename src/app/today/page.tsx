@@ -1,8 +1,8 @@
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
-import { EncounterSoundArchive } from "@/components/EncounterSoundArchive";
 import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
 import { mockDailyMemory, mockEncounters } from "@/lib/mockData";
+import { todayHero, todaySoundTitle } from "@/lib/uiPoetics";
 
 export default function TodayPage() {
   return (
@@ -12,38 +12,39 @@ export default function TodayPage() {
         month: "long",
         day: "numeric",
       })}
-      intro="The Station has turned nearby traces into a quiet daily sound memory. What was your day like?"
-      title="Your day in sound"
+      intro={todayHero.intro}
+      title={todayHero.title}
     >
-      <section className="relative isolate overflow-visible sm:min-h-[520px] lg:min-h-[660px]">
-        <div className="relative z-0 mx-auto mt-2 w-full max-w-[720px] sm:absolute sm:left-1/2 sm:top-2 sm:mt-0 sm:-translate-x-1/2 lg:top-0">
-          <div className="relative">
-            <AbstractMemoryVisual
-              composition={mockDailyMemory.composition}
-              encounters={mockEncounters}
-              showMutation
-              size={720}
-              {...mockDailyMemory.visualization}
+      <section className="relative isolate w-full overflow-visible pb-2">
+        <div className="relative z-0 mx-auto mt-2 flex w-full max-w-[720px] justify-center">
+          <AbstractMemoryVisual
+            composition={mockDailyMemory.composition}
+            encounters={mockEncounters}
+            showMutation
+            size={720}
+            {...mockDailyMemory.visualization}
+          />
+        </div>
+
+        {/* SVG overflow no longer covers controls; dock stays above imagery + bottom nav */}
+        <div className="relative z-30 mx-auto flex w-full max-w-[720px] justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:pt-6">
+          <div className="rounded-full border border-[#26231F]/[0.08] bg-white/95 px-4 py-2.5 shadow-[0_12px_48px_rgba(38,35,31,0.14)] backdrop-blur-md">
+            <SoundMemoryPlayer
+              melody={mockDailyMemory.composition.voices.flatMap(
+                (voice) => voice.melody,
+              )}
+              title={todaySoundTitle}
+              variant="controlRow"
             />
           </div>
         </div>
       </section>
 
-      <div className="relative z-20 -mt-1 w-full sm:-mt-6 lg:-mt-10">
-        <SoundMemoryPlayer
-          melody={mockDailyMemory.composition.voices.flatMap(
-            (voice) => voice.melody,
-          )}
-          title="Today"
-          variant="controlRow"
-        />
-      </div>
-
-      <EncounterSoundArchive
+      {/* <EncounterSoundArchive
         composition={mockDailyMemory.composition}
         encounters={mockEncounters}
         seed={mockDailyMemory.visualization.seed}
-      />
+      /> */}
     </AppShell>
   );
 }

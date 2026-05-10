@@ -1,13 +1,14 @@
 import { AppShell } from "@/components/AppShell";
 import { SoundTestVoice } from "@/components/SoundTestVoice";
 import { mockSoundProfile, mockSoundVoices } from "@/lib/mockData";
+import { soundTestHero, soundTestProfileIntro } from "@/lib/uiPoetics";
 
 export default function SoundTestPage() {
   return (
     <AppShell
-      eyebrow="Sound test"
-      intro="Slow string-like tones expand harmonically as closeness rises. Use headphones at a low volume."
-      title="Hear distance thicken."
+      eyebrow={soundTestHero.eyebrow}
+      intro={soundTestHero.intro}
+      title={soundTestHero.title}
     >
       <section className="mb-14 lg:max-w-3xl">
         <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
@@ -17,9 +18,10 @@ export default function SoundTestPage() {
           {mockSoundProfile.name}
         </p>
         <p className="mt-3 font-body text-base leading-6 text-text-muted">
-          {mockSoundProfile.tempoBpm} BPM, long release, no percussion. The
-          melody remains present while fifths, octaves, and shimmer notes arrive
-          near the body.
+          {soundTestProfileIntro}
+        </p>
+        <p className="mt-2 font-body text-sm tabular-nums tracking-wide text-text-muted/85">
+          {mockSoundProfile.tempoBpm} BPM · long release
         </p>
       </section>
 

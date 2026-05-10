@@ -6,7 +6,8 @@ import { blobVertexShader } from "./shaders/blob.vert";
 import type { EcologyPersonalityId } from "./types";
 import type { EcologyUniformSnapshot } from "./types";
 
-const BLOB_RADIUS = 2.18;
+/** Match particle shell scale (`IcoNoiseSphere` radius) */
+const BLOB_RADIUS = 2.58;
 /** 단일 연속 면 — 디테일 높여 유기적 실루엣을 깎기 쉽게 */
 const ICO_DETAIL = 9;
 

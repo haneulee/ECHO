@@ -9,11 +9,11 @@ export function DistanceSlider({ value, onChange }: DistanceSliderProps) {
   return (
     <label className="block">
       <span className="mb-2 flex items-center justify-between font-body text-xs uppercase tracking-[0.24em] text-text-muted">
-        <span>Closeness</span>
+        <span>How near</span>
         <span>{value.toFixed(2)}</span>
       </span>
       <input
-        aria-label="Closeness"
+        aria-label="Nearness"
         className="h-2 w-full accent-text"
         max={1}
         min={0}

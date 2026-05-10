@@ -7,7 +7,8 @@ import { icosphereVertexShader } from "./shaders/icosphere.vert";
 import type { EcologyPersonalityId } from "./types";
 import type { EcologyUniformSnapshot } from "./types";
 
-const ICO_RADIUS = 2.18;
+/** Visual scale of the particle shell — larger reads bolder on profile */
+const ICO_RADIUS = 2.58;
 
 /** 경량: 파티클 수·크기 모두 절약 */
 export const ICO_NOISE_SPHERE_LITE = {
