@@ -1,7 +1,6 @@
 "use client";
 
 import type { EcologyPersonalityId } from "@/profile-ecology/types";
-import { EchoShellBlob } from "./EchoShellBlob";
 import { EchoShellParticles } from "./EchoShellParticles";
 
 export type ProfileHeroLabProps = {

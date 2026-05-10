@@ -43,7 +43,7 @@ export function AppShell({
   return (
     <main
       className={[
-        "mx-auto w-full min-w-0 max-w-7xl overflow-x-hidden text-text",
+        "mx-auto w-full min-w-0 max-w-7xl overflow-x-clip text-text",
         hideChrome ? "" : "px-6 pt-6 sm:px-8 lg:px-12",
         mainPad,
       ].join(" ")}

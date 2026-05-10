@@ -1,5 +1,4 @@
 import { AppShell } from "@/components/AppShell";
-import { EchoPersonalitySliders } from "@/components/EchoPersonalitySliders";
 import { EvolutionCard } from "@/components/EvolutionCard";
 import { ProfileHeroLab } from "@/components/profile/ProfileHeroLab";
 import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
@@ -20,7 +19,7 @@ export default function ProfilePage() {
       intro="Listen slowly—the surface is also a memory."
       title={mockEchoDevice.echoName}
     >
-      <section className="relative isolate overflow-visible sm:min-h-[540px] lg:min-h-[660px]">
+      <section className="relative isolate overflow-x-clip">
         <div className="relative z-10 flex max-w-xl flex-row justify-between gap-3 font-body text-sm leading-5 text-text-muted sm:grid sm:grid-cols-3 sm:justify-start sm:gap-x-10 sm:gap-y-0">
           <div className="min-w-0 flex-1 sm:block sm:flex-none">
             <p className="text-[10px] uppercase tracking-[0.22em] sm:text-xs">
@@ -48,13 +47,12 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="relative z-0 mt-10 -mx-6 w-[calc(100%+3rem)] max-w-none sm:absolute sm:left-1/2 sm:top-12 sm:mt-0 sm:mx-0 sm:w-screen sm:max-w-[100vw] sm:-translate-x-1/2 lg:top-0">
-            <ProfileHeroLab ecologyPersonality={ecologyPersonality} />
+        <div className="relative z-0 mt-10 w-full">
+          <ProfileHeroLab ecologyPersonality={ecologyPersonality} />
         </div>
-
       </section>
 
-      <div className="relative z-20 -mt-1 w-full sm:-mt-6 lg:-mt-10">
+      <div className="relative z-10 mt-12 w-full sm:mt-14 lg:mt-16">
         <SoundMemoryPlayer
           melody={mockEchoDevice.currentState.melody}
           title="Collected resonances"
@@ -62,9 +60,7 @@ export default function ProfilePage() {
         />
       </div>
 
-      <EchoPersonalitySliders device={mockEchoDevice} />
-
-      <section className="mt-24 border-t border-text/10 pt-16">
+      <section className="relative z-10 mt-20 scroll-mt-28 border-t border-text/10 pt-16 sm:mt-24 lg:mt-32">
         <div className="grid gap-10 lg:grid-cols-[minmax(260px,0.38fr)_1fr]">
           <div>
             <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
