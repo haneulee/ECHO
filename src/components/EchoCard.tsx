@@ -1,4 +1,4 @@
-import { echoTypeLabels } from "@/lib/mockData";
+import { echoTypeLabels } from "@/lib/echoTypeMeta";
 import type { EchoDevice } from "@/lib/types";
 import { MelodyView } from "./MelodyView";
 

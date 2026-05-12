@@ -1,5 +1,8 @@
 import type { DailyMemory, EchoType } from "@/lib/types";
-import { mockDailyMemory, mockEncounters } from "@/lib/mockData";
+import {
+  onboardingDemoComposition,
+  onboardingDemoEncounters,
+} from "@/lib/onboardingDemoData";
 
 export type HowToLivePanel = {
   id: string;
@@ -54,7 +57,7 @@ export const HOW_TO_LIVE_PANELS: HowToLivePanel[] = [
 export function howToLiveCompositionEmphasis(
   type: EchoType,
 ): DailyMemory["composition"] {
-  const base = mockDailyMemory.composition;
+  const base = onboardingDemoComposition;
   const voices = base.voices.map((v) => ({
     ...v,
     presence:
@@ -70,7 +73,7 @@ export function howToLiveCompositionEmphasis(
 }
 
 export function howToLiveEncountersBiased(type: EchoType) {
-  return mockEncounters.slice(0, 6).map((e, i) => ({
+  return onboardingDemoEncounters.slice(0, 6).map((e, i) => ({
     ...e,
     otherEchoType: i % 2 === 0 ? type : e.otherEchoType,
   }));

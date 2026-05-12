@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { mockEncounters } from "@/lib/mockData";
-import type { DailyMemory } from "@/lib/types";
+import type { DailyMemory, Encounter } from "@/lib/types";
 import { archiveCarousel } from "@/lib/uiPoetics";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";
 import { SoundMemoryPlayer } from "./SoundMemoryPlayer";
 
+export type ArchiveCarouselItem = {
+  memory: DailyMemory;
+  encounters: Encounter[];
+};
+
 type ArchiveCarouselProps = {
-  memories: DailyMemory[];
+  items: ArchiveCarouselItem[];
 };
 
 /** Sonic visual size — single centered instance; scales slightly by breakpoint. */
@@ -30,13 +34,14 @@ function useArchiveVisualSize() {
   return size;
 }
 
-export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
+export function ArchiveCarousel({ items }: ArchiveCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const visualSize = useArchiveVisualSize();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [segmentPx, setSegmentPx] = useState(0);
 
-  const activeMemory = memories[activeIndex];
+  const activeItem = items[activeIndex];
+  const activeMemory = activeItem?.memory;
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -53,11 +58,11 @@ export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el || segmentPx <= 0) return;
+    if (!el || segmentPx <= 0 || items.length === 0) return;
 
     const onScroll = () => {
       const idx = Math.min(
-        memories.length - 1,
+        items.length - 1,
         Math.max(0, Math.round(el.scrollTop / segmentPx)),
       );
       setActiveIndex(idx);
@@ -66,7 +71,7 @@ export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
     el.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => el.removeEventListener("scroll", onScroll);
-  }, [memories.length, segmentPx]);
+  }, [items.length, segmentPx]);
 
   const sectionRef = useRef<HTMLElement | null>(null);
 
@@ -93,6 +98,10 @@ export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
       ? { minHeight: segmentPx }
       : { minHeight: "min(85dvh, 720px)" };
 
+  if (!activeMemory || !activeItem) {
+    return null;
+  }
+
   return (
     <section
       ref={sectionRef}
@@ -103,11 +112,11 @@ export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
         ref={scrollRef}
         className="absolute inset-0 z-0 touch-pan-y overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] snap-y snap-mandatory scroll-smooth"
       >
-        {memories.map((memory) => (
+        {items.map((item) => (
           <div
             aria-hidden
             className="w-full shrink-0 snap-start snap-always"
-            key={memory.id}
+            key={item.memory.id}
             style={segmentStyle}
           />
         ))}
@@ -119,10 +128,7 @@ export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
           <div className="max-w-[min(100%,520px)]">
             <AbstractMemoryVisual
               composition={activeMemory.composition}
-              encounters={mockEncounters.slice(
-                0,
-                Math.max(1, activeMemory.totalEncounters),
-              )}
+              encounters={activeItem.encounters}
               key={activeMemory.id}
               showMutation
               size={visualSize}
@@ -134,11 +140,14 @@ export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
         <div className="shrink-0 space-y-4 pb-1 pt-2 sm:gap-5 sm:pb-2 sm:pt-3 lg:gap-6 lg:pb-3 lg:pt-4">
           <div className="max-w-xl">
             <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
-              {new Date(activeMemory.date).toLocaleDateString("en", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}
+              {new Date(`${activeMemory.date}T12:00:00`).toLocaleDateString(
+                "en",
+                {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                },
+              )}
             </p>
             <h2 className="mt-2 font-display text-[clamp(1.5rem,6vw,2.75rem)] leading-[1.1] tracking-[-0.04em] sm:mt-3 sm:text-[40px] sm:leading-[44px] lg:text-[clamp(2.25rem,4vw,4.25rem)] lg:leading-[1.05]">
               {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
@@ -162,7 +171,7 @@ export function ArchiveCarousel({ memories }: ArchiveCarouselProps) {
           </div>
           <div className="flex justify-center font-body text-xs tabular-nums tracking-[0.2em] text-text-muted">
             {String(activeIndex + 1).padStart(2, "0")} /{" "}
-            {String(memories.length).padStart(2, "0")}
+            {String(items.length).padStart(2, "0")}
           </div>
         </div>
       </div>

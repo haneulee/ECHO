@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 import { navItems } from "@/lib/uiPoetics";
 
@@ -26,6 +27,34 @@ export function AppShell({
   hideChrome = false,
 }: AppShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [authId, setAuthId] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d: { user?: { id: string } | null }) => {
+        if (!cancelled) setAuthId(d.user?.id ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setAuthId(null);
+      })
+      .finally(() => {
+        if (!cancelled) setAuthReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  async function signOut() {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    setAuthId(null);
+    router.push("/");
+    router.refresh();
+  }
 
   const mainPad = hideChrome
     ? viewportLocked
@@ -51,6 +80,30 @@ export function AppShell({
           </Link>
           <div className="flex items-center gap-8">
             {navItems.map((item) => {
+              if (item.kind === "account") {
+                if (!authReady) return null;
+                if (authId) {
+                  return (
+                    <button
+                      className="font-body text-sm text-text-muted transition hover:text-text"
+                      key="account"
+                      type="button"
+                      onClick={() => void signOut()}
+                    >
+                      {item.signedInLabel}
+                    </button>
+                  );
+                }
+                return (
+                  <Link
+                    className="font-body text-sm text-nav-active transition hover:opacity-90"
+                    href="/login"
+                    key="account"
+                  >
+                    {item.signedOutLabel}
+                  </Link>
+                );
+              }
               const isActive = pathname === item.href;
 
               return (
@@ -128,6 +181,44 @@ export function AppShell({
         <nav className="fixed inset-x-0 bottom-4 z-20 mx-auto w-[min(390px,calc(100%-32px))] rounded-full bg-white/88 p-2 shadow-quiet backdrop-blur lg:hidden">
           <div className="grid grid-cols-4 gap-1">
             {navItems.map((item) => {
+              if (item.kind === "account") {
+                if (!authReady) {
+                  return (
+                    <div
+                      aria-hidden
+                      className="rounded-full px-2 py-3"
+                      key="account"
+                    />
+                  );
+                }
+                if (authId) {
+                  return (
+                    <button
+                      className="rounded-full px-2 py-3 text-center font-body text-[11px] leading-4 text-text-muted transition hover:bg-surface-soft hover:text-text"
+                      key="account"
+                      type="button"
+                      onClick={() => void signOut()}
+                    >
+                      {item.signedInLabel}
+                    </button>
+                  );
+                }
+                const loginActive = pathname === "/login";
+                return (
+                  <Link
+                    className={[
+                      "rounded-full px-2 py-3 text-center font-body text-[11px] leading-4 transition",
+                      loginActive
+                        ? "bg-nav-active text-white"
+                        : "text-nav-inactive",
+                    ].join(" ")}
+                    href="/login"
+                    key="account"
+                  >
+                    {item.signedOutLabel}
+                  </Link>
+                );
+              }
               const isActive = pathname === item.href;
 
               return (

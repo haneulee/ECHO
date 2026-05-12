@@ -1,4 +1,4 @@
-import { echoTypeLabels } from "@/lib/mockData";
+import { echoTypeLabels } from "@/lib/echoTypeMeta";
 import type { DailyMemory, Encounter } from "@/lib/types";
 import { encounterArchive, proximityWhisper } from "@/lib/uiPoetics";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";

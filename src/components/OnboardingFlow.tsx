@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import {
@@ -15,7 +15,11 @@ import {
 } from "@/components/OnboardingModelCarousel";
 import { randomTwoWordEchoName } from "@/lib/onboardingNames";
 import type { EchoType } from "@/lib/types";
-import { mockDailyMemory, mockEncounters } from "@/lib/mockData";
+import {
+  onboardingDemoComposition,
+  onboardingDemoEncounters,
+  onboardingDemoVisualization,
+} from "@/lib/onboardingDemoData";
 import { onboarding } from "@/lib/uiPoetics";
 
 /** Welcome → model → name → Day → Night → App */
@@ -33,6 +37,26 @@ export function OnboardingFlow() {
   const [step, setStep] = useState(0);
   const [modelIndex, setModelIndex] = useState(0);
   const [echoName, setEchoName] = useState("");
+  const [finishing, setFinishing] = useState(false);
+  const [hasEchoDevice, setHasEchoDevice] = useState<boolean | null>(null);
+  const [claimUnitCode, setClaimUnitCode] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/auth/me", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d: { user?: { id: string } | null; hasEchoDevice?: boolean }) => {
+        if (cancelled) return;
+        if (d?.user) setHasEchoDevice(Boolean(d.hasEchoDevice));
+        else setHasEchoDevice(false);
+      })
+      .catch(() => {
+        if (!cancelled) setHasEchoDevice(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function applySuggestedNameForModel(type: EchoType) {
     setEchoName(randomTwoWordEchoName(type));
@@ -55,17 +79,56 @@ export function OnboardingFlow() {
     }
   }
 
-  function finish() {
-    router.push("/profile");
+  async function finish() {
+    if (finishing) return;
+    if (hasEchoDevice === null) return;
+    const echoType = ONBOARDING_MODEL_ORDER[modelIndex];
+    const name = echoName.trim() || randomTwoWordEchoName(echoType);
+    if (!hasEchoDevice && !claimUnitCode.trim()) {
+      window.alert("Enter your Echo unit code—the same value on the device.");
+      return;
+    }
+    setFinishing(true);
+    try {
+      const body: {
+        echoName: string;
+        echoType: EchoType;
+        echoUnitCode?: string;
+      } = { echoName: name, echoType };
+      if (!hasEchoDevice) {
+        body.echoUnitCode = claimUnitCode.trim();
+      }
+      const res = await fetch("/api/me/echo-device", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        window.alert(data.error ?? `Could not save device (${res.status})`);
+        if (res.status === 401) {
+          router.push("/login");
+          router.refresh();
+        }
+        return;
+      }
+      router.push("/today");
+      router.refresh();
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : "Network error");
+    } finally {
+      setFinishing(false);
+    }
   }
 
   const visualCommon = {
-    composition: mockDailyMemory.composition,
-    encounters: mockEncounters.slice(0, 6),
-    seed: mockDailyMemory.visualization.seed,
-    density: mockDailyMemory.visualization.density,
-    brightness: mockDailyMemory.visualization.brightness,
-    movement: mockDailyMemory.visualization.movement,
+    composition: onboardingDemoComposition,
+    encounters: onboardingDemoEncounters.slice(0, 6),
+    seed: onboardingDemoVisualization.seed,
+    density: onboardingDemoVisualization.density,
+    brightness: onboardingDemoVisualization.brightness,
+    movement: onboardingDemoVisualization.movement,
     showMutation: false,
   };
 
@@ -173,6 +236,33 @@ export function OnboardingFlow() {
                   <p className="mt-3 font-body text-sm leading-6 text-text-muted sm:text-base sm:leading-7">
                     {howToPanel.body}
                   </p>
+                  {step === 5 && hasEchoDevice === null ? (
+                    <p className="mt-4 font-body text-xs text-text-muted">
+                      Checking your account…
+                    </p>
+                  ) : null}
+                  {step === 5 && hasEchoDevice === false ? (
+                    <div className="mt-5">
+                      <label
+                        className="font-body text-xs uppercase tracking-[0.22em] text-text-muted"
+                        htmlFor="echo-claim-unit"
+                      >
+                        {onboarding.echoUnitOnboardingLabel}
+                      </label>
+                      <input
+                        className="mt-3 w-full border-b border-border bg-transparent pb-2 font-display text-xl leading-8 text-text outline-none placeholder:text-text-muted/45 focus:border-text"
+                        id="echo-claim-unit"
+                        autoComplete="off"
+                        onChange={(event) => setClaimUnitCode(event.target.value)}
+                        spellCheck={false}
+                        type="text"
+                        value={claimUnitCode}
+                      />
+                      <p className="mt-2 font-body text-[11px] leading-4 text-text-muted/90">
+                        {onboarding.echoUnitOnboardingHelp}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -239,18 +329,26 @@ export function OnboardingFlow() {
             </button>
             <button
               className={primaryBtn}
+              disabled={
+                finishing ||
+                (step === 5 &&
+                  (hasEchoDevice === null ||
+                    (hasEchoDevice === false && !claimUnitCode.trim())))
+              }
               onClick={() => {
                 if (step < 5) {
                   next();
                 } else {
-                  finish();
+                  void finish();
                 }
               }}
               type="button"
             >
-              {step < 5
-                ? onboarding.nextChapter
-                : onboarding.primaryFinish}
+              {finishing
+                ? "Saving…"
+                : step < 5
+                  ? onboarding.nextChapter
+                  : onboarding.primaryFinish}
             </button>
           </>
         ) : null}

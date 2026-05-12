@@ -1,21 +1,59 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+
 import { AppShell } from "@/components/AppShell";
 import { EvolutionCard } from "@/components/EvolutionCard";
 import { ProfileHeroLab } from "@/components/profile/ProfileHeroLab";
 import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
 import { echoTypeToPointCloudVisual } from "@/lib/echoPointCloudMapping";
+import { getSession } from "@/lib/auth/session";
+import { getProfileDeviceContext } from "@/lib/profileDeviceService";
 import {
   echoTemperamentEcology,
   vaguePresenceFromIso,
 } from "@/lib/profilePoetics";
-import { profileHero, profileLabels, profileSections } from "@/lib/uiPoetics";
-import { mockEchoDevice, mockEvolutions } from "@/lib/mockData";
+import {
+  profileHero,
+  profileLabels,
+  profileNoDevice,
+  profileSections,
+} from "@/lib/uiPoetics";
 
-export default function ProfilePage() {
-  const ecologyPersonality =
-    echoTypeToPointCloudVisual[mockEchoDevice.echoType];
+export const dynamic = "force-dynamic";
+
+export default async function ProfilePage() {
+  const session = await getSession();
+  if (!session) {
+    redirect("/login");
+  }
+  const userId = session.userId;
+  const ctx = await getProfileDeviceContext(userId);
+
+  if (!ctx) {
+    return (
+      <AppShell
+        eyebrow={profileHero.eyebrow}
+        intro={profileHero.intro}
+        title={profileNoDevice.title}
+      >
+        <p className="max-w-lg font-body text-sm leading-6 text-text/80">
+          {profileNoDevice.body}
+        </p>
+        <Link
+          className="mt-8 inline-flex rounded-full bg-nav-active px-6 py-3 font-body text-sm text-white transition hover:opacity-90"
+          href={profileNoDevice.ctaHref}
+        >
+          {profileNoDevice.ctaLabel}
+        </Link>
+      </AppShell>
+    );
+  }
+
+  const { device: echoDevice, evolutions } = ctx;
+  const ecologyPersonality = echoTypeToPointCloudVisual[echoDevice.echoType];
 
   return (
-    <AppShell eyebrow={profileHero.eyebrow} title={mockEchoDevice.echoName}>
+    <AppShell eyebrow={profileHero.eyebrow} title={echoDevice.echoName}>
       <section className="relative isolate flex flex-col overflow-x-clip">
         <div className="relative z-10 shrink-0 flex max-w-xl flex-row justify-between gap-3 font-body text-sm leading-5 text-text-muted sm:grid sm:grid-cols-3 sm:justify-start sm:gap-x-10 sm:gap-y-0">
           <div className="min-w-0 flex-1 sm:block sm:flex-none">
@@ -23,7 +61,7 @@ export default function ProfilePage() {
               {profileLabels.name}
             </p>
             <p className="mt-1 truncate text-text sm:mt-2">
-              {mockEchoDevice.echoName}
+              {echoDevice.echoName}
             </p>
           </div>
           <div className="min-w-0 flex-1 text-center sm:block sm:flex-none sm:text-left">
@@ -31,7 +69,7 @@ export default function ProfilePage() {
               {profileLabels.temperament}
             </p>
             <p className="mt-1 truncate text-text sm:mt-2">
-              {echoTemperamentEcology[mockEchoDevice.echoType]}
+              {echoTemperamentEcology[echoDevice.echoType]}
             </p>
           </div>
           <div className="min-w-0 flex-1 text-right sm:block sm:flex-none sm:text-left">
@@ -39,12 +77,11 @@ export default function ProfilePage() {
               {profileLabels.presence}
             </p>
             <p className="mt-1 text-text sm:mt-2">
-              {vaguePresenceFromIso(mockEchoDevice.lastSyncedAt)}
+              {vaguePresenceFromIso(echoDevice.lastSyncedAt)}
             </p>
           </div>
         </div>
 
-        {/* Stack from the top—no flex-1 vertical centering so visual + audio sit higher on all breakpoints */}
         <div className="relative z-0 mt-2 flex w-full flex-col items-center gap-3 pt-1 sm:mt-3 sm:gap-4 sm:pt-2 lg:mt-4 lg:gap-5">
           <div className="mx-auto flex w-full max-w-[min(100%,520px)] justify-center">
             <ProfileHeroLab ecologyPersonality={ecologyPersonality} />
@@ -52,7 +89,7 @@ export default function ProfilePage() {
           <div className="relative z-20 flex w-full max-w-xl justify-center px-4">
             <div className="rounded-full border border-[#26231F]/[0.08] bg-white/95 px-4 py-2.5 shadow-[0_12px_48px_rgba(38,35,31,0.12)] backdrop-blur-md">
               <SoundMemoryPlayer
-                melody={mockEchoDevice.currentState.melody}
+                melody={echoDevice.currentState.melody}
                 title={profileSections.soundPlayerTitle}
                 variant="controlRow"
               />
@@ -72,9 +109,19 @@ export default function ProfilePage() {
             </h2>
           </div>
           <div className="grid gap-10">
-            {mockEvolutions.map((evolution) => (
-              <EvolutionCard evolution={evolution} key={evolution.id} />
-            ))}
+            {evolutions.length === 0 ? (
+              <p className="font-body text-sm text-text/75">
+                No evolutions recorded yet.
+              </p>
+            ) : (
+              evolutions.map((evolution) => (
+                <EvolutionCard
+                  echoName={echoDevice.echoName}
+                  evolution={evolution}
+                  key={evolution.id}
+                />
+              ))
+            )}
           </div>
         </div>
       </section>

@@ -1,0 +1,13 @@
+.sonic-visual-frame {
+  background: transparent;
+  box-shadow: none;
+}
+
+.resonance-orbit-frame {
+  min-height: min(88vh, 820px);
+  height: min(88vh, 820px);
+}
+
+.sonic-visual-canvas {
+  background: transparent;
+}

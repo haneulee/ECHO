@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
-import type { DailyMemory, EchoType } from "@/lib/types";
 import {
-  echoTypeDescriptions,
-  echoTypeLabels,
-  mockDailyMemory,
-  mockEncounters,
-} from "@/lib/mockData";
+  onboardingDemoComposition,
+  onboardingDemoEncounters,
+} from "@/lib/onboardingDemoData";
+import { echoTypeDescriptions, echoTypeLabels } from "@/lib/echoTypeMeta";
+import type { DailyMemory, EchoType } from "@/lib/types";
 
 /** Stable scroll order for onboarding model picker (matches copy flow). */
 export const ONBOARDING_MODEL_ORDER: EchoType[] = ["shy", "messy", "bounce"];
@@ -29,7 +28,7 @@ const modelVisualization: Record<
 function compositionHighlighting(
   type: EchoType,
 ): DailyMemory["composition"] {
-  const base = mockDailyMemory.composition;
+  const base = onboardingDemoComposition;
   const voices = base.voices.map((v) => ({
     ...v,
     presence:
@@ -46,17 +45,19 @@ function compositionHighlighting(
 }
 
 function encountersForModel(type: EchoType) {
-  return mockEncounters.slice(0, 6).map((encounter) => ({
+  return onboardingDemoEncounters.map((encounter) => ({
     ...encounter,
     otherEchoType: type,
   }));
 }
 
 function melodyForModel(type: EchoType): string[] {
-  const voice = mockDailyMemory.composition.voices.find(
+  const voice = onboardingDemoComposition.voices.find(
     (v) => v.echoType === type,
   );
-  return voice?.melody ?? mockDailyMemory.composition.voices[0].melody;
+  return (
+    voice?.melody ?? onboardingDemoComposition.voices[0].melody
+  );
 }
 
 /** Slightly different pacing per model so previews feel distinct. */

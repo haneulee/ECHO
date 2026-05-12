@@ -1,20 +1,21 @@
-import { echoTypeLabels, mockEncounters } from "@/lib/mockData";
-import type { DailyMemory } from "@/lib/types";
+import { echoTypeLabels } from "@/lib/echoTypeMeta";
+import type { DailyMemory, Encounter } from "@/lib/types";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";
 import { SoundMemoryPlayer } from "./SoundMemoryPlayer";
 
 type MemoryCardProps = {
   memory: DailyMemory;
+  encounters: Encounter[];
 };
 
-export function MemoryCard({ memory }: MemoryCardProps) {
+export function MemoryCard({ memory, encounters }: MemoryCardProps) {
   return (
     <article className="relative min-h-[360px] overflow-visible">
       <div className="absolute left-1/2 top-0 -translate-x-1/2">
         <div className="relative grid h-56 w-56 shrink-0 place-items-center md:h-72 md:w-72">
           <AbstractMemoryVisual
             composition={memory.composition}
-            encounters={mockEncounters.slice(
+            encounters={encounters.slice(
               0,
               Math.max(1, memory.totalEncounters),
             )}

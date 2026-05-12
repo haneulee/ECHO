@@ -3,13 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "rm -rf .next && next dev --hostname 127.0.0.1",
-    "build": "next build",
+    "postinstall": "prisma generate",
+    "dev": "rm -rf .next && WATCHPACK_POLLING=true next dev --hostname 127.0.0.1",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
+    "db:reset": "dotenv -e .env.local -- prisma migrate reset",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "dotenv -e .env.local -- prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "6.19.0",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.3",
+    "luxon": "^3.7.2",
     "next": "^15.5.15",
     "react": "latest",
     "react-dom": "latest",
@@ -17,15 +29,20 @@
     "tone": "latest"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/luxon": "^3.7.1",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@types/three": "^0",
     "autoprefixer": "latest",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.15",
     "postcss": "latest",
+    "prisma": "6.19.0",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.21.0",
     "typescript": "latest"
   },
   "packageManager": "yarn@4.1.1+sha512.ec40d0639bb307441b945d9467139cbb88d14394baac760b52eca038b330d16542d66fef61574271534ace5a200518dabf3b53a85f1f9e4bfa37141b538a9590"

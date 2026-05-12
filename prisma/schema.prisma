@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EchoType {
+  shy
+  messy
+  bounce
+}
+
+enum ProximityZone {
+  far
+  near
+  close
+  very_close
+}
+
+model User {
+  id            String        @id
+  name          String
+  passwordHash  String?
+  devices EchoDevice[]
+  dailyMemories DailyMemory[]
+}
+
+enum EvolutionMutationType {
+  melody_fragment_exchange
+  envelope_shift
+  brightness_shift
+}
+
+model EchoDevice {
+  id                    String     @id
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serialNumber          String
+  echoName              String
+  echoType              EchoType
+  currentSoundProfileId String?
+  currentState          Json       @default("{}")
+  lastSyncedAt          DateTime?
+  encounters            Encounter[]
+  dailyMemories         DailyMemory[]
+  evolutions             EchoEvolution[]
+
+  @@index([userId])
+}
+
+model EchoEvolution {
+  id               String                 @id
+  deviceId         String
+  device           EchoDevice             @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  dailyMemoryId    String
+  mutationType     EvolutionMutationType
+  sourceEchoHash   String
+  trigger          Json
+  beforeState      Json
+  afterState       Json
+  borrowedFragment Json
+  createdAt        DateTime
+
+  @@index([deviceId, createdAt])
+}
+
+model SoundProfile {
+  id           String @id
+  name         String
+  description  String
+  engineType   String
+  scale        String
+  tempoBpm     Int
+  globalParams Json
+  voices       Json
+}
+
+model Encounter {
+  id              String         @id
+  deviceId        String
+  device          EchoDevice     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  otherEchoHash   String
+  otherEchoType   EchoType
+  startedAt       DateTime
+  endedAt         DateTime
+  durationSec     Int
+  rssiAvg         Float
+  rssiMin         Int
+  rssiMax         Int
+  proximityZone   ProximityZone
+  closenessAvg    Float
+  soundProfileId  String
+
+  @@index([deviceId, startedAt])
+}
+
+model DailyMemory {
+  id                String        @id
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId          String
+  device            EchoDevice      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  date              String
+  soundProfileId    String
+  profileSnapshot   Json          @default("{}")
+  totalEncounters   Int
+  totalDurationSec  Int
+  dominantZone      ProximityZone
+  dominantEchoType  EchoType
+  composition       Json          @default("{}")
+  visualization     Json          @default("{}")
+  createdAt         DateTime
+
+  @@unique([userId, deviceId, date])
+  @@index([userId, date])
+}

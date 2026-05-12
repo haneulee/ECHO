@@ -20,10 +20,14 @@ export const profileLabels = {
 } as const;
 
 export const navItems = [
-  { href: "/today", label: "This day" },
-  { href: "/profile", label: "Echo" },
-  { href: "/archive", label: "Past days" },
-  { href: "/sound-test", label: "Distance" },
+  { kind: "link" as const, href: "/today", label: "This day" },
+  { kind: "link" as const, href: "/profile", label: "Echo" },
+  { kind: "link" as const, href: "/archive", label: "Past days" },
+  {
+    kind: "account" as const,
+    signedInLabel: "Sign out",
+    signedOutLabel: "Log in",
+  },
 ] as const;
 
 export type NavItem = (typeof navItems)[number];
@@ -38,6 +42,15 @@ export const profileSections = {
   evolutionEyebrow: "What the hours took",
   evolutionTitle: "Melody altered by passing.",
   soundPlayerTitle: "The thread still humming",
+} as const;
+
+/** /profile when the account has no EchoDevice row yet */
+export const profileNoDevice = {
+  title: "No Echo at the sill yet",
+  body:
+    "Your account has no Echo device row yet. If you skipped onboarding, open it and finish the last step (legacy accounts may be asked for the unit code again). New sign-ups register the printed unit code at account creation.",
+  ctaLabel: "Open onboarding",
+  ctaHref: "/onboarding",
 } as const;
 
 export const todayHero = {
@@ -110,4 +123,10 @@ export const onboarding = {
   primaryFinish: "Step through",
   back: "Return",
   nextChapter: "Onward",
+  echoUnitSignupLabel: "Echo unit code",
+  echoUnitSignupHelp:
+    "The code printed on your Echo and embedded in firmware—your station labels encounters with this id.",
+  echoUnitOnboardingLabel: "Echo unit code",
+  echoUnitOnboardingHelp:
+    "Only if this account has no device yet: enter the same code you use on the hardware (letters, digits, hyphen, underscore).",
 } as const;
