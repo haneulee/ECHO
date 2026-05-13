@@ -101,6 +101,10 @@ Create a production build:
 npm run build
 ```
 
+## Raspberry Pi station ingest (optional)
+
+BLE 업로드 후 Pi가 호출하는 HTTPS 인제스트(`INGEST_SECRET` Bearer)는 **`docs/STATION_AND_INTEGRATION.md`**에 스키마·`deviceId` 규칙·`curl` 예시가 정리되어 있습니다. 엔드포인트: `/api/ingest/encounters`, `/api/ingest/evolutions`, `/api/ingest/echo-state`.
+
 ## Design Direction
 
 Echo should feel soft, quiet, intimate, and ambient. The app should read as a poetic archive rather than an analytics dashboard.

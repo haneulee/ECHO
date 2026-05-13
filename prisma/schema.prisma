@@ -28,12 +28,6 @@ model User {
   dailyMemories DailyMemory[]
 }
 
-enum EvolutionMutationType {
-  melody_fragment_exchange
-  envelope_shift
-  brightness_shift
-}
-
 model EchoDevice {
   id                    String     @id
   userId                String
@@ -44,6 +38,8 @@ model EchoDevice {
   currentSoundProfileId String?
   currentState          Json       @default("{}")
   lastSyncedAt          DateTime?
+  echoModelType         String?
+  uniqueDeviceName      String?
   encounters            Encounter[]
   dailyMemories         DailyMemory[]
   evolutions             EchoEvolution[]
@@ -52,16 +48,17 @@ model EchoDevice {
 }
 
 model EchoEvolution {
-  id               String                 @id
+  id               String    @id
   deviceId         String
-  device           EchoDevice             @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  dailyMemoryId    String
-  mutationType     EvolutionMutationType
+  device           EchoDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  dailyMemoryId    String?
+  mutationType     String
   sourceEchoHash   String
+  sourceEchoType   EchoType?
   trigger          Json
   beforeState      Json
   afterState       Json
-  borrowedFragment Json
+  borrowedFragment Json?
   createdAt        DateTime
 
   @@index([deviceId, createdAt])

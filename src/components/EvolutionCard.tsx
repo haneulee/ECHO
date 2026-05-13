@@ -33,11 +33,15 @@ export function EvolutionCard({ evolution, echoName }: EvolutionCardProps) {
           That long a hold—{evolution.trigger.durationSec} seconds—was enough
           for two patterns to forget where one ends.
         </p>
-        <p className="mt-3">
-          What slipped through:{" "}
-          {evolution.borrowedFragment.original.join(" · ")} ··· now dreaming
-          toward {evolution.borrowedFragment.transposed.join(" · ")}.
-        </p>
+        {evolution.borrowedFragment ? (
+          <p className="mt-3">
+            What slipped through:{" "}
+            {evolution.borrowedFragment.original.join(" · ")} ··· now dreaming
+            toward {evolution.borrowedFragment.transposed.join(" · ")}.
+          </p>
+        ) : (
+          <p className="mt-3">What slipped through is still forming—no fragment snapshot for this exchange.</p>
+        )}
       </div>
     </article>
   );

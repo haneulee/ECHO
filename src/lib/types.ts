@@ -115,12 +115,10 @@ export type DailyMemory = {
 export type EchoEvolution = {
   id: string;
   deviceId: string;
-  dailyMemoryId: string;
-  mutationType:
-    | "melody_fragment_exchange"
-    | "envelope_shift"
-    | "brightness_shift";
+  dailyMemoryId: string | null;
+  mutationType: string;
   sourceEchoHash: string;
+  sourceEchoType?: EchoType | null;
   trigger: {
     proximityZone: "very_close";
     durationSec: number;
@@ -142,7 +140,7 @@ export type EchoEvolution = {
     original: string[];
     transposed: string[];
     insertedAt: number;
-  };
+  } | null;
   createdAt: string;
 };
 
