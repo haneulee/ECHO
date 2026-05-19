@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
-import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
+import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import { TodayOrbitSection } from "@/app/today/TodayOrbitSection";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
 import { todayHero, todaySoundTitle } from "@/lib/uiPoetics";
@@ -74,18 +74,10 @@ function TodayDataBody() {
     state.data.encounters.length === 0 &&
     state.data.dailyMemory === null;
 
-  const melody =
-    state.kind === "ok" && state.data.dailyMemory
-      ? state.data.dailyMemory.composition.voices.flatMap((v) => v.melody)
-      : [];
-
-  const showPlayer =
-    state.kind === "ok" && state.data.dailyMemory && melody.length > 0;
-
   const hasEncounters =
     state.kind === "ok" && state.data.encounters.length > 0;
 
-  const showOrbitSection = state.kind === "ok" && (hasEncounters || showPlayer);
+  const showOrbitSection = state.kind === "ok" && hasEncounters;
 
   return (
     <AppShell
@@ -127,19 +119,16 @@ function TodayDataBody() {
                 <TodayOrbitSection encounters={state.data.encounters} />
               ) : null}
 
-              {showPlayer ? (
+              {hasEncounters ? (
                 <div
-                  className={
-                    hasEncounters
-                      ? "relative z-30 mx-auto flex w-full max-w-[920px] justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 sm:pt-7"
-                      : "relative z-30 mx-auto flex w-full max-w-[920px] justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1 sm:pt-2"
-                  }
+                  className="relative z-30 mx-auto flex w-full max-w-[920px] justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 sm:pt-7"
                 >
                   <div className="rounded-full border border-[#1a3a48]/25 bg-[#FFFCF7]/95 px-4 py-2.5 shadow-[0_12px_48px_rgba(38,35,31,0.14)] backdrop-blur-md">
-                    <SoundMemoryPlayer
-                      melody={melody}
+                    <TodayEncounterSoundPlayer
+                      date={date}
+                      device={state.data.device}
+                      encounters={state.data.encounters}
                       title={todaySoundTitle}
-                      variant="controlRow"
                     />
                   </div>
                 </div>

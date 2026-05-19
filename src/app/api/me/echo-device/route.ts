@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth/session";
 import { clearSessionCookie } from "@/lib/auth/sessionCookie";
 import { defaultStateForType } from "@/lib/echoDeviceDefaults";
 import { isValidEchoUnitCode, normalizeEchoUnitCode } from "@/lib/echoUnitCode";
+import { isLocalMockMode } from "@/lib/localMockMode";
 import { prisma } from "@/lib/prisma";
 import type { EchoType } from "@/lib/types";
 
@@ -13,7 +14,7 @@ const ECHO_TYPES: EchoType[] = ["shy", "messy", "bounce"];
 
 export async function POST(request: Request) {
   const session = await getSession();
-  if (!session) {
+  if (!session && !isLocalMockMode()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -37,7 +38,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid echoType." }, { status: 400 });
   }
 
-  const userId = session.userId;
+  if (isLocalMockMode()) {
+    return NextResponse.json({
+      ok: true,
+      deviceId: "ECHO_BOUNCE_001",
+      updated: true,
+      mock: true,
+    });
+  }
+
+  const userId = session!.userId;
   const userExists = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true },

@@ -2,10 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { resolveSessionUser } from "@/lib/auth/resolveSessionUser";
+import { isLocalMockMode } from "@/lib/localMockMode";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  if (isLocalMockMode()) {
+    redirect("/today");
+  }
   const r = await resolveSessionUser();
   if (r.kind === "ok") {
     redirect("/today");

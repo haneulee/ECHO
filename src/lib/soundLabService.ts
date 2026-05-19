@@ -1,3 +1,6 @@
+import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
+import { isLocalMockMode } from "@/lib/localMockMode";
+import { mockSoundProfile, mockSoundVoices } from "@/lib/mockData";
 import { prisma } from "@/lib/prisma";
 import type { SoundProfile, SoundVoice } from "@/lib/types";
 
@@ -7,9 +10,20 @@ export type SoundLabPayload = {
 };
 
 export async function getSoundLabPayload(): Promise<SoundLabPayload | null> {
-  const row = await prisma.soundProfile.findFirst({
-    orderBy: { id: "asc" },
-  });
+  if (isLocalMockMode()) {
+    return { profile: mockSoundProfile, voices: mockSoundVoices };
+  }
+  let row = null;
+  try {
+    row = await prisma.soundProfile.findFirst({
+      orderBy: { id: "asc" },
+    });
+  } catch (e) {
+    if (isDatabaseConnectFailure(e)) {
+      return { profile: mockSoundProfile, voices: mockSoundVoices };
+    }
+    throw e;
+  }
   if (!row) return null;
   const voices = row.voices as unknown as SoundVoice[];
   const profile: SoundProfile = {

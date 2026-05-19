@@ -23,15 +23,34 @@ async function userIdFromRequest(request: NextRequest): Promise<string | null> {
   }
 }
 
+function allowLocalMock(request: NextRequest): boolean {
+  const host = request.headers.get("host") ?? "";
+  return (
+    process.env.NODE_ENV !== "production" ||
+    process.env.ECHO_MOCK_TODAY === "1" ||
+    host.startsWith("localhost") ||
+    host.startsWith("127.0.0.1")
+  );
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userId = await userIdFromRequest(request);
+  const localMock = allowLocalMock(request);
 
   if (
     pathname.startsWith("/api/today") ||
     pathname.startsWith("/api/archive") ||
     pathname.startsWith("/api/me/echo-device")
   ) {
+    if (
+      localMock &&
+      (pathname.startsWith("/api/today") ||
+        pathname.startsWith("/api/archive") ||
+        pathname.startsWith("/api/me/echo-device"))
+    ) {
+      return NextResponse.next();
+    }
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -49,6 +68,9 @@ export async function middleware(request: NextRequest) {
   const isProtected = protectedPrefixes.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
+  if (localMock && isProtected) {
+    return NextResponse.next();
+  }
   if (isProtected && !userId) {
     const login = new URL("/login", request.url);
     login.searchParams.set("next", pathname);

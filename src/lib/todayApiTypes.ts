@@ -1,6 +1,7 @@
-import type { DailyMemory, Encounter } from "@/lib/types";
+import type { DailyMemory, EchoDevice, Encounter } from "@/lib/types";
 
 export type TodayApiResponse = {
   encounters: Encounter[];
   dailyMemory: DailyMemory | null;
+  device: EchoDevice | null;
 };

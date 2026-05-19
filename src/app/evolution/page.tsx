@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { EvolutionCard } from "@/components/EvolutionCard";
 import { getSession } from "@/lib/auth/session";
+import { isLocalMockMode } from "@/lib/localMockMode";
 import { getProfileDeviceContext } from "@/lib/profileDeviceService";
 import { evolutionPageHero } from "@/lib/uiPoetics";
 
@@ -10,10 +11,10 @@ export const dynamic = "force-dynamic";
 
 export default async function EvolutionPage() {
   const session = await getSession();
-  if (!session) {
+  if (!session && !isLocalMockMode()) {
     redirect("/login");
   }
-  const userId = session.userId;
+  const userId = session?.userId ?? "local_mock";
   const ctx = await getProfileDeviceContext(userId);
 
   if (!ctx) {
