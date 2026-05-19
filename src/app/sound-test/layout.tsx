@@ -14,5 +14,8 @@ export default async function SoundTestLayout({
   if (r.kind === "stale_jwt") {
     redirect("/api/auth/sync-session?next=%2Fsound-test");
   }
+  if (r.kind === "db_unavailable") {
+    redirect("/offline");
+  }
   return children;
 }

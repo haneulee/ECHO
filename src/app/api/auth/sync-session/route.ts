@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getSession } from "@/lib/auth/session";
+import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
 import { clearSessionCookie } from "@/lib/auth/sessionCookie";
 import { prisma } from "@/lib/prisma";
 
@@ -37,10 +38,20 @@ export async function GET(request: Request) {
     return NextResponse.redirect(login);
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { id: true },
-  });
+  let user: { id: string } | null;
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { id: true },
+    });
+  } catch (e) {
+    if (isDatabaseConnectFailure(e)) {
+      const res = NextResponse.redirect(new URL("/", request.url));
+      clearSessionCookie(res);
+      return res;
+    }
+    throw e;
+  }
 
   if (!user) {
     const login = new URL("/login", request.url);

@@ -14,5 +14,8 @@ export default async function EvolutionLayout({
   if (r.kind === "stale_jwt") {
     redirect("/api/auth/sync-session?next=%2Fevolution");
   }
+  if (r.kind === "db_unavailable") {
+    redirect("/offline");
+  }
   return children;
 }

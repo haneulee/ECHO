@@ -14,5 +14,8 @@ export default async function ArchiveLayout({
   if (r.kind === "stale_jwt") {
     redirect("/api/auth/sync-session?next=%2Farchive");
   }
+  if (r.kind === "db_unavailable") {
+    redirect("/offline");
+  }
   return children;
 }

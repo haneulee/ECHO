@@ -10,6 +10,9 @@ export default async function HomePage() {
   if (r.kind === "ok") {
     redirect("/today");
   }
+  if (r.kind === "db_unavailable") {
+    redirect("/offline");
+  }
   if (r.kind === "stale_jwt") {
     redirect("/api/auth/sync-session?next=%2F");
   }

@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Echo",
-  description: "A poetic archive of proximity for a sound-reactive companion.",
+  title: "ECHO",
+  description:
+    "A small companion that reacts to the presence of other Echoes through sound",
+  icons: {
+    icon: [{ url: "/brand/ECHO_logo_4.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({

@@ -14,5 +14,8 @@ export default async function ProfileLayout({
   if (r.kind === "stale_jwt") {
     redirect("/api/auth/sync-session?next=%2Fprofile");
   }
+  if (r.kind === "db_unavailable") {
+    redirect("/offline");
+  }
   return children;
 }
