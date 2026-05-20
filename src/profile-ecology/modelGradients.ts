@@ -4,22 +4,22 @@ import type { EcologyPersonalityId } from "./types";
 
 /**
  * Echo archetype colors (via `EcologyPersonalityId`): each particle mixes `colA`→`colB`
- * using attribute `aHue` + noise (shy = green → blue).
+ * using shader hue + noise.
  */
 export const MODEL_GRADIENTS: Record<
   EcologyPersonalityId,
   { colA: THREE.Vector3; colB: THREE.Vector3 }
 > = {
   drift: {
-    colA: new THREE.Vector3(0.14, 0.62, 0.36),
-    colB: new THREE.Vector3(0.16, 0.44, 0.94),
+    colA: new THREE.Vector3(0.56, 0.9, 0.77),
+    colB: new THREE.Vector3(0.6, 0.85, 1.0),
   },
   ripple: {
-    colA: new THREE.Vector3(0.18, 0.58, 0.72),
-    colB: new THREE.Vector3(0.95, 0.62, 0.38),
+    colA: new THREE.Vector3(0.95, 0.6, 0.76),
+    colB: new THREE.Vector3(0.69, 0.65, 1.0),
   },
   bloom: {
-    colA: new THREE.Vector3(0.62, 0.32, 0.78),
-    colB: new THREE.Vector3(0.98, 0.84, 0.52),
+    colA: new THREE.Vector3(1.0, 0.89, 0.43),
+    colB: new THREE.Vector3(1.0, 0.62, 0.43),
   },
 };

@@ -69,9 +69,7 @@ export default async function ProfilePage() {
             <p className="text-[10px] uppercase tracking-[0.22em] sm:text-xs">
               {profileLabels.melodyNotes}
             </p>
-            <p className="mt-1 break-words text-text sm:mt-2">
-              {melodyNotes}
-            </p>
+            <p className="mt-1 break-words text-text sm:mt-2">{melodyNotes}</p>
           </div>
           <div className="min-w-0 flex-1 text-right sm:block sm:flex-none sm:text-left">
             <p className="text-[10px] uppercase tracking-[0.22em] sm:text-xs">
@@ -88,7 +86,7 @@ export default async function ProfilePage() {
             <ProfileHeroLab ecologyPersonality={ecologyPersonality} />
           </div>
           <div className="relative z-20 flex w-full max-w-xl justify-center px-4">
-            <div className="rounded-full border border-[#26231F]/[0.08] bg-white/95 px-4 py-2.5 shadow-[0_12px_48px_rgba(38,35,31,0.12)] backdrop-blur-md">
+            <div className="rounded-full px-4 py-2.5">
               <ProfileFirmwareSoundPlayer
                 device={echoDevice}
                 title={profileSections.soundPlayerTitle}
@@ -114,7 +112,10 @@ export default async function ProfilePage() {
                 No evolutions recorded yet.
               </p>
             ) : (
-              <EvolutionResonancePreview evolution={latestEvolution} />
+              <EvolutionResonancePreview
+                echoType={echoDevice.echoType}
+                evolution={latestEvolution}
+              />
             )}
           </div>
         </div>

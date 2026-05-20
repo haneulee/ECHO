@@ -3,12 +3,12 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
 import { PageLoading } from "@/components/PageLoading";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
-import { TodayOrbitSection } from "@/app/today/TodayOrbitSection";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
-import type { EchoType } from "@/lib/types";
+import type { DailyMemory, EchoDevice, EchoType, Encounter } from "@/lib/types";
 import { todayHero, todaySoundTitle } from "@/lib/uiPoetics";
 import { formatCalendarEyebrow } from "@/lib/zonedDayRange";
 
@@ -31,9 +31,81 @@ type LoadState =
   | { kind: "ok"; data: TodayApiResponse };
 
 const MIN_LOADING_MS = 650;
+const ECHO_TYPES: EchoType[] = ["shy", "messy", "bounce"];
+
+type TodayVisualMemory = Pick<DailyMemory, "composition" | "visualization">;
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function clamp01(value: number) {
+  return Math.min(1, Math.max(0, value));
+}
+
+function hashSeed(value: string) {
+  let hash = 2166136261;
+  for (const char of value) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return Math.abs(hash % 10000) + 1;
+}
+
+function average(values: number[]) {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function buildTodayVisualMemory(
+  date: string,
+  encounters: Encounter[],
+  device: EchoDevice | null,
+  dailyMemory: DailyMemory | null,
+): TodayVisualMemory | null {
+  if (dailyMemory) return dailyMemory;
+  if (encounters.length === 0) return null;
+
+  const totalDurationSec = encounters.reduce(
+    (sum, encounter) => sum + encounter.durationSec,
+    0,
+  );
+  const averageCloseness = average(
+    encounters.map((encounter) => encounter.closenessAvg),
+  );
+  const fallbackMelody = device?.currentState.melody ?? ["C4", "E4", "G4"];
+  const voices = ECHO_TYPES.map((echoType) => {
+    const typedEncounters = encounters.filter(
+      (encounter) => encounter.otherEchoType === echoType,
+    );
+    if (typedEncounters.length === 0) return null;
+
+    return {
+      echoType,
+      presence: typedEncounters.length / encounters.length,
+      melody: fallbackMelody,
+      averageCloseness: average(
+        typedEncounters.map((encounter) => encounter.closenessAvg),
+      ),
+    };
+  }).filter((voice): voice is NonNullable<typeof voice> => voice !== null);
+
+  return {
+    composition: {
+      style: "Live daily resonance",
+      tempoBpm: 52,
+      scale: "A minor pentatonic",
+      voices,
+    },
+    visualization: {
+      seed: hashSeed(
+        `${date}:${encounters.map((encounter) => encounter.id).join("|")}`,
+      ),
+      density: clamp01(encounters.length / 12),
+      brightness: clamp01(0.38 + averageCloseness * 0.58),
+      movement: clamp01(totalDurationSec / 3600),
+    },
+  };
 }
 
 function TodayDataBody() {
@@ -61,7 +133,9 @@ function TodayDataBody() {
         const errBody = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
-        await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
+        await wait(
+          Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)),
+        );
         setState({
           kind: "error",
           message: errBody?.error ?? `Request failed (${res.status})`,
@@ -92,10 +166,19 @@ function TodayDataBody() {
     state.data.encounters.length === 0 &&
     state.data.dailyMemory === null;
 
-  const hasEncounters =
-    state.kind === "ok" && state.data.encounters.length > 0;
+  const hasEncounters = state.kind === "ok" && state.data.encounters.length > 0;
 
-  const showOrbitSection = state.kind === "ok" && hasEncounters;
+  const todayVisualMemory =
+    state.kind === "ok"
+      ? buildTodayVisualMemory(
+          date,
+          state.data.encounters,
+          state.data.device,
+          state.data.dailyMemory,
+        )
+      : null;
+  const showVisualSection =
+    state.kind === "ok" && hasEncounters && todayVisualMemory;
   const echoDevice = state.kind === "ok" ? state.data.device : null;
   const echoName = echoDevice?.echoName ?? "your Echo";
   const echoNameColor = echoDevice
@@ -112,7 +195,11 @@ function TodayDataBody() {
   );
 
   if (state.kind === "loading") {
-    return <PageLoading label="Loading today's field" />;
+    return (
+      <AppShell viewportLocked>
+        <PageLoading className="min-h-0 flex-1" label="Loading today's field" />
+      </AppShell>
+    );
   }
 
   return (
@@ -120,6 +207,7 @@ function TodayDataBody() {
       eyebrow={eyebrow}
       intro={todayHero.intro}
       title={title}
+      viewportLocked
     >
       {state.kind === "error" ? (
         <div className="mx-auto max-w-[920px] space-y-4 px-4 py-8">
@@ -143,21 +231,31 @@ function TodayDataBody() {
             </p>
           ) : null}
 
-          {showOrbitSection ? (
-            <section className="relative isolate w-full overflow-visible pb-2">
-              {hasEncounters ? (
-                <TodayOrbitSection encounters={state.data.encounters} />
-              ) : null}
+          {showVisualSection ? (
+            <section className="relative isolate flex min-h-0 w-full flex-1 flex-col overflow-hidden pb-1">
+              <div className="relative z-0 mx-auto flex min-h-0 w-full max-w-[920px] flex-1 items-center justify-center overflow-visible px-1">
+                <div className="max-h-full max-w-[min(112%,520px)] overflow-visible [&>svg]:max-h-full [&>svg]:w-auto">
+                  <AbstractMemoryVisual
+                    bleed
+                    composition={todayVisualMemory.composition}
+                    encounters={state.data.encounters}
+                    gradientOnly
+                    key={state.data.dailyMemory?.id ?? `today-${date}`}
+                    size={500}
+                    visualId={state.data.dailyMemory?.id ?? `today-${date}`}
+                    {...todayVisualMemory.visualization}
+                  />
+                </div>
+              </div>
 
               {hasEncounters ? (
-                <div
-                  className="relative z-30 mx-auto flex w-full max-w-[920px] justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 sm:pt-7"
-                >
-                  <div className="rounded-full border border-[#1a3a48]/25 bg-[#FFFCF7]/95 px-4 py-2.5 shadow-[0_12px_48px_rgba(38,35,31,0.14)] backdrop-blur-md">
+                <div className="relative z-30 mx-auto -mt-2 flex w-full max-w-[920px] shrink-0 justify-center px-4 pb-1 pt-0">
+                  <div className="rounded-full px-4 py-2.5">
                     <TodayEncounterSoundPlayer
                       date={date}
                       device={state.data.device}
                       encounters={state.data.encounters}
+                      memory={state.data.dailyMemory}
                       title={todaySoundTitle}
                     />
                   </div>
@@ -172,7 +270,11 @@ function TodayDataBody() {
 }
 
 function TodayPageFallback() {
-  return <PageLoading label="Loading today's field" />;
+  return (
+    <AppShell viewportLocked>
+      <PageLoading className="min-h-0 flex-1" label="Loading today's field" />
+    </AppShell>
+  );
 }
 
 export function TodayPageView() {

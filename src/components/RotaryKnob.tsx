@@ -46,7 +46,7 @@ export function RotaryKnob({
       aria-valuemax={100}
       aria-valuemin={0}
       aria-valuenow={Math.round(clampedValue * 100)}
-      className="relative shrink-0 touch-none rounded-full bg-[#050505] shadow-[0_14px_34px_rgba(0,0,0,0.18)]"
+      className="relative shrink-0 cursor-pointer touch-none rounded-full bg-[#050505] shadow-[0_14px_34px_rgba(0,0,0,0.18)]"
       onPointerDown={(event) => {
         setIsDragging(true);
         event.currentTarget.setPointerCapture(event.pointerId);

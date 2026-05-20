@@ -6,12 +6,13 @@ import {
   buildEncounterSoundPlan,
   renderEncounterSoundBuffer,
 } from "@/lib/dailyEncounterSound";
-import type { EchoDevice, Encounter } from "@/lib/types";
+import type { DailyMemory, EchoDevice, Encounter } from "@/lib/types";
 import { RotaryKnob } from "@/components/RotaryKnob";
 
 type TodayEncounterSoundPlayerProps = {
   date: string;
   device: EchoDevice | null;
+  memory?: DailyMemory | null;
   encounters: Encounter[];
   title: string;
 };
@@ -19,12 +20,13 @@ type TodayEncounterSoundPlayerProps = {
 export function TodayEncounterSoundPlayer({
   date,
   device,
+  memory = null,
   encounters,
   title,
 }: TodayEncounterSoundPlayerProps) {
   const plan = useMemo(
-    () => buildEncounterSoundPlan(date, encounters, device),
-    [date, device, encounters],
+    () => buildEncounterSoundPlan(date, encounters, device, memory),
+    [date, device, encounters, memory],
   );
   const [isPlaying, setIsPlaying] = useState(false);
   const [volumePercent, setVolumePercent] = useState(64);

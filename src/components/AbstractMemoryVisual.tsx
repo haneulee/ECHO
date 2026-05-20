@@ -49,8 +49,10 @@ export function AbstractMemoryVisual({
     const palette = getEchoColorPalette(encounter.otherEchoType);
 
     return Array.from({ length: repeats }).map((_, repeatIndex) => {
+      const progress =
+        (encounterIndex + repeatIndex / repeats) / safeEncounters.length;
       const angle =
-        ((encounterIndex + repeatIndex / repeats) / safeEncounters.length) *
+        -progress *
           Math.PI *
           2 +
         (random() - 0.5) * 0.7;

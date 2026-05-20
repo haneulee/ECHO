@@ -9,9 +9,9 @@ import {
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
 import { PageLoading } from "@/components/PageLoading";
-import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
+import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import type { ArchiveApiResponse } from "@/lib/archiveApiTypes";
-import { archiveCarousel, archiveHero } from "@/lib/uiPoetics";
+import { archiveHero } from "@/lib/uiPoetics";
 
 type LoadState =
   | { kind: "loading" }
@@ -54,7 +54,6 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeItem = items[activeIndex]!;
   const activeMemory = activeItem.memory;
-  const melody = activeMemory.composition.voices.flatMap((voice) => voice.melody);
 
   function move(delta: number) {
     setActiveIndex((current) =>
@@ -79,15 +78,27 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
         </aside>
 
         <div className="grid place-items-center">
-          <AbstractMemoryVisual
-            composition={activeMemory.composition}
-            encounters={activeItem.encounters}
-            gradientOnly
-            key={activeMemory.id}
-            size={520}
-            visualId={`archive-main-${activeMemory.id}`}
-            {...activeMemory.visualization}
-          />
+          <div className="grid justify-items-center">
+            <AbstractMemoryVisual
+              composition={activeMemory.composition}
+              encounters={activeItem.encounters}
+              gradientOnly
+              key={activeMemory.id}
+              size={520}
+              visualId={`archive-main-${activeMemory.id}`}
+              {...activeMemory.visualization}
+            />
+            <div className="-mt-4 rounded-full px-4 py-2.5">
+              <TodayEncounterSoundPlayer
+                date={activeMemory.date}
+                device={null}
+                encounters={activeItem.encounters}
+                key={activeMemory.id}
+                memory={activeMemory}
+                title="Transit Resonance"
+              />
+            </div>
+          </div>
         </div>
 
         <aside className="self-center justify-self-end">
@@ -111,22 +122,7 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
                 </p>
                 <p className="mt-1 text-text">{encounterWindow(activeItem)}</p>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em]">
-                  Evening resonance
-                </p>
-                <p className="mt-1 text-text">
-                  {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
-                </p>
-              </div>
             </div>
-            <span className="my-8 block h-px w-full bg-text/10" />
-            <a
-              className="inline-flex items-center gap-10 font-body text-sm text-text-muted transition hover:text-text"
-              href={`/today?date=${activeMemory.date}`}
-            >
-              View full day <span aria-hidden>→</span>
-            </a>
           </div>
         </aside>
       </div>
@@ -142,7 +138,9 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
                 <button
                   className={[
                     "flex items-center gap-4 text-left transition",
-                    index === activeIndex ? "opacity-100" : "opacity-50 hover:opacity-80",
+                    index === activeIndex
+                      ? "opacity-100"
+                      : "opacity-50 hover:opacity-80",
                   ].join(" ")}
                   key={item.memory.id}
                   onClick={() => setActiveIndex(index)}
@@ -192,20 +190,6 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
             </button>
           </div>
         </div>
-
-        <div className="mx-auto mt-8 flex w-full max-w-2xl justify-center">
-          <div className="rounded-full border border-[#26231F]/[0.08] bg-white/95 px-4 py-2.5 shadow-[0_12px_48px_rgba(38,35,31,0.14)] backdrop-blur-md">
-            <SoundMemoryPlayer
-              key={activeMemory.id}
-              melody={melody}
-              title="Transit Resonance"
-              subtitle={`${memoryDate(activeMemory.date, "short")} · ${String(
-                activeIndex + 1,
-              ).padStart(2, "0")} / ${String(items.length).padStart(2, "0")}`}
-              variant="controlRow"
-            />
-          </div>
-        </div>
       </footer>
     </section>
   );
@@ -232,7 +216,9 @@ function ArchiveBody() {
         const errBody = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
-        await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
+        await wait(
+          Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)),
+        );
         setState({
           kind: "error",
           message: errBody?.error ?? `Request failed (${res.status})`,
@@ -254,7 +240,16 @@ function ArchiveBody() {
   }, [load]);
 
   if (state.kind === "loading") {
-    return <PageLoading label="Loading archive" />;
+    return (
+      <AppShell
+        eyebrow={archiveHero.eyebrow}
+        intro={archiveHero.intro}
+        title={archiveHero.title}
+        viewportLocked
+      >
+        <PageLoading className="min-h-0 flex-1" label="Loading archive" />
+      </AppShell>
+    );
   }
 
   if (state.kind === "error") {

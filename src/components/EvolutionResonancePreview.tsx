@@ -1,25 +1,35 @@
 import type { CSSProperties } from "react";
 
-import type { EchoEvolution } from "@/lib/types";
+import type { EchoEvolution, EchoType } from "@/lib/types";
+import { getEchoColorPalette } from "@/lib/visualRules";
 
 type EvolutionResonancePreviewProps = {
+  echoType: EchoType;
   evolution: EchoEvolution;
 };
 
-function fieldPalette(tone: "before" | "after") {
-  return tone === "before"
-    ? { large: "bg-[#C9AA73]/55", small: "bg-[#8A8177]/35" }
-    : { large: "bg-[#A64D77]/60", small: "bg-[#6B5C6C]/35" };
+function fieldColor(echoType: EchoType, tone: "before" | "after") {
+  const [start, mid, end] = getEchoColorPalette(echoType);
+  const opacity = tone === "before" ? 0.62 : 0.82;
+  const haloOpacity = tone === "before" ? 0.18 : 0.28;
+
+  return {
+    background: `radial-gradient(circle at 35% 30%, ${start} 0%, ${mid} 52%, ${end} 100%)`,
+    boxShadow: `0 0 20px color-mix(in srgb, ${mid} ${Math.round(haloOpacity * 100)}%, transparent)`,
+    opacity,
+  } satisfies CSSProperties;
 }
 
 function MelodyField({
+  echoType,
   melody,
   tone,
 }: {
+  echoType: EchoType;
   melody: string[];
   tone: "before" | "after";
 }) {
-  const palette = fieldPalette(tone);
+  const colorStyle = fieldColor(echoType, tone);
 
   return (
     <div className="relative mt-8 h-52 overflow-hidden">
@@ -39,17 +49,16 @@ function MelodyField({
         return (
           <span
             aria-label={note}
-            className={[
-              "absolute rounded-full shadow-[0_0_18px_rgba(38,35,31,0.08)]",
-              size >= 14 ? palette.large : palette.small,
-            ].join(" ")}
+            className="absolute rounded-full"
             key={`${tone}-${note}-${index}`}
             style={
               {
+                ...colorStyle,
                 height: size,
                 left: `${8 + (index / Math.max(1, melody.length - 1)) * 84}%`,
                 top: `${16 + ((code + index * 17) % 66)}%`,
                 width: size,
+                ...(size < 14 ? { opacity: (colorStyle.opacity ?? 1) * 0.72 } : null),
               } as CSSProperties
             }
             title={note}
@@ -72,12 +81,14 @@ function MelodyField({
 }
 
 export function EvolutionResonancePreview({
+  echoType,
   evolution,
 }: EvolutionResonancePreviewProps) {
   const original =
     evolution.borrowedFragment?.original ?? evolution.beforeState.melody.slice(0, 2);
   const transposed =
     evolution.borrowedFragment?.transposed ?? evolution.afterState.melody.slice(0, 2);
+  const [, shiftColor] = getEchoColorPalette(echoType);
 
   return (
     <article className="grid gap-10">
@@ -89,7 +100,11 @@ export function EvolutionResonancePreview({
           <p className="mt-2 font-body text-sm text-text-muted">
             Original melody
           </p>
-          <MelodyField melody={evolution.beforeState.melody} tone="before" />
+          <MelodyField
+            echoType={echoType}
+            melody={evolution.beforeState.melody}
+            tone="before"
+          />
         </div>
         <div className="hidden px-2 pt-14 font-display text-4xl text-text-muted lg:block">
           →
@@ -101,7 +116,11 @@ export function EvolutionResonancePreview({
           <p className="mt-2 font-body text-sm text-text-muted">
             After resonance
           </p>
-          <MelodyField melody={evolution.afterState.melody} tone="after" />
+          <MelodyField
+            echoType={echoType}
+            melody={evolution.afterState.melody}
+            tone="after"
+          />
         </div>
       </div>
 
@@ -112,7 +131,7 @@ export function EvolutionResonancePreview({
         <div className="mt-5 grid grid-cols-[auto_1fr_auto] items-center gap-4 font-display text-2xl text-text">
           <span>{original.join(" · ")}</span>
           <span className="h-px bg-text/20" />
-          <span className="text-[#A64D77]">{transposed.join(" · ")}</span>
+          <span style={{ color: shiftColor }}>{transposed.join(" · ")}</span>
         </div>
         <p className="mt-4 font-body text-sm text-text-muted">
           {evolution.trigger.durationSec} seconds near{" "}

@@ -2,12 +2,16 @@ import { LoadingPulse } from "@/components/LoadingPulse";
 
 type PageLoadingProps = {
   label?: string;
+  className?: string;
 };
 
-export function PageLoading({ label = "Loading" }: PageLoadingProps) {
+export function PageLoading({
+  label = "Loading",
+  className = "min-h-screen",
+}: PageLoadingProps) {
   return (
-    <main className="grid min-h-screen place-items-center bg-white text-text">
+    <div className={["grid place-items-center bg-white text-text", className].join(" ")}>
       <LoadingPulse label={label} />
-    </main>
+    </div>
   );
 }

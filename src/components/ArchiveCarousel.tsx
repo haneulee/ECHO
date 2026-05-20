@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { DailyMemory, Encounter } from "@/lib/types";
 import { archiveCarousel } from "@/lib/uiPoetics";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";
-import { SoundMemoryPlayer } from "./SoundMemoryPlayer";
+import { TodayEncounterSoundPlayer } from "./TodayEncounterSoundPlayer";
 
 export type ArchiveCarouselItem = {
   memory: DailyMemory;
@@ -157,17 +157,17 @@ export function ArchiveCarousel({ items }: ArchiveCarouselProps) {
           </div>
 
           <div className="flex w-full justify-center px-4">
-            <div className="pointer-events-auto rounded-full border border-[#26231F]/[0.08] bg-white/95 px-4 py-2.5 shadow-[0_12px_48px_rgba(38,35,31,0.14)] backdrop-blur-md">
-              <SoundMemoryPlayer
+            <div className="pointer-events-auto rounded-full px-4 py-2.5">
+              <TodayEncounterSoundPlayer
+                date={activeMemory.date}
+                device={null}
+                encounters={activeItem.encounters}
                 key={activeMemory.id}
-                melody={activeMemory.composition.voices.flatMap(
-                  (voice) => voice.melody,
-                )}
+                memory={activeMemory}
                 title={new Date(activeMemory.date).toLocaleDateString("en", {
                   month: "short",
                   day: "numeric",
                 })}
-                variant="controlRow"
               />
             </div>
           </div>
