@@ -31,7 +31,7 @@ type LoadState =
   | { kind: "error"; message: string }
   | { kind: "ok"; data: TodayApiResponse };
 
-const MIN_LOADING_MS = 650;
+const MIN_LOADING_MS = 150;
 const ECHO_TYPES: EchoType[] = ["shy", "messy", "bounce"];
 
 type TodayVisualMemory = Pick<DailyMemory, "composition" | "visualization">;
@@ -238,7 +238,7 @@ function TodayDataBody() {
                 />
                 <p className="font-body text-sm leading-6 text-text/75">
                   No encounters. <br />
-                  Feel co-presence through your Echo's sound.
+                  Feel co-presence through your Echo&apos;s sound.
                 </p>
               </div>
             </section>

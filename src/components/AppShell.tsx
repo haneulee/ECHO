@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -18,6 +19,31 @@ type AppShellProps = {
   hideChrome?: boolean;
 };
 
+type AuthMeResponse = { user?: { id: string } | null };
+
+let cachedAuthId: string | null | undefined;
+let authIdRequest: Promise<string | null> | null = null;
+
+function loadAuthId(): Promise<string | null> {
+  if (cachedAuthId !== undefined) {
+    return Promise.resolve(cachedAuthId);
+  }
+  authIdRequest ??= fetch("/api/auth/me", { credentials: "include" })
+    .then((r) => r.json() as Promise<AuthMeResponse>)
+    .then((d) => {
+      cachedAuthId = d.user?.id ?? null;
+      return cachedAuthId;
+    })
+    .catch(() => {
+      cachedAuthId = null;
+      return cachedAuthId;
+    })
+    .finally(() => {
+      authIdRequest = null;
+    });
+  return authIdRequest;
+}
+
 export function AppShell({
   children,
   eyebrow,
@@ -28,30 +54,27 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [authId, setAuthId] = useState<string | null>(null);
-  const [authReady, setAuthReady] = useState(false);
+  const [authId, setAuthId] = useState<string | null>(cachedAuthId ?? null);
+  const [authReady, setAuthReady] = useState(cachedAuthId !== undefined);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((r) => r.json())
-      .then((d: { user?: { id: string } | null }) => {
-        if (!cancelled) setAuthId(d.user?.id ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setAuthId(null);
-      })
-      .finally(() => {
-        if (!cancelled) setAuthReady(true);
-      });
+    void loadAuthId().then((id) => {
+      if (cancelled) return;
+      setAuthId(id);
+      setAuthReady(true);
+    });
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, []);
 
   async function signOut() {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    cachedAuthId = null;
+    authIdRequest = null;
     setAuthId(null);
+    setAuthReady(true);
     router.push("/");
     router.refresh();
   }
@@ -88,14 +111,14 @@ export function AppShell({
                   src="/brand/ECHO_logo_4.svg"
                   width={40}
                 />
-                <img
+                <Image
                   alt=""
                   className="h-8 w-auto shrink-0"
                   height={32}
                   src="/brand/ECHO_logo_2.svg"
                   width={127}
                 /> */}
-                <img
+                <Image
                   alt=""
                   className="h-8 w-auto shrink-0"
                   height={32}
@@ -154,7 +177,7 @@ export function AppShell({
 
       {!hideChrome ? (
         <Link className="mb-8 inline-flex items-center lg:hidden" href="/today">
-          <img
+          <Image
             alt="ECHO"
             className="h-8 w-auto shrink-0"
             height={32}

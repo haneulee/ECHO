@@ -18,7 +18,7 @@ type LoadState =
   | { kind: "error"; message: string }
   | { kind: "ok"; items: ArchiveCarouselItem[] };
 
-const MIN_LOADING_MS = 650;
+const MIN_LOADING_MS = 150;
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
