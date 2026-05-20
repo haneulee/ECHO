@@ -6,6 +6,8 @@ import { icosphereFragmentShader } from "./shaders/icosphere.frag";
 import { icosphereVertexShader } from "./shaders/icosphere.vert";
 import type { EcologyPersonalityId } from "./types";
 import type { EcologyUniformSnapshot } from "./types";
+import type { EchoAudioBands } from "@/lib/echoAudioAnalyser";
+import type { EchoNotePulse } from "@/lib/echoAudioAnalyser";
 
 /** Visual scale of the particle shell — larger reads bolder on profile */
 const ICO_RADIUS = 2.58;
@@ -126,6 +128,10 @@ export class IcoNoiseSphere {
         uColA: { value: g0.colA.clone() },
         uColB: { value: g0.colB.clone() },
         uBrightness: { value: 0.92 },
+        uAudioLevel: { value: 0 },
+        uAudioHigh: { value: 0 },
+        uNotePulse: { value: 0 },
+        uNoteHue: { value: 0.5 },
       },
       transparent: true,
       depthWrite: false,
@@ -157,6 +163,35 @@ export class IcoNoiseSphere {
     const t = THREE.MathUtils.clamp(paletteMix, 0, 1);
     u.uColA.value.copy(ga.colA).lerp(gb.colA, t);
     u.uColB.value.copy(ga.colB).lerp(gb.colB, t);
+  }
+
+  applyAudioReactivity(bands: EchoAudioBands, note: EchoNotePulse, t: number) {
+    const u = this.material.uniforms;
+    const breath = 0.5 + Math.sin(t * 0.52) * 0.5;
+    const bass = THREE.MathUtils.clamp(bands.bass, 0, 1);
+    const mid = THREE.MathUtils.clamp(bands.mid, 0, 1);
+    const high = THREE.MathUtils.clamp(bands.high, 0, 1);
+    const level = THREE.MathUtils.clamp(bands.level, 0, 1);
+    const levelEnergy = THREE.MathUtils.smoothstep(level, 0.018, 0.28);
+    const noteEnergy = THREE.MathUtils.clamp(note.pulse, 0, 1);
+    const colorEnergy = Math.max(levelEnergy * levelEnergy, noteEnergy * 0.72);
+
+    u.uDispStrength.value =
+      u.uDispStrength.value * (0.4 + breath * 0.018) + bass * 0.18 + mid * 0.08;
+    u.uPointScale.value =
+      u.uPointScale.value * (0.86 + breath * 0.018);
+    u.uTimeSpeed.value =
+      u.uTimeSpeed.value * (0.32 + breath * 0.012);
+    u.uBrightness.value =
+      u.uBrightness.value * (0.9 + colorEnergy * 0.07 + high * 0.02);
+    u.uAudioLevel.value = levelEnergy * 0.18;
+    u.uAudioHigh.value = THREE.MathUtils.smoothstep(high, 0.015, 0.24);
+    u.uNotePulse.value = noteEnergy;
+    u.uNoteHue.value = THREE.MathUtils.clamp(note.hue, 0, 1);
+
+    this.group.scale.setScalar(1 + colorEnergy * 0.004);
+    this.group.rotation.y = Math.sin(t * 0.12) * 0.01 + mid * 0.004;
+    this.group.rotation.x = Math.sin(t * 0.09) * 0.006 + high * 0.002;
   }
 
   setTime(t: number) {

@@ -97,6 +97,10 @@ uniform float uDispStrength;
 uniform float uTimeSpeed;
 uniform float uPointScale;
 uniform float uMaxPointPx;
+uniform float uAudioLevel;
+uniform float uAudioHigh;
+uniform float uNotePulse;
+uniform float uNoteHue;
 
 attribute float size;
 
@@ -140,7 +144,20 @@ void main() {
   vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
   gl_Position = projectionMatrix * mvPosition;
 
-  float pts = size * uPointScale * (150.0 / max(-mvPosition.z + 0.08, 0.12));
+  float pointResponder =
+    0.52 +
+    0.28 * smoothstep(-0.52, 0.1, noiseVal) +
+    0.2 * smoothstep(0.35, 1.0, abs(lowFreq));
+  float hueDist = abs(vHue - uNoteHue);
+  hueDist = min(hueDist, 1.0 - hueDist);
+  float noteRegion = 1.0 - smoothstep(0.04, 0.34, hueDist);
+  float audioSize =
+    1.0 +
+    uAudioLevel * (0.12 + pointResponder * 0.18) +
+    uAudioHigh * pointResponder * 0.08 +
+    uNotePulse * (0.16 + noteRegion * 0.86);
+  float pts =
+    size * uPointScale * audioSize * (150.0 / max(-mvPosition.z + 0.08, 0.12));
   gl_PointSize = min(pts, uMaxPointPx);
 }
 `;

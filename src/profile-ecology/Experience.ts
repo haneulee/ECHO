@@ -12,10 +12,17 @@ import {
   cloneEcologySnapshot,
   lerpEcologySnapshots,
 } from "./snapshotUtils";
+import {
+  sampleEchoAudioBands,
+  sampleEchoNotePulse,
+} from "@/lib/echoAudioAnalyser";
+import type { EchoAudioBands } from "@/lib/echoAudioAnalyser";
 import type { EcologyPersonalityId } from "./types";
 import type { EcologyUniformSnapshot } from "./types";
 
 const TRANSITION_SEC = 1.65;
+const AUDIO_ATTACK_SEC = 0.22;
+const AUDIO_RELEASE_SEC = 0.72;
 
 export type ShellEcologyParticleDensity = "lite" | "heavy";
 
@@ -40,6 +47,12 @@ export class ShellEcologyExperience {
   private transitionFrom: EcologyUniformSnapshot | null = null;
   private transitionTargetId: EcologyPersonalityId = "drift";
   private transitionU = 1;
+  private audioSmooth: EchoAudioBands = {
+    bass: 0,
+    mid: 0,
+    high: 0,
+    level: 0,
+  };
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -187,10 +200,22 @@ export class ShellEcologyExperience {
       this.personalityId,
       paletteT,
     );
+    this.stepAudioReactivity(t, dt);
 
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.render(this.scene, this.camera);
   };
+
+  private stepAudioReactivity(t: number, dt: number) {
+    const raw = sampleEchoAudioBands();
+    const smooth = this.audioSmooth;
+    for (const key of ["bass", "mid", "high", "level"] as const) {
+      const tau = raw[key] > smooth[key] ? AUDIO_ATTACK_SEC : AUDIO_RELEASE_SEC;
+      const k = 1 - Math.exp(-dt / tau);
+      smooth[key] += (raw[key] - smooth[key]) * k;
+    }
+    this.particles.applyAudioReactivity(smooth, sampleEchoNotePulse(), t);
+  }
 
   private onResize = () => {
     this.resize();

@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
 import { EvolutionResonancePreview } from "@/components/EvolutionResonancePreview";
+import { ProfileFirmwareSoundPlayer } from "@/components/ProfileFirmwareSoundPlayer";
 import { ProfileHeroLab } from "@/components/profile/ProfileHeroLab";
-import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
 import { echoTypeToPointCloudVisual } from "@/lib/echoPointCloudMapping";
 import { getSession } from "@/lib/auth/session";
 import { echoTypeLabels } from "@/lib/echoTypeMeta";
@@ -89,10 +89,9 @@ export default async function ProfilePage() {
           </div>
           <div className="relative z-20 flex w-full max-w-xl justify-center px-4">
             <div className="rounded-full border border-[#26231F]/[0.08] bg-white/95 px-4 py-2.5 shadow-[0_12px_48px_rgba(38,35,31,0.12)] backdrop-blur-md">
-              <SoundMemoryPlayer
-                melody={echoDevice.currentState.melody}
+              <ProfileFirmwareSoundPlayer
+                device={echoDevice}
                 title={profileSections.soundPlayerTitle}
-                variant="controlRow"
               />
             </div>
           </div>

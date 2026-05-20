@@ -5,7 +5,7 @@ export const localMockEchoDevice: EchoDevice = {
   ...mockEchoDevice,
   id: "ECHO_BOUNCE_001",
   serialNumber: "ECHO_BOUNCE_001",
-  echoName: "Boing Ping",
+  echoName: "Sweet Potato",
   echoType: "bounce",
   currentState: {
     melody: ["C5", "E5", "G5", "A5", "G5", "E5", "D5", "C5"],
