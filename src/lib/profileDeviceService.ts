@@ -13,6 +13,7 @@ export async function getProfileDeviceContext(
   evolutions: EchoEvolution[];
 } | null> {
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("profile device context local mock mode");
     return {
       device: localMockEchoDevice,
       evolutions: mockEvolutions,

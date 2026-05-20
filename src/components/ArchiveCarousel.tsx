@@ -110,7 +110,7 @@ export function ArchiveCarousel({ items }: ArchiveCarouselProps) {
       {/* Scroll layer: full-height segments drive active memory (below overlay). */}
       <div
         ref={scrollRef}
-        className="absolute inset-0 z-0 touch-pan-y overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] snap-y snap-mandatory scroll-smooth"
+        className="scrollbar-none absolute inset-0 z-0 touch-pan-y overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] snap-y snap-mandatory scroll-smooth"
       >
         {items.map((item) => (
           <div
@@ -124,14 +124,16 @@ export function ArchiveCarousel({ items }: ArchiveCarouselProps) {
 
       {/* Fixed presentation: centered sonic visual + info swap with scroll index */}
       <div className="relative z-[1] flex min-h-0 flex-1 flex-col pointer-events-none">
-        <div className="flex min-h-0 flex-1 items-center justify-center px-4 pt-2">
-          <div className="max-w-[min(100%,520px)]">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-visible px-0 pt-2">
+          <div className="max-w-[min(120%,560px)] overflow-visible">
             <AbstractMemoryVisual
+              bleed
               composition={activeMemory.composition}
               encounters={activeItem.encounters}
+              gradientOnly
               key={activeMemory.id}
-              showMutation
               size={visualSize}
+              visualId={`archive-mobile-${activeMemory.id}`}
               {...activeMemory.visualization}
             />
           </div>

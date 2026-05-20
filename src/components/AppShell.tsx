@@ -63,6 +63,7 @@ export function AppShell({
     : viewportLocked
       ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10 lg:pt-32"
       : "min-h-screen pb-24 lg:pb-20 lg:pt-32";
+  const showHeader = !hideChrome && Boolean(eyebrow || title || intro);
 
   return (
     <main
@@ -163,7 +164,7 @@ export function AppShell({
         </Link>
       ) : null}
 
-      {!hideChrome ? (
+      {showHeader ? (
         <header
           className={[
             "relative z-10 grid shrink-0 gap-5 bg-white sm:gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.55fr)] lg:items-end",

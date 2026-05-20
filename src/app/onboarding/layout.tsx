@@ -9,6 +9,7 @@ export default async function OnboardingLayout({
   children: React.ReactNode;
 }) {
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/onboarding layout local mock mode");
     return children;
   }
   const r = await resolveSessionUser();

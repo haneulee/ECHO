@@ -9,6 +9,7 @@ export default async function TodayLayout({
   children: React.ReactNode;
 }) {
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/today layout local mock mode");
     return children;
   }
   const r = await resolveSessionUser();

@@ -11,6 +11,7 @@ export type SoundLabPayload = {
 
 export async function getSoundLabPayload(): Promise<SoundLabPayload | null> {
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("sound lab local mock mode");
     return { profile: mockSoundProfile, voices: mockSoundVoices };
   }
   let row = null;

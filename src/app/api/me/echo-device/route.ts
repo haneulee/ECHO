@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth/session";
 import { clearSessionCookie } from "@/lib/auth/sessionCookie";
 import { defaultStateForType } from "@/lib/echoDeviceDefaults";
 import { isValidEchoUnitCode, normalizeEchoUnitCode } from "@/lib/echoUnitCode";
-import { isLocalMockMode } from "@/lib/localMockMode";
+import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { prisma } from "@/lib/prisma";
 import type { EchoType } from "@/lib/types";
 
@@ -39,6 +39,7 @@ export async function POST(request: Request) {
   }
 
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/api/me/echo-device local mock mode");
     return NextResponse.json({
       ok: true,
       deviceId: "ECHO_BOUNCE_001",

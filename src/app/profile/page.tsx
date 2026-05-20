@@ -2,17 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
-import { EvolutionCard } from "@/components/EvolutionCard";
+import { EvolutionResonancePreview } from "@/components/EvolutionResonancePreview";
 import { ProfileHeroLab } from "@/components/profile/ProfileHeroLab";
 import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
 import { echoTypeToPointCloudVisual } from "@/lib/echoPointCloudMapping";
 import { getSession } from "@/lib/auth/session";
+import { echoTypeLabels } from "@/lib/echoTypeMeta";
 import { isLocalMockMode } from "@/lib/localMockMode";
 import { getProfileDeviceContext } from "@/lib/profileDeviceService";
-import {
-  echoTemperamentEcology,
-  vaguePresenceFromIso,
-} from "@/lib/profilePoetics";
+import { vaguePresenceFromIso } from "@/lib/profilePoetics";
 import {
   profileHero,
   profileLabels,
@@ -52,6 +50,8 @@ export default async function ProfilePage() {
 
   const { device: echoDevice, evolutions } = ctx;
   const ecologyPersonality = echoTypeToPointCloudVisual[echoDevice.echoType];
+  const melodyNotes = echoDevice.currentState.melody.join(" · ");
+  const latestEvolution = evolutions[0] ?? null;
 
   return (
     <AppShell eyebrow={profileHero.eyebrow} title={echoDevice.echoName}>
@@ -59,18 +59,18 @@ export default async function ProfilePage() {
         <div className="relative z-10 shrink-0 flex max-w-xl flex-row justify-between gap-3 font-body text-sm leading-5 text-text-muted sm:grid sm:grid-cols-3 sm:justify-start sm:gap-x-10 sm:gap-y-0">
           <div className="min-w-0 flex-1 sm:block sm:flex-none">
             <p className="text-[10px] uppercase tracking-[0.22em] sm:text-xs">
-              {profileLabels.name}
+              {profileLabels.type}
             </p>
             <p className="mt-1 truncate text-text sm:mt-2">
-              {echoDevice.echoName}
+              {echoTypeLabels[echoDevice.echoType]}
             </p>
           </div>
           <div className="min-w-0 flex-1 text-center sm:block sm:flex-none sm:text-left">
             <p className="text-[10px] uppercase tracking-[0.22em] sm:text-xs">
-              {profileLabels.temperament}
+              {profileLabels.melodyNotes}
             </p>
-            <p className="mt-1 truncate text-text sm:mt-2">
-              {echoTemperamentEcology[echoDevice.echoType]}
+            <p className="mt-1 break-words text-text sm:mt-2">
+              {melodyNotes}
             </p>
           </div>
           <div className="min-w-0 flex-1 text-right sm:block sm:flex-none sm:text-left">
@@ -110,18 +110,12 @@ export default async function ProfilePage() {
             </h2>
           </div>
           <div className="grid gap-10">
-            {evolutions.length === 0 ? (
+            {!latestEvolution ? (
               <p className="font-body text-sm text-text/75">
                 No evolutions recorded yet.
               </p>
             ) : (
-              evolutions.map((evolution) => (
-                <EvolutionCard
-                  echoName={echoDevice.echoName}
-                  evolution={evolution}
-                  key={evolution.id}
-                />
-              ))
+              <EvolutionResonancePreview evolution={latestEvolution} />
             )}
           </div>
         </div>

@@ -17,6 +17,9 @@ export type AbstractMemoryVisualProps = {
   encounters: Encounter[];
   composition: DailyMemory["composition"];
   showMutation?: boolean;
+  gradientOnly?: boolean;
+  visualId?: string;
+  bleed?: boolean;
 };
 
 export function AbstractMemoryVisual({
@@ -28,13 +31,17 @@ export function AbstractMemoryVisual({
   encounters,
   composition,
   showMutation = false,
+  gradientOnly = false,
+  visualId,
+  bleed = false,
 }: AbstractMemoryVisualProps) {
   const random = seededRandom(seed);
   const center = svgRound(size / 2);
   const baseRadius = svgRound(size * 0.29);
   const ringThickness = svgRound(getRingThicknessFromDensity(density));
   const safeEncounters = encounters.length > 0 ? encounters : [];
-  const id = `memory-${seed}`;
+  const idSuffix = visualId?.replace(/[^a-zA-Z0-9_-]/g, "-") ?? "default";
+  const id = `memory-${seed}-${idSuffix}`;
   const duration = `${Math.max(9, 18 - movement * 10)}s`;
 
   const blobs = safeEncounters.flatMap((encounter, encounterIndex) => {
@@ -84,10 +91,22 @@ export function AbstractMemoryVisual({
       width={size}
     >
       <defs>
-        <filter id={`${id}-diffuse`} x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="10" />
+        <filter
+          id={`${id}-diffuse`}
+          x={bleed ? "-80%" : "-40%"}
+          y={bleed ? "-80%" : "-40%"}
+          width={bleed ? "260%" : "180%"}
+          height={bleed ? "260%" : "180%"}
+        >
+          <feGaussianBlur stdDeviation={bleed ? "16" : "10"} />
         </filter>
-        <filter id={`${id}-paper-soften`} x="-20%" y="-20%" width="140%" height="140%">
+        <filter
+          id={`${id}-paper-soften`}
+          x={bleed ? "-60%" : "-20%"}
+          y={bleed ? "-60%" : "-20%"}
+          width={bleed ? "220%" : "140%"}
+          height={bleed ? "220%" : "140%"}
+        >
           <feGaussianBlur stdDeviation="1.2" />
         </filter>
         <radialGradient id={`${id}-paper`} cx="50%" cy="50%" r="62%">
@@ -129,41 +148,47 @@ export function AbstractMemoryVisual({
           transformOrigin: `${center}px ${center}px`,
         }}
       >
-        <ellipse
-          cx={center}
-          cy={svgRound(center + size * 0.006)}
-          fill="none"
-          opacity="0.12"
-          rx={svgRound(baseRadius * 1.08)}
-          ry={svgRound(baseRadius * 0.92)}
-          stroke="#CFC7BA"
-          strokeDasharray="1 18"
-          strokeLinecap="round"
-          strokeWidth={svgRound(Math.max(10, ringThickness * 0.62))}
-        />
-        {composition.voices.map((voice, index) => {
-          const radius = svgRound(baseRadius + (index - 1) * ringThickness * 0.42);
-          const circumference = svgRound(2 * Math.PI * radius);
-          const dash = svgRound(circumference * voice.presence);
-
-          return (
-            <circle
+        {!gradientOnly ? (
+          <>
+            <ellipse
               cx={center}
-              cy={center}
+              cy={svgRound(center + size * 0.006)}
               fill="none"
-              key={`${voice.echoType}-ring`}
-              opacity={svgRound(0.14 + voice.presence * 0.24, 6)}
-              r={radius}
-              stroke={`url(#${id}-voice-${index})`}
-              strokeDasharray={`${dash} ${circumference}`}
+              opacity="0.12"
+              rx={svgRound(baseRadius * 1.08)}
+              ry={svgRound(baseRadius * 0.92)}
+              stroke="#CFC7BA"
+              strokeDasharray="1 18"
               strokeLinecap="round"
-              strokeWidth={svgRound(
-                ringThickness * (0.7 + voice.averageCloseness * 0.46),
-              )}
-              transform={`rotate(${index * 84 - 24} ${center} ${center})`}
+              strokeWidth={svgRound(Math.max(10, ringThickness * 0.62))}
             />
-          );
-        })}
+            {composition.voices.map((voice, index) => {
+              const radius = svgRound(
+                baseRadius + (index - 1) * ringThickness * 0.42,
+              );
+              const circumference = svgRound(2 * Math.PI * radius);
+              const dash = svgRound(circumference * voice.presence);
+
+              return (
+                <circle
+                  cx={center}
+                  cy={center}
+                  fill="none"
+                  key={`${voice.echoType}-ring`}
+                  opacity={svgRound(0.14 + voice.presence * 0.24, 6)}
+                  r={radius}
+                  stroke={`url(#${id}-voice-${index})`}
+                  strokeDasharray={`${dash} ${circumference}`}
+                  strokeLinecap="round"
+                  strokeWidth={svgRound(
+                    ringThickness * (0.7 + voice.averageCloseness * 0.46),
+                  )}
+                  transform={`rotate(${index * 84 - 24} ${center} ${center})`}
+                />
+              );
+            })}
+          </>
+        ) : null}
 
         <g filter={`url(#${id}-diffuse)`}>
           {blobs.map((blob) => (
@@ -178,7 +203,7 @@ export function AbstractMemoryVisual({
           ))}
         </g>
 
-        {showMutation ? (
+        {showMutation && !gradientOnly ? (
           <path
             d={`M ${center - baseRadius * 0.72} ${center - baseRadius * 0.54}
                 C ${center - 8} ${center - baseRadius * 0.98},

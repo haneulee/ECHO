@@ -9,6 +9,7 @@ export default async function EvolutionLayout({
   children: React.ReactNode;
 }) {
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/evolution layout local mock mode");
     return children;
   }
   const r = await resolveSessionUser();

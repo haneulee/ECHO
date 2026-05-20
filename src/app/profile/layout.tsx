@@ -9,6 +9,7 @@ export default async function ProfileLayout({
   children: React.ReactNode;
 }) {
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/profile layout local mock mode");
     return children;
   }
   const r = await resolveSessionUser();

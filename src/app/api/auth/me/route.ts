@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const session = await getSession();
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/api/auth/me local mock mode");
     return NextResponse.json({
       user: session
         ? { id: session.userId, name: "Local Mock" }

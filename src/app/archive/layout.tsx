@@ -9,6 +9,7 @@ export default async function ArchiveLayout({
   children: React.ReactNode;
 }) {
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/archive layout local mock mode");
     return children;
   }
   const r = await resolveSessionUser();

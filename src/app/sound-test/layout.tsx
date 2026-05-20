@@ -9,6 +9,7 @@ export default async function SoundTestLayout({
   children: React.ReactNode;
 }) {
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/sound-test layout local mock mode");
     return children;
   }
   const r = await resolveSessionUser();

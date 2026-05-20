@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/ home local mock mode");
     redirect("/today");
   }
   const r = await resolveSessionUser();

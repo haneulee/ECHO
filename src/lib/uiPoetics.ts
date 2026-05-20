@@ -13,19 +13,19 @@ export const proximityWhisper: Record<ProximityZone, string> = {
 };
 
 export const profileLabels = {
-  name: "The name you carry",
-  temperament: "How they wear the air",
+  type: "Temperament",
+  melodyNotes: "Melody",
   /** Value still from `vaguePresenceFromIso` */
-  presence: "When nearness last stirred",
+  presence: "Last presence",
 } as const;
 
 export const navItems = [
-  { kind: "link" as const, href: "/today", label: "This day" },
-  { kind: "link" as const, href: "/profile", label: "Echo" },
-  { kind: "link" as const, href: "/archive", label: "Past days" },
+  { kind: "link" as const, href: "/today", label: "Today" },
+  { kind: "link" as const, href: "/profile", label: "Your Echo" },
+  { kind: "link" as const, href: "/archive", label: "Memories" },
   {
     kind: "account" as const,
-    signedInLabel: "Sign out",
+    signedInLabel: "Leave",
     signedOutLabel: "Log in",
   },
 ] as const;
@@ -33,14 +33,14 @@ export const navItems = [
 export type NavItem = (typeof navItems)[number];
 
 export const profileHero = {
-  eyebrow: "Small warmth against your skin",
+  eyebrow: "My Echo name",
   intro:
     "When another Echo draws near, sound gathers—soft proof you share the same air.",
 } as const;
 
 export const profileSections = {
-  evolutionEyebrow: "What the hours took",
-  evolutionTitle: "Melody altered by passing.",
+  evolutionEyebrow: "What changed through the day",
+  evolutionTitle: "A nearby Echo slowly altered the melody",
   soundPlayerTitle: "The thread still humming",
 } as const;
 
@@ -61,7 +61,8 @@ export const todaySoundTitle = "Unspool it";
 
 export const archiveHero = {
   eyebrow: "Older tides",
-  title: "Earlier crossings",
+  title: "Daily resonances",
+  intro: "A sonic archive of co-presence",
 } as const;
 
 /** Archive carousel — headline under the date */
@@ -71,7 +72,7 @@ export const archiveCarousel = {
       ? "Solitude wore the whole day through."
       : encounterCount === 1
         ? "Once, another orbit grazed yours."
-        : `${encounterCount} thin crossings stitched the hours.`,
+        : `${encounterCount} encounters left traces behind.`,
 } as const;
 
 export const encounterArchive = {

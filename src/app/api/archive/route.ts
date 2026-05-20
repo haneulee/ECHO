@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const session = await getSession();
   if (isLocalMockMode()) {
+    logDatabaseUnavailable("/api/archive local mock mode");
     return NextResponse.json(mockArchivePayload());
   }
   if (!session) {

@@ -48,6 +48,14 @@ input {
   font: inherit;
 }
 
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 @font-face {
   font-family: "Francesco";
   src: url("/fonts/francescoweb-regular.woff") format("woff");

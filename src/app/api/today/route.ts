@@ -58,6 +58,7 @@ export async function GET(request: Request) {
   }
 
   if (allowMockFallback) {
+    logDatabaseUnavailable("/api/today local mock mode");
     return NextResponse.json(mockTodayPayload(dateStr));
   }
 
