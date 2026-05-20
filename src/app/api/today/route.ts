@@ -8,6 +8,7 @@ import {
 } from "@/lib/dbSerializers";
 import { getSession } from "@/lib/auth/session";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
+import { logDatabaseUnavailable } from "@/lib/localMockMode";
 import { mockTodayPayload } from "@/lib/mockTodayPayload";
 import { prisma } from "@/lib/prisma";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
@@ -56,11 +57,12 @@ export async function GET(request: Request) {
     );
   }
 
+  if (allowMockFallback) {
+    return NextResponse.json(mockTodayPayload(dateStr));
+  }
+
   const session = await getSession();
   if (!session) {
-    if (allowMockFallback) {
-      return NextResponse.json(mockTodayPayload(dateStr));
-    }
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const userId = session.userId;
@@ -119,7 +121,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json(payload);
   } catch (e) {
-    if (allowMockFallback && isDatabaseConnectFailure(e)) {
+    if (isDatabaseConnectFailure(e)) {
+      logDatabaseUnavailable("/api/today", e);
       return NextResponse.json(mockTodayPayload(dateStr));
     }
     throw e;

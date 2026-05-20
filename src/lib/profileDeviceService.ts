@@ -1,7 +1,8 @@
 import { echoDeviceRowToDto, echoEvolutionRowToDto } from "@/lib/dbSerializers";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
-import { isLocalMockMode } from "@/lib/localMockMode";
-import { mockEchoDevice, mockEvolutions } from "@/lib/mockData";
+import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
+import { localMockEchoDevice } from "@/lib/localMockData";
+import { mockEvolutions } from "@/lib/mockData";
 import { prisma } from "@/lib/prisma";
 import type { EchoDevice, EchoEvolution } from "@/lib/types";
 
@@ -13,7 +14,7 @@ export async function getProfileDeviceContext(
 } | null> {
   if (isLocalMockMode()) {
     return {
-      device: mockEchoDevice,
+      device: localMockEchoDevice,
       evolutions: mockEvolutions,
     };
   }
@@ -26,8 +27,9 @@ export async function getProfileDeviceContext(
     });
   } catch (e) {
     if (isDatabaseConnectFailure(e)) {
+      logDatabaseUnavailable("profile device context", e);
       return {
-        device: mockEchoDevice,
+        device: localMockEchoDevice,
         evolutions: mockEvolutions,
       };
     }

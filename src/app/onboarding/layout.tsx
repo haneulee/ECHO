@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { resolveSessionUser } from "@/lib/auth/resolveSessionUser";
-import { isLocalMockMode } from "@/lib/localMockMode";
+import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 
 export default async function OnboardingLayout({
   children,
@@ -19,7 +19,8 @@ export default async function OnboardingLayout({
     redirect("/api/auth/sync-session?next=%2Fonboarding");
   }
   if (r.kind === "db_unavailable") {
-    redirect("/offline");
+    logDatabaseUnavailable("/onboarding layout");
+    return children;
   }
   return children;
 }

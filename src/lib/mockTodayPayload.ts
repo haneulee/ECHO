@@ -1,8 +1,8 @@
 import {
   mockDailyMemory,
-  mockEchoDevice,
   mockEncounters,
 } from "@/lib/mockData";
+import { localMockEchoDevice } from "@/lib/localMockData";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
 
 function timePart(isoLike: string): string {
@@ -12,19 +12,7 @@ function timePart(isoLike: string): string {
 
 export function mockTodayPayload(date: string): TodayApiResponse {
   const device = {
-    ...mockEchoDevice,
-    // Match the currently flashed sample firmware shape more closely.
-    id: "ECHO_BOUNCE_001",
-    serialNumber: "ECHO_BOUNCE_001",
-    echoName: "Boing Ping",
-    echoType: "bounce" as const,
-    currentState: {
-      melody: ["C5", "E5", "G5", "A5", "G5", "E5", "D5", "C5"],
-      brightness: 0.76,
-      calmness: 0.46,
-      densityBias: 0.68,
-      influences: { shy: 0.21, messy: 0.21, bounce: 0.58 },
-    },
+    ...localMockEchoDevice,
     lastSyncedAt: `${date}T14:45:00.000Z`,
   };
 

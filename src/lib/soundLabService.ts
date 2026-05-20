@@ -1,5 +1,5 @@
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
-import { isLocalMockMode } from "@/lib/localMockMode";
+import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { mockSoundProfile, mockSoundVoices } from "@/lib/mockData";
 import { prisma } from "@/lib/prisma";
 import type { SoundProfile, SoundVoice } from "@/lib/types";
@@ -20,6 +20,7 @@ export async function getSoundLabPayload(): Promise<SoundLabPayload | null> {
     });
   } catch (e) {
     if (isDatabaseConnectFailure(e)) {
+      logDatabaseUnavailable("sound lab", e);
       return { profile: mockSoundProfile, voices: mockSoundVoices };
     }
     throw e;

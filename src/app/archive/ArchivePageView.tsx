@@ -7,6 +7,7 @@ import {
   type ArchiveCarouselItem,
 } from "@/components/ArchiveCarousel";
 import { AppShell } from "@/components/AppShell";
+import { PageLoading } from "@/components/PageLoading";
 import type { ArchiveApiResponse } from "@/lib/archiveApiTypes";
 import { archiveHero } from "@/lib/uiPoetics";
 
@@ -14,6 +15,12 @@ type LoadState =
   | { kind: "loading" }
   | { kind: "error"; message: string }
   | { kind: "ok"; items: ArchiveCarouselItem[] };
+
+const MIN_LOADING_MS = 650;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function ArchiveBody() {
   const timeZone = useMemo(
@@ -24,6 +31,7 @@ function ArchiveBody() {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
 
   const load = useCallback(async () => {
+    const startedAt = performance.now();
     setState({ kind: "loading" });
     try {
       const qs = new URLSearchParams({ timeZone });
@@ -35,6 +43,7 @@ function ArchiveBody() {
         const errBody = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
+        await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
         setState({
           kind: "error",
           message: errBody?.error ?? `Request failed (${res.status})`,
@@ -42,9 +51,11 @@ function ArchiveBody() {
         return;
       }
       const data = (await res.json()) as ArchiveApiResponse;
+      await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
       setState({ kind: "ok", items: data.items });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Network error";
+      await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
       setState({ kind: "error", message });
     }
   }, [timeZone]);
@@ -53,15 +64,16 @@ function ArchiveBody() {
     void load();
   }, [load]);
 
+  if (state.kind === "loading") {
+    return <PageLoading label="Loading archive" />;
+  }
+
   return (
     <AppShell
       eyebrow={archiveHero.eyebrow}
       title={archiveHero.title}
       viewportLocked
     >
-      {state.kind === "loading" ? (
-        <p className="px-1 font-body text-sm text-text/70">Loading archive…</p>
-      ) : null}
       {state.kind === "error" ? (
         <div className="space-y-4 px-1">
           <p className="font-body text-sm text-red-900/90">{state.message}</p>

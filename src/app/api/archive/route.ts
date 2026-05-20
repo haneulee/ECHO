@@ -4,7 +4,7 @@ import type { ArchiveApiResponse } from "@/lib/archiveApiTypes";
 import { listArchiveForUser } from "@/lib/archiveService";
 import { getSession } from "@/lib/auth/session";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
-import { isLocalMockMode } from "@/lib/localMockMode";
+import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { mockArchivePayload } from "@/lib/mockArchivePayload";
 import { prisma } from "@/lib/prisma";
 import { isValidIanaTimeZone } from "@/lib/zonedDayRange";
@@ -47,6 +47,7 @@ export async function GET(request: Request) {
     return NextResponse.json(payload);
   } catch (e) {
     if (isDatabaseConnectFailure(e)) {
+      logDatabaseUnavailable("/api/archive", e);
       return NextResponse.json(mockArchivePayload());
     }
     throw e;

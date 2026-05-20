@@ -4,6 +4,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import Link from "next/link";
 
+import { LoadingPulse } from "@/components/LoadingPulse";
+import { PageLoading } from "@/components/PageLoading";
+
 const inputClass =
   "mt-1 w-full rounded-xl border border-border bg-white px-4 py-3 font-body text-sm text-text outline-none transition focus:border-nav-active";
 
@@ -73,11 +76,15 @@ function LoginForm() {
           <p className="font-body text-sm text-red-900/90">{error}</p>
         ) : null}
         <button
-          className="w-full rounded-full bg-nav-active py-3.5 font-body text-sm text-white transition hover:opacity-90 disabled:opacity-50"
+          className="flex w-full items-center justify-center rounded-full bg-nav-active py-3.5 font-body text-sm text-white transition hover:opacity-90 disabled:opacity-50"
           disabled={pending}
           type="submit"
         >
-          {pending ? "Signing in…" : "Sign in"}
+          {pending ? (
+            <LoadingPulse label="Signing in" size="sm" />
+          ) : (
+            "Sign in"
+          )}
         </button>
       </form>
       <p className="mt-8 text-center font-body text-sm text-text-muted">
@@ -97,7 +104,9 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<p className="p-8 font-body text-sm">Loading…</p>}>
+    <Suspense
+      fallback={<PageLoading label="Loading login" />}
+    >
       <LoginForm />
     </Suspense>
   );

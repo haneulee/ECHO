@@ -47,16 +47,14 @@ export const profileSections = {
 /** /profile when the account has no EchoDevice row yet */
 export const profileNoDevice = {
   title: "No Echo at the sill yet",
-  body:
-    "Your account has no Echo device row yet. If you skipped onboarding, open it and finish the last step (legacy accounts may be asked for the unit code again). New sign-ups register the printed unit code at account creation.",
+  body: "Your account has no Echo device row yet. If you skipped onboarding, open it and finish the last step (legacy accounts may be asked for the unit code again). New sign-ups register the printed unit code at account creation.",
   ctaLabel: "Open onboarding",
   ctaHref: "/onboarding",
 } as const;
 
 export const todayHero = {
   intro:
-    "The nest gathers what could not be said—here it unfolds as one slow tide of sound, and light that remembers who wandered near.",
-  title: "How your Echo met others today",
+    "Throughout the day, Echo recorded co-presence. Back on its nest, these encounters return as evolving traces of sound.",
 } as const;
 
 export const todaySoundTitle = "Unspool it";

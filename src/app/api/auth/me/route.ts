@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { clearSessionCookie } from "@/lib/auth/sessionCookie";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
-import { isLocalMockMode } from "@/lib/localMockMode";
+import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -40,12 +40,10 @@ export async function GET() {
       hasEchoDevice: deviceCount > 0,
     });
   } catch (e) {
-    if (
-      process.env.NODE_ENV !== "production" &&
-      isDatabaseConnectFailure(e)
-    ) {
+    if (isDatabaseConnectFailure(e)) {
+      logDatabaseUnavailable("/api/auth/me", e);
       return NextResponse.json({
-        user: { id: session.userId, name: "Local Mock" },
+        user: { id: session.userId, name: "Echo" },
         hasEchoDevice: true,
         dbUnavailable: true,
       });

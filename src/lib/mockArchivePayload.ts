@@ -1,4 +1,5 @@
-import { mockArchive, mockEchoDevice, mockEncounters } from "@/lib/mockData";
+import { localMockEchoDevice } from "@/lib/localMockData";
+import { mockArchive, mockEncounters } from "@/lib/mockData";
 import type { ArchiveApiResponse } from "@/lib/archiveApiTypes";
 
 function shiftDate(isoLike: string, date: string): string {
@@ -14,7 +15,7 @@ export function mockArchivePayload(): ArchiveApiResponse {
         .map((encounter, encounterIndex) => ({
           ...encounter,
           id: `mock_archive_${memory.date}_${encounterIndex + 1}`,
-          deviceId: mockEchoDevice.id,
+          deviceId: localMockEchoDevice.id,
           startedAt: shiftDate(encounter.startedAt, memory.date),
           endedAt: shiftDate(encounter.endedAt, memory.date),
         }));
@@ -23,6 +24,8 @@ export function mockArchivePayload(): ArchiveApiResponse {
         memory: {
           ...memory,
           id: `mock_archive_memory_${memoryIndex + 1}`,
+          deviceId: localMockEchoDevice.id,
+          profileSnapshot: localMockEchoDevice.currentState,
           totalEncounters: encounters.length,
           totalDurationSec: encounters.reduce(
             (sum, encounter) => sum + encounter.durationSec,

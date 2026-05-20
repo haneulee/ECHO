@@ -10,7 +10,7 @@ import { navItems } from "@/lib/uiPoetics";
 type AppShellProps = {
   children: ReactNode;
   eyebrow?: string;
-  title?: string;
+  title?: ReactNode;
   intro?: string;
   /** Fit content to the viewport height without page scroll (e.g. Archive). */
   viewportLocked?: boolean;

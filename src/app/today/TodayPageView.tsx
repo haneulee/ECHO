@@ -4,11 +4,19 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
+import { PageLoading } from "@/components/PageLoading";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import { TodayOrbitSection } from "@/app/today/TodayOrbitSection";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
+import type { EchoType } from "@/lib/types";
 import { todayHero, todaySoundTitle } from "@/lib/uiPoetics";
 import { formatCalendarEyebrow } from "@/lib/zonedDayRange";
+
+const echoTypeTitleColor: Record<EchoType, string> = {
+  shy: "#658BC1",
+  messy: "#B56F5C",
+  bounce: "#D5A940",
+};
 
 function localIsoDate(d: Date): string {
   const y = d.getFullYear();
@@ -22,6 +30,12 @@ type LoadState =
   | { kind: "error"; message: string }
   | { kind: "ok"; data: TodayApiResponse };
 
+const MIN_LOADING_MS = 650;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function TodayDataBody() {
   const searchParams = useSearchParams();
   const deviceId = searchParams.get("deviceId");
@@ -34,6 +48,7 @@ function TodayDataBody() {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
 
   const load = useCallback(async () => {
+    const startedAt = performance.now();
     setState({ kind: "loading" });
     try {
       const qs = new URLSearchParams({ date, timeZone });
@@ -46,6 +61,7 @@ function TodayDataBody() {
         const errBody = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
+        await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
         setState({
           kind: "error",
           message: errBody?.error ?? `Request failed (${res.status})`,
@@ -53,9 +69,11 @@ function TodayDataBody() {
         return;
       }
       const data = (await res.json()) as TodayApiResponse;
+      await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
       setState({ kind: "ok", data });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Network error";
+      await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
       setState({ kind: "error", message });
     }
   }, [date, deviceId, timeZone]);
@@ -78,19 +96,31 @@ function TodayDataBody() {
     state.kind === "ok" && state.data.encounters.length > 0;
 
   const showOrbitSection = state.kind === "ok" && hasEncounters;
+  const echoDevice = state.kind === "ok" ? state.data.device : null;
+  const echoName = echoDevice?.echoName ?? "your Echo";
+  const echoNameColor = echoDevice
+    ? echoTypeTitleColor[echoDevice.echoType]
+    : undefined;
+  const title = (
+    <>
+      How{" "}
+      <span style={echoNameColor ? { color: echoNameColor } : undefined}>
+        {echoName}
+      </span>{" "}
+      sensed others today
+    </>
+  );
+
+  if (state.kind === "loading") {
+    return <PageLoading label="Loading today's field" />;
+  }
 
   return (
     <AppShell
       eyebrow={eyebrow}
       intro={todayHero.intro}
-      title={todayHero.title}
+      title={title}
     >
-      {state.kind === "loading" ? (
-        <p className="mx-auto max-w-[920px] px-4 py-8 font-body text-sm text-text/70">
-          {"Loading today's field…"}
-        </p>
-      ) : null}
-
       {state.kind === "error" ? (
         <div className="mx-auto max-w-[920px] space-y-4 px-4 py-8">
           <p className="font-body text-sm text-red-900/90">{state.message}</p>
@@ -142,19 +172,7 @@ function TodayDataBody() {
 }
 
 function TodayPageFallback() {
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const eyebrow = formatCalendarEyebrow(localIsoDate(new Date()), timeZone);
-  return (
-    <AppShell
-      eyebrow={eyebrow}
-      intro={todayHero.intro}
-      title={todayHero.title}
-    >
-      <p className="mx-auto max-w-[920px] px-4 py-8 font-body text-sm text-text/70">
-        {"Loading today's field…"}
-      </p>
-    </AppShell>
-  );
+  return <PageLoading label="Loading today's field" />;
 }
 
 export function TodayPageView() {

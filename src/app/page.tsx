@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { resolveSessionUser } from "@/lib/auth/resolveSessionUser";
-import { isLocalMockMode } from "@/lib/localMockMode";
+import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,8 @@ export default async function HomePage() {
     redirect("/today");
   }
   if (r.kind === "db_unavailable") {
-    redirect("/offline");
+    logDatabaseUnavailable("/ home");
+    redirect("/today");
   }
   if (r.kind === "stale_jwt") {
     redirect("/api/auth/sync-session?next=%2F");
