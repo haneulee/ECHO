@@ -23,20 +23,14 @@ async function userIdFromRequest(request: NextRequest): Promise<string | null> {
   }
 }
 
-function allowLocalMock(request: NextRequest): boolean {
-  const host = request.headers.get("host") ?? "";
-  return (
-    process.env.NODE_ENV !== "production" ||
-    process.env.ECHO_MOCK_TODAY === "1" ||
-    host.startsWith("localhost") ||
-    host.startsWith("127.0.0.1")
-  );
+function allowLocalMock(): boolean {
+  return process.env.ECHO_MOCK_TODAY === "1";
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userId = await userIdFromRequest(request);
-  const localMock = allowLocalMock(request);
+  const localMock = allowLocalMock();
 
   if (
     pathname.startsWith("/api/today") ||

@@ -8,7 +8,7 @@ import {
 } from "@/lib/dbSerializers";
 import { getSession } from "@/lib/auth/session";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
-import { logDatabaseUnavailable } from "@/lib/localMockMode";
+import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { mockTodayPayload } from "@/lib/mockTodayPayload";
 import { prisma } from "@/lib/prisma";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
@@ -16,19 +16,8 @@ import { isValidIanaTimeZone, zonedDayRangeUtc } from "@/lib/zonedDayRange";
 
 export const dynamic = "force-dynamic";
 
-function allowMockFallbackFor(request: Request): boolean {
-  const host = request.headers.get("host") ?? "";
-  return (
-    process.env.NODE_ENV !== "production" ||
-    process.env.ECHO_MOCK_TODAY === "1" ||
-    host.startsWith("localhost") ||
-    host.startsWith("127.0.0.1")
-  );
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const allowMockFallback = allowMockFallbackFor(request);
   const dateStr = searchParams.get("date");
   const deviceId = searchParams.get("deviceId");
   const timeZone =
@@ -57,7 +46,7 @@ export async function GET(request: Request) {
     );
   }
 
-  if (allowMockFallback) {
+  if (isLocalMockMode()) {
     logDatabaseUnavailable("/api/today local mock mode");
     return NextResponse.json(mockTodayPayload(dateStr));
   }

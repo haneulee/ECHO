@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
@@ -225,10 +226,22 @@ function TodayDataBody() {
       {state.kind === "ok" ? (
         <>
           {emptyDay ? (
-            <p className="mx-auto max-w-[920px] px-4 pb-2 pt-1 font-body text-sm text-text/75">
-              No encounters for this day yet. When your Echo syncs, orbits
-              appear here.
-            </p>
+            <section className="mx-auto flex min-h-0 w-full max-w-[920px] flex-1 items-center justify-center px-4 pb-16 pt-8 sm:pb-12">
+              <div className="flex max-w-sm flex-col items-center text-center">
+                <Image
+                  alt=""
+                  aria-hidden
+                  className="mb-6 h-20 w-20 opacity-75"
+                  height={80}
+                  src="/brand/ECHO_logo_4.svg"
+                  width={80}
+                />
+                <p className="font-body text-sm leading-6 text-text/75">
+                  No encounters. <br />
+                  Feel co-presence through your Echo's sound.
+                </p>
+              </div>
+            </section>
           ) : null}
 
           {showVisualSection ? (
