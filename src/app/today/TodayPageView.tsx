@@ -216,7 +216,7 @@ function TodayDataBody() {
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-full border border-[#1a3a48]/30 bg-white px-4 py-2 font-body text-sm text-text transition hover:border-[#1a3a48]/50"
+            className="rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
           >
             Try again
           </button>

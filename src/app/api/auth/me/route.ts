@@ -5,6 +5,7 @@ import { clearSessionCookie } from "@/lib/auth/sessionCookie";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { prisma } from "@/lib/prisma";
+import type { EchoType } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export async function GET() {
         ? { id: session.userId, name: "Local Mock" }
         : { id: "local_mock", name: "Local Mock" },
       hasEchoDevice: true,
+      echoType: "bounce" satisfies EchoType,
       mock: true,
     });
   }
@@ -33,12 +35,15 @@ export async function GET() {
       clearSessionCookie(res);
       return res;
     }
-    const deviceCount = await prisma.echoDevice.count({
+    const echoDevice = await prisma.echoDevice.findFirst({
       where: { userId: user.id },
+      orderBy: { id: "asc" },
+      select: { echoType: true },
     });
     return NextResponse.json({
       user,
-      hasEchoDevice: deviceCount > 0,
+      hasEchoDevice: Boolean(echoDevice),
+      echoType: echoDevice?.echoType ?? null,
     });
   } catch (e) {
     if (isDatabaseConnectFailure(e)) {
@@ -46,6 +51,7 @@ export async function GET() {
       return NextResponse.json({
         user: { id: session.userId, name: "Echo" },
         hasEchoDevice: true,
+        echoType: "bounce" satisfies EchoType,
         dbUnavailable: true,
       });
     }

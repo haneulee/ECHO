@@ -31,7 +31,7 @@ export default function OfflinePage() {
           Try again
         </Link>
         <Link
-          className="rounded-full border border-border bg-white px-6 py-3 font-body text-sm text-text transition hover:bg-surface-soft"
+          className="rounded-full border border-border bg-surface/65 px-6 py-3 font-body text-sm text-text transition hover:bg-surface"
           href="/api/auth/offline-exit"
         >
           Sign out &amp; go home
