@@ -231,10 +231,10 @@ function TodayDataBody() {
                 <Image
                   alt=""
                   aria-hidden
-                  className="mb-6 h-20 w-20 opacity-75"
-                  height={80}
-                  src="/brand/ECHO_logo_4.svg"
-                  width={80}
+                  className="mb-6 h-24 w-24 rounded-full object-cover opacity-80"
+                  height={96}
+                  src="/brand/gradation.png"
+                  width={96}
                 />
                 <p className="font-body text-sm leading-6 text-text/75">
                   No encounters. <br />

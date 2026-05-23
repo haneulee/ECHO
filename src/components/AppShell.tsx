@@ -103,28 +103,15 @@ export function AppShell({
               className="font-display flex items-center gap-3 text-2xl leading-7"
               href="/today"
             >
-              <span aria-hidden className="flex items-center gap-2 opacity-90">
-                {/* <img
-                  alt=""
-                  className="h-10 w-10 shrink-0"
-                  height={40}
-                  src="/brand/ECHO_logo_4.svg"
-                  width={40}
-                />
+              <span aria-hidden className="flex items-center opacity-90">
                 <Image
                   alt=""
-                  className="h-8 w-auto shrink-0"
-                  height={32}
-                  src="/brand/ECHO_logo_2.svg"
-                  width={127}
-                /> */}
-                <Image
-                  alt=""
-                  className="h-8 w-auto shrink-0"
-                  height={32}
-                  src="/brand/ECHO_logo_1.svg"
-                  width={127}
+                  className="h-14 w-14 shrink-0 rounded-full object-cover"
+                  height={56}
+                  src="/brand/gradation.png"
+                  width={56}
                 />
+                <span className="text-2xl font-bold">Echo</span>
               </span>
             </Link>
             <div className="flex items-center gap-8">
@@ -179,10 +166,10 @@ export function AppShell({
         <Link className="mb-8 inline-flex items-center lg:hidden" href="/today">
           <Image
             alt="ECHO"
-            className="h-8 w-auto shrink-0"
-            height={32}
-            src="/brand/ECHO_logo_1.svg"
-            width={127}
+            className="h-12 w-12 shrink-0 rounded-full object-cover"
+            height={48}
+            src="/brand/gradation.png"
+            width={48}
           />
         </Link>
       ) : null}

@@ -6,7 +6,9 @@ export const metadata: Metadata = {
   description:
     "A small companion that reacts to the presence of other Echoes through sound",
   icons: {
-    icon: [{ url: "/brand/ECHO_logo_4.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/brand/gradation-favicon.png", type: "image/png", sizes: "512x512" },
+    ],
   },
 };
 
