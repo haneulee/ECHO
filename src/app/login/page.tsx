@@ -13,7 +13,7 @@ const inputClass =
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/today";
+  const next = searchParams.get("next") ?? "/profile";
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ function LoginForm() {
         setError(data.error ?? "Could not log in.");
         return;
       }
-      router.push(next.startsWith("/") ? next : "/today");
+      router.push(next.startsWith("/") ? next : "/profile");
       router.refresh();
     } finally {
       setPending(false);

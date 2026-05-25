@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import type { EchoType } from "@/lib/types";
-import { navItems } from "@/lib/uiPoetics";
 
 type AppShellProps = {
   children: ReactNode;
@@ -18,6 +16,10 @@ type AppShellProps = {
   viewportLocked?: boolean;
   /** Hide desktop nav + page header (e.g. immersive onboarding). */
   hideChrome?: boolean;
+  /** Let immersive pages fill the browser without the shell max-width/padding. */
+  fullBleed?: boolean;
+  /** Apply a known Echo theme immediately when a page already has device data. */
+  echoTheme?: EchoType | null;
 };
 
 type AuthState = {
@@ -71,158 +73,86 @@ export function AppShell({
   intro,
   viewportLocked = false,
   hideChrome = false,
+  fullBleed = false,
+  echoTheme = null,
 }: AppShellProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [authId, setAuthId] = useState<string | null>(
-    cachedAuthState?.userId ?? null,
-  );
-  const [authReady, setAuthReady] = useState(cachedAuthState !== undefined);
-
   useEffect(() => {
     let cancelled = false;
-    if (cachedAuthState) {
+    if (echoTheme) {
+      applyEchoTheme(echoTheme);
+      cachedAuthState = cachedAuthState
+        ? { ...cachedAuthState, echoType: echoTheme }
+        : { userId: null, echoType: echoTheme };
+    } else if (cachedAuthState) {
       applyEchoTheme(cachedAuthState.echoType);
     }
     const shouldRefreshTheme =
       cachedAuthState?.userId !== null && cachedAuthState?.echoType === null;
     void loadAuthState(shouldRefreshTheme).then((state) => {
       if (cancelled) return;
-      setAuthId(state.userId);
-      setAuthReady(true);
       applyEchoTheme(state.echoType);
     });
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
-
-  async function signOut() {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    cachedAuthState = { userId: null, echoType: null };
-    authStateRequest = null;
-    setAuthId(null);
-    setAuthReady(true);
-    applyEchoTheme(null);
-    router.push("/");
-    router.refresh();
-  }
+  }, [echoTheme]);
 
   const mainPad = hideChrome
-    ? viewportLocked
-      ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden px-6 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 lg:px-12 lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-      : "min-h-screen px-6 pb-24 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 lg:px-12 lg:pb-20"
+    ? fullBleed && viewportLocked
+      ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden"
+      : viewportLocked
+        ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden px-6 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 lg:px-12 lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        : "min-h-screen px-6 pb-24 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 lg:px-12 lg:pb-20"
     : viewportLocked
-      ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10 lg:pt-32"
-      : "min-h-screen pb-24 lg:pb-20 lg:pt-32";
+      ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10 lg:pt-28"
+      : "min-h-screen pb-24 lg:pb-20 lg:pt-28";
   const showHeader = !hideChrome && Boolean(eyebrow || title || intro);
 
   return (
     <main
       className={[
-        "mx-auto w-full min-w-0 max-w-7xl overflow-x-clip text-text",
+        "mx-auto w-full min-w-0 overflow-x-clip text-text",
+        hideChrome && fullBleed ? "max-w-none" : "max-w-7xl",
         hideChrome ? "" : "px-6 pt-6 sm:px-8 lg:px-12",
         mainPad,
       ].join(" ")}
     >
-      {!hideChrome ? (
-        <nav className="fixed inset-x-0 top-0 z-30 hidden bg-transparent px-12 py-6 lg:block">
-          <div className="mx-auto flex max-w-7xl items-center justify-between">
-            <Link
-              className="font-display flex items-center gap-3 text-2xl leading-7"
-              href="/today"
-            >
-              <span aria-hidden className="flex items-center opacity-90">
-                <Image
-                  alt=""
-                  className="h-14 w-14 shrink-0 rounded-full object-cover"
-                  height={56}
-                  src="/brand/gradation.png"
-                  width={56}
-                />
-                <span className="text-2xl font-bold">Echo</span>
-              </span>
-            </Link>
-            <div className="flex items-center gap-8">
-              {navItems.map((item) => {
-                if (item.kind === "account") {
-                  if (!authReady) return null;
-                  if (authId) {
-                    return (
-                      <button
-                        className="font-body text-sm text-text-muted transition hover:text-text"
-                        key="account"
-                        type="button"
-                        onClick={() => void signOut()}
-                      >
-                        {item.signedInLabel}
-                      </button>
-                    );
-                  }
-                  return (
-                    <Link
-                      className="font-body text-sm text-nav-active transition hover:opacity-90"
-                      href="/login"
-                      key="account"
-                    >
-                      {item.signedOutLabel}
-                    </Link>
-                  );
-                }
-                const isActive = pathname === item.href;
-
-                return (
-                  <Link
-                    className={[
-                      "font-body text-sm leading-5 transition",
-                      isActive
-                        ? "text-nav-active"
-                        : "text-nav-inactive hover:text-text",
-                    ].join(" ")}
-                    href={item.href}
-                    key={item.href}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </nav>
-      ) : null}
-
-      {!hideChrome ? (
-        <Link className="mb-8 inline-flex items-center lg:hidden" href="/today">
-          <Image
-            alt="ECHO"
-            className="h-12 w-12 shrink-0 rounded-full object-cover"
-            height={48}
-            src="/brand/gradation.png"
-            width={48}
-          />
-        </Link>
-      ) : null}
+      <Link
+        aria-label="Echo home"
+        className="fixed left-4 top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex items-center justify-center sm:left-6 lg:left-8"
+        href="/profile"
+      >
+        <Image
+          alt=""
+          aria-hidden
+          className="h-15 w-15 shrink-0 rounded-full object-cover"
+          height={40}
+          src="/brand/gradation.png"
+          width={40}
+        />
+        <span className="font-display text-3xl">Echo</span>
+      </Link>
 
       {showHeader ? (
         <header
           className={[
-            "relative z-10 grid shrink-0 gap-5 bg-transparent sm:gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.55fr)] lg:items-end",
-            viewportLocked ? "mb-4 sm:mb-5 lg:mb-8" : "mb-8 sm:mb-10 lg:mb-14",
+            "relative z-10 grid shrink-0 gap-5 bg-transparent sm:gap-6 lg:grid-cols-[minmax(0,0.88fr)_minmax(300px,0.58fr)] lg:items-end",
+            viewportLocked ? "mb-5 sm:mb-6 lg:mb-7" : "mb-9 sm:mb-11 lg:mb-14",
           ].join(" ")}
         >
           <div>
             {eyebrow ? (
-              <p className="mb-3 font-body text-xs uppercase tracking-[0.32em] text-text-muted">
+              <p className="mb-3 font-body text-[11px] uppercase tracking-[0.36em] text-text-muted">
                 {eyebrow}
               </p>
             ) : null}
             {title ? (
               <h1
                 className={[
-                  "max-w-3xl font-display tracking-[-0.03em]",
+                  "max-w-3xl font-display tracking-[-0.035em]",
                   viewportLocked
-                    ? "text-[30px] leading-[34px] sm:text-[40px] sm:leading-[44px] lg:text-[48px] lg:leading-[52px]"
-                    : "text-[40px] leading-[44px] sm:text-[56px] sm:leading-[60px] lg:text-[72px] lg:leading-[76px]",
+                    ? "text-[32px] leading-[35px] sm:text-[42px] sm:leading-[45px] lg:text-[50px] lg:leading-[52px]"
+                    : "text-[42px] leading-[44px] sm:text-[58px] sm:leading-[60px] lg:text-[76px] lg:leading-[76px]",
                 ].join(" ")}
               >
                 {title}
@@ -232,7 +162,7 @@ export function AppShell({
           {intro ? (
             <p
               className={[
-                "max-w-md font-body text-text-muted lg:pb-2",
+                "max-w-sm font-body text-text-muted lg:pb-2",
                 viewportLocked
                   ? "text-sm leading-5 lg:text-base lg:leading-6"
                   : "text-base leading-6 lg:text-lg lg:leading-7",
@@ -251,67 +181,6 @@ export function AppShell({
       ) : (
         children
       )}
-
-      {!hideChrome ? (
-        <nav className="fixed inset-x-0 bottom-4 z-20 mx-auto w-[min(390px,calc(100%-32px))] rounded-full bg-surface/88 p-2 shadow-quiet backdrop-blur lg:hidden">
-          <div className="grid grid-cols-4 gap-1">
-            {navItems.map((item) => {
-              if (item.kind === "account") {
-                if (!authReady) {
-                  return (
-                    <div
-                      aria-hidden
-                      className="rounded-full px-2 py-3"
-                      key="account"
-                    />
-                  );
-                }
-                if (authId) {
-                  return (
-                    <button
-                      className="rounded-full px-2 py-3 text-center font-body text-[11px] leading-4 text-text-muted transition hover:bg-surface-soft hover:text-text"
-                      key="account"
-                      type="button"
-                      onClick={() => void signOut()}
-                    >
-                      {item.signedInLabel}
-                    </button>
-                  );
-                }
-                const loginActive = pathname === "/login";
-                return (
-                  <Link
-                    className={[
-                      "rounded-full px-2 py-3 text-center font-body text-[11px] leading-4 transition",
-                      loginActive
-                        ? "bg-nav-active text-white"
-                        : "text-nav-inactive",
-                    ].join(" ")}
-                    href="/login"
-                    key="account"
-                  >
-                    {item.signedOutLabel}
-                  </Link>
-                );
-              }
-              const isActive = pathname === item.href;
-
-              return (
-                <Link
-                  className={[
-                    "rounded-full px-2 py-3 text-center font-body text-[11px] leading-4 transition",
-                    isActive ? "bg-nav-active text-white" : "text-nav-inactive",
-                  ].join(" ")}
-                  href={item.href}
-                  key={item.href}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      ) : null}
     </main>
   );
 }

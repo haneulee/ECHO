@@ -29,7 +29,7 @@ const primaryBtn =
   "flex-1 rounded-full bg-nav-active py-3.5 font-body text-sm text-white transition hover:opacity-90 sm:py-4 disabled:cursor-not-allowed disabled:opacity-40";
 
 const secondaryBtn =
-  "flex-1 rounded-full border border-border bg-white py-3.5 font-body text-sm text-text transition hover:bg-surface-soft sm:py-4";
+  "flex-1 rounded-full border border-border bg-surface/65 py-3.5 font-body text-sm text-text transition hover:bg-surface sm:py-4";
 
 export function OnboardingFlow() {
   const router = useRouter();
@@ -70,12 +70,12 @@ export function OnboardingFlow() {
     setStep((current) => Math.max(0, current - 1));
   }
 
-  /** Step 0: leave onboarding (browser history or Today). */
+  /** Step 0: leave onboarding (browser history or profile). */
   function backFromWelcome() {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
     } else {
-      router.push("/today");
+      router.push("/profile");
     }
   }
 
@@ -113,7 +113,7 @@ export function OnboardingFlow() {
         }
         return;
       }
-      router.push("/today");
+      router.push("/profile");
       router.refresh();
     } catch (e) {
       window.alert(e instanceof Error ? e.message : "Network error");
@@ -273,7 +273,7 @@ export function OnboardingFlow() {
       {/* Pinned to bottom on all breakpoints (above mobile tab bar when visible). */}
       <div
         className={[
-          "pointer-events-auto mt-auto flex shrink-0 flex-row gap-3 bg-white/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 lg:bg-transparent lg:pb-[max(0.35rem,env(safe-area-inset-bottom))] lg:pt-4 lg:backdrop-blur-none",
+          "pointer-events-auto mt-auto flex shrink-0 flex-row gap-3 bg-transparent pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 lg:pb-[max(0.35rem,env(safe-area-inset-bottom))] lg:pt-4",
         ].join(" ")}
       >
         {step === 0 ? (

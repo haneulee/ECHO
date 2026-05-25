@@ -1,17 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  ArchiveCarousel,
-  type ArchiveCarouselItem,
-} from "@/components/ArchiveCarousel";
+import { type ArchiveCarouselItem } from "@/components/ArchiveCarousel";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
 import { PageLoading } from "@/components/PageLoading";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import type { ArchiveApiResponse } from "@/lib/archiveApiTypes";
-import { archiveHero } from "@/lib/uiPoetics";
+import { archiveCarousel, archiveHero } from "@/lib/uiPoetics";
 
 type LoadState =
   | { kind: "loading" }
@@ -34,7 +32,7 @@ function memoryDate(date: string, style: "long" | "short") {
 }
 
 function encounterWindow(item: ArchiveCarouselItem) {
-  if (item.encounters.length === 0) return "Quiet all day";
+  if (item.encounters.length === 0) return "The day stayed quiet";
   const starts = item.encounters
     .map((encounter) => new Date(encounter.startedAt))
     .filter((date) => !Number.isNaN(date.getTime()))
@@ -50,7 +48,7 @@ function encounterWindow(item: ArchiveCarouselItem) {
   return `${format.format(first)} – ${format.format(last)}`;
 }
 
-function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
+export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeItem = items[activeIndex]!;
   const activeMemory = activeItem.memory;
@@ -95,7 +93,7 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
                 encounters={activeItem.encounters}
                 key={activeMemory.id}
                 memory={activeMemory}
-                title="Transit Resonance"
+                title="Play this memory"
               />
             </div>
           </div>
@@ -106,19 +104,14 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
             <p className="font-body text-xs uppercase tracking-[0.24em] text-text-muted">
               {memoryDate(activeMemory.date, "long")}
             </p>
-            <p className="mt-6 font-display text-[72px] leading-none tracking-[-0.05em]">
-              {activeMemory.totalEncounters}
-            </p>
-            <p className="mt-1 font-body text-xl leading-6 text-text">
-              encounters
-              <br />
-              remained nearby
+            <p className="mt-6 max-w-xs font-display text-[42px] leading-[44px] tracking-[-0.04em]">
+              {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
             </p>
             <span className="my-8 block h-px w-12 bg-text/15" />
             <div className="space-y-6 font-body text-sm text-text-muted">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em]">
-                  Mostly between
+                  The air changed
                 </p>
                 <p className="mt-1 text-text">{encounterWindow(activeItem)}</p>
               </div>
@@ -131,7 +124,7 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
         <div className="grid grid-cols-[1fr_auto] items-start gap-8">
           <div>
             <p className="mb-4 font-body text-xs uppercase tracking-[0.28em] text-text-muted">
-              Recent memories
+              Recent traces
             </p>
             <div className="grid max-w-4xl grid-cols-3 gap-8">
               {items.slice(0, 3).map((item, index) => (
@@ -161,7 +154,7 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
                   <span className="font-body text-sm text-text">
                     {memoryDate(item.memory.date, "short")}
                     <span className="mt-1 block text-text-muted">
-                      {item.memory.totalEncounters} encounters
+                      {archiveCarousel.dayHeadline(item.memory.totalEncounters)}
                     </span>
                   </span>
                 </button>
@@ -191,6 +184,61 @@ function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
           </div>
         </div>
       </footer>
+    </section>
+  );
+}
+
+function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
+  return (
+    <section className="mx-auto max-w-5xl pb-20 pt-12 sm:pt-16 lg:pt-20">
+      <Link
+        className="inline-flex rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
+        href="/profile"
+      >
+        back to profile
+      </Link>
+      <div className="mt-10 grid gap-4 sm:gap-5">
+        {items.map((item) => {
+          const memory = item.memory;
+          return (
+            <article
+              className="grid gap-5 rounded-[36px] border border-text/10 bg-surface/35 p-5 sm:grid-cols-[9rem_1fr] sm:items-center sm:p-6 lg:grid-cols-[12rem_1fr_auto] lg:gap-8 lg:p-8"
+              key={memory.id}
+            >
+              <div className="grid justify-items-center overflow-hidden rounded-[32px]">
+                <AbstractMemoryVisual
+                  composition={memory.composition}
+                  encounters={item.encounters}
+                  gradientOnly
+                  size={176}
+                  visualId={`memory-list-${memory.id}`}
+                  {...memory.visualization}
+                />
+              </div>
+              <div>
+                <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+                  {memoryDate(memory.date, "long")}
+                </p>
+                <h2 className="mt-3 max-w-xl font-display text-[34px] leading-[36px] tracking-[-0.04em] sm:text-[42px] sm:leading-[44px]">
+                  {archiveCarousel.dayHeadline(memory.totalEncounters)}
+                </h2>
+                <p className="mt-4 font-body text-sm leading-6 text-text-muted">
+                  {encounterWindow(item)}
+                </p>
+              </div>
+              <div className="justify-self-start lg:justify-self-end">
+                <TodayEncounterSoundPlayer
+                  date={memory.date}
+                  device={null}
+                  encounters={item.encounters}
+                  memory={memory}
+                  title="Play this memory"
+                />
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -247,7 +295,15 @@ function ArchiveBody() {
         title={archiveHero.title}
         viewportLocked
       >
-        <PageLoading className="min-h-0 flex-1" label="Loading archive" />
+        <div className="flex min-h-0 flex-1 flex-col">
+          <Link
+            className="mb-6 inline-flex self-start rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
+            href="/profile"
+          >
+            back to profile
+          </Link>
+          <PageLoading className="min-h-0 flex-1" label="Opening the archive" />
+        </div>
       </AppShell>
     );
   }
@@ -261,6 +317,12 @@ function ArchiveBody() {
         viewportLocked
       >
         <div className="space-y-4 px-1">
+          <Link
+            className="inline-flex rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
+            href="/profile"
+          >
+            back to profile
+          </Link>
           <p className="font-body text-sm text-red-900/90">{state.message}</p>
           <button
             type="button"
@@ -282,33 +344,27 @@ function ArchiveBody() {
         title={archiveHero.title}
         viewportLocked
       >
-        <p className="max-w-md px-1 font-body text-sm leading-6 text-text/80">
-          No saved daily memories yet. When Echo writes a day to the database,
-          it lands here in order.
-        </p>
+        <div className="space-y-5 px-1">
+          <Link
+            className="inline-flex rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
+            href="/profile"
+          >
+            back to profile
+          </Link>
+          <p className="max-w-md font-body text-sm leading-6 text-text/80">
+            No sound memories have settled here yet. After Echo rests on its
+            station, days with company will begin to appear.
+          </p>
+        </div>
       </AppShell>
     );
   }
 
   if (state.kind === "ok" && state.items.length > 0) {
     return (
-      <>
-        <div className="lg:hidden">
-          <AppShell
-            eyebrow={archiveHero.eyebrow}
-            intro={archiveHero.intro}
-            title={archiveHero.title}
-            viewportLocked
-          >
-            <ArchiveCarousel items={state.items} />
-          </AppShell>
-        </div>
-        <div className="hidden lg:block">
-          <AppShell>
-            <DesktopArchiveView items={state.items} />
-          </AppShell>
-        </div>
-      </>
+      <AppShell eyebrow={archiveHero.eyebrow} intro={archiveHero.intro} title="memories">
+        <MemoriesListView items={state.items} />
+      </AppShell>
     );
   }
 

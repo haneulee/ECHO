@@ -15,6 +15,11 @@ type TodayEncounterSoundPlayerProps = {
   memory?: DailyMemory | null;
   encounters: Encounter[];
   title: string;
+  autoPlayKey?: string | null;
+  controlsVisible?: boolean;
+  onPlayStart?: () => void;
+  showVolume?: boolean;
+  stopKey?: string | null;
 };
 
 export function TodayEncounterSoundPlayer({
@@ -23,6 +28,11 @@ export function TodayEncounterSoundPlayer({
   memory = null,
   encounters,
   title,
+  autoPlayKey = null,
+  controlsVisible = true,
+  onPlayStart,
+  showVolume = true,
+  stopKey = null,
 }: TodayEncounterSoundPlayerProps) {
   const plan = useMemo(
     () => buildEncounterSoundPlan(date, encounters, device, memory),
@@ -42,6 +52,18 @@ export function TodayEncounterSoundPlayer({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!autoPlayKey) return;
+    void play();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPlayKey]);
+
+  useEffect(() => {
+    if (!stopKey) return;
+    stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stopKey]);
 
   function ensureAudioContext() {
     if (audioContextRef.current) return audioContextRef.current;
@@ -88,6 +110,7 @@ export function TodayEncounterSoundPlayer({
     gainRef.current = gain;
     source.start();
     setIsPlaying(true);
+    onPlayStart?.();
   }
 
   function toggle() {
@@ -106,22 +129,26 @@ export function TodayEncounterSoundPlayer({
 
   return (
     <div className="pointer-events-none flex w-full items-center justify-center gap-2">
-      <button
-        aria-label={isPlaying ? `Stop ${title}` : `Play ${title}`}
-        className="pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#26231F] text-lg text-white transition hover:scale-[1.03] lg:h-16 lg:w-16"
-        onClick={toggle}
-        type="button"
-      >
-        {isPlaying ? "■" : "▶"}
-      </button>
-      <div className="pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#26231F]/[0.06] lg:h-16 lg:w-16">
-        <RotaryKnob
-          label={`${title} volume`}
-          onChange={updateVolume}
-          size={34}
-          value={volumePercent / 100}
-        />
-      </div>
+      {controlsVisible ? (
+        <button
+          aria-label={isPlaying ? `Stop ${title}` : `Play ${title}`}
+          className="pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full bg-nav-active text-lg text-white transition hover:scale-[1.03] lg:h-16 lg:w-16"
+          onClick={toggle}
+          type="button"
+        >
+          {isPlaying ? "■" : "▶"}
+        </button>
+      ) : null}
+      {controlsVisible && showVolume ? (
+        <div className="pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full bg-nav-active/10 lg:h-16 lg:w-16">
+          <RotaryKnob
+            label={`${title} volume`}
+            onChange={updateVolume}
+            size={34}
+            value={volumePercent / 100}
+          />
+        </div>
+      ) : null}
       <span className="sr-only">
         {plan.notes.length} deterministic notes from {encounters.length} encounters
         over {Math.round(plan.durationSec)} seconds using the current Echo melody.

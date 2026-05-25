@@ -9,6 +9,7 @@ import {
 } from "@/lib/onboardingDemoData";
 import { echoTypeDescriptions, echoTypeLabels } from "@/lib/echoTypeMeta";
 import type { DailyMemory, EchoType } from "@/lib/types";
+import { getEchoColorPalette } from "@/lib/visualRules";
 
 /** Stable scroll order for onboarding model picker (matches copy flow). */
 export const ONBOARDING_MODEL_ORDER: EchoType[] = ["shy", "messy", "bounce"];
@@ -102,6 +103,7 @@ export function OnboardingModelCarousel({
   const [segmentPx, setSegmentPx] = useState(0);
 
   const activeType = ONBOARDING_MODEL_ORDER[activeIndex];
+  const activePalette = getEchoColorPalette(activeType);
 
   const indexChangeRef = useRef(onActiveIndexChange);
   indexChangeRef.current = onActiveIndexChange;
@@ -204,11 +206,24 @@ export function OnboardingModelCarousel({
           <div className="mx-auto flex w-full max-w-xl flex-col gap-2">
             <div className="max-w-xl">
               <p className="h-4 font-body text-xs uppercase leading-4 tracking-[0.28em] text-text-muted">
-                Choose your model
+                Choose your color
               </p>
               <h2 className="mt-2 flex min-h-[3rem] items-center font-display text-[clamp(1.5rem,6vw,2.75rem)] leading-[1.1] tracking-[-0.04em] sm:mt-3 sm:min-h-[3.25rem] sm:text-[40px] sm:leading-[44px] lg:min-h-[3.5rem] lg:text-[clamp(2.25rem,4vw,4.25rem)] lg:leading-[1.05]">
                 {echoTypeLabels[activeType]}
               </h2>
+              <div
+                aria-label={`${echoTypeLabels[activeType]} color palette`}
+                className="mt-3 flex gap-2"
+              >
+                {activePalette.map((color) => (
+                  <span
+                    aria-hidden
+                    className="h-5 w-5 rounded-full border border-text/10"
+                    key={color}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
               <p className="mt-3 max-w-lg font-body text-sm leading-6 text-text-muted sm:min-h-[5.5rem] sm:text-base sm:leading-7 lg:min-h-[5rem]">
                 {echoTypeDescriptions[activeType]}
               </p>

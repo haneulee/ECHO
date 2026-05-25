@@ -14,18 +14,18 @@ export const proximityWhisper: Record<ProximityZone, string> = {
 
 export const profileLabels = {
   type: "Temperament",
-  melodyNotes: "Melody",
+  melodyNotes: "Sonic thread",
   /** Value still from `vaguePresenceFromIso` */
-  presence: "Last presence",
+  presence: "Last near",
 } as const;
 
 export const navItems = [
-  { kind: "link" as const, href: "/today", label: "Today" },
-  { kind: "link" as const, href: "/profile", label: "Your Echo" },
-  { kind: "link" as const, href: "/archive", label: "Memories" },
+  { kind: "link" as const, href: "/today", label: "Today’s Field" },
+  { kind: "link" as const, href: "/profile", label: "Companion" },
+  { kind: "link" as const, href: "/archive", label: "Archive" },
   {
     kind: "account" as const,
-    signedInLabel: "Leave",
+    signedInLabel: "Rest",
     signedOutLabel: "Log in",
   },
 ] as const;
@@ -33,51 +33,51 @@ export const navItems = [
 export type NavItem = (typeof navItems)[number];
 
 export const profileHero = {
-  eyebrow: "My Echo name",
+  eyebrow: "Companion",
   intro:
-    "When another Echo draws near, sound gathers—soft proof you share the same air.",
+    "Each Echo has a temperament. Alone it stays quiet; near others, it finds harmony.",
 } as const;
 
 export const profileSections = {
-  evolutionEyebrow: "What changed through the day",
-  evolutionTitle: "A nearby Echo slowly altered the melody",
-  soundPlayerTitle: "The thread still humming",
+  evolutionEyebrow: "What stayed after nearness",
+  evolutionTitle: "A melody carrying someone else’s light",
+  soundPlayerTitle: "Hear your companion",
 } as const;
 
 /** /profile when the account has no EchoDevice row yet */
 export const profileNoDevice = {
-  title: "No Echo at the sill yet",
-  body: "Your account has no Echo device row yet. If you skipped onboarding, open it and finish the last step (legacy accounts may be asked for the unit code again). New sign-ups register the printed unit code at account creation.",
-  ctaLabel: "Open onboarding",
+  title: "No companion has arrived yet",
+  body: "Echo begins as a small object in your hand. Finish the welcome ritual to name it and let its first temperament settle in.",
+  ctaLabel: "Begin the ritual",
   ctaHref: "/onboarding",
 } as const;
 
 export const todayHero = {
   intro:
-    "Throughout the day, Echo recorded co-presence. Back on its nest, these encounters return as evolving traces of sound.",
+    "Carry Echo through the day. When another companion comes close, the air begins to sound.",
 } as const;
 
-export const todaySoundTitle = "Unspool it";
+export const todaySoundTitle = "Let the day play";
 
 export const archiveHero = {
-  eyebrow: "Older tides",
-  title: "Daily resonances",
-  intro: "A sonic archive of co-presence",
+  eyebrow: "After the station",
+  title: "Sound memories",
+  intro: "At the station, the day returns as sound memory.",
 } as const;
 
 /** Archive carousel — headline under the date */
 export const archiveCarousel = {
   dayHeadline: (encounterCount: number) =>
     encounterCount === 0
-      ? "Solitude wore the whole day through."
+      ? "A quiet day stayed quiet."
       : encounterCount === 1
-        ? "Once, another orbit grazed yours."
-        : `${encounterCount} encounters left traces behind.`,
+        ? "One nearness left a small trace."
+        : `${encounterCount} moments of nearness stayed behind.`,
 } as const;
 
 export const encounterArchive = {
-  eyebrow: "Others who breathed your radius",
-  title: "Presence without the stage.",
+  eyebrow: "Who crossed the air",
+  title: "Presence, softly kept.",
 } as const;
 
 export const evolutionPageHero = {

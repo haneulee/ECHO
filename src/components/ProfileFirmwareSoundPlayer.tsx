@@ -129,13 +129,13 @@ export function ProfileFirmwareSoundPlayer({
     <div className="pointer-events-none flex w-full items-center justify-center gap-2">
       <button
         aria-label={isPlaying ? `Stop ${title}` : `Play ${title}`}
-        className="pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#26231F] text-lg text-white transition hover:scale-[1.03] lg:h-16 lg:w-16"
+        className="pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full bg-nav-active text-lg text-white transition hover:scale-[1.03] lg:h-16 lg:w-16"
         onClick={toggle}
         type="button"
       >
         {isPlaying ? "■" : "▶"}
       </button>
-      <div className="pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#26231F]/[0.06] lg:h-16 lg:w-16">
+      <div className="pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full bg-nav-active/10 lg:h-16 lg:w-16">
         <RotaryKnob
           label={`${title} volume`}
           onChange={updateVolume}
