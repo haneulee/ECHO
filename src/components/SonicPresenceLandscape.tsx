@@ -8,6 +8,7 @@ import { getEchoColorPalette } from "@/lib/visualRules";
 import type { EchoDevice, Encounter } from "@/lib/types";
 
 type SonicPresenceLandscapeProps = {
+  backHref?: string;
   device: EchoDevice | null;
   encounters: Encounter[];
   title: ReactNode;
@@ -146,7 +147,7 @@ function makeTextSprite(label: string, color: string) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  ctx.font = '38px "Francesco", Georgia, serif';
+  ctx.font = '38px "Averia Serif Libre", serif';
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = color;
@@ -289,6 +290,7 @@ function disposeObject(object: THREE.Object3D) {
 }
 
 export function SonicPresenceLandscape({
+  backHref = "/profile",
   device,
   encounters,
   title,
@@ -306,7 +308,7 @@ export function SonicPresenceLandscape({
       return;
     }
     void document.fonts
-      .load('38px "Francesco"')
+      .load('38px "Averia Serif Libre"')
       .catch(() => null)
       .finally(() => {
         if (!cancelled) setFontReady(true);
@@ -689,7 +691,7 @@ export function SonicPresenceLandscape({
 
       <Link
         className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-40 rounded-full border border-text/10 bg-surface/65 px-4 py-2 font-body text-sm text-text backdrop-blur-md transition hover:bg-surface sm:right-6 lg:right-8"
-        href="/profile"
+        href={backHref}
       >
         back
       </Link>

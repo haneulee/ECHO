@@ -20,7 +20,7 @@ export function LoadingPulse({
       role="status"
     >
       <span className="sr-only">{label}</span>
-      <span aria-hidden className={["flex text-[#1a3a48]", gap].join(" ")}>
+      <span aria-hidden className={["flex text-current", gap].join(" ")}>
         {[0, 1, 2].map((i) => (
           <span
             className={[

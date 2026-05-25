@@ -189,55 +189,111 @@ export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) 
 }
 
 function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const visibleItems = items
+    .map((item, index) => ({ item, index, offset: index - activeIndex }))
+    .filter(({ offset }) => Math.abs(offset) <= 2);
+
+  function move(delta: number) {
+    setActiveIndex((current) =>
+      Math.min(items.length - 1, Math.max(0, current + delta)),
+    );
+  }
+
   return (
-    <section className="mx-auto max-w-5xl pb-20 pt-12 sm:pt-16 lg:pt-20">
-      <Link
-        className="inline-flex rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
-        href="/profile"
-      >
-        back to profile
-      </Link>
-      <div className="mt-10 grid gap-4 sm:gap-5">
-        {items.map((item) => {
-          const memory = item.memory;
+    <section className="mx-auto flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden">
+      <div className="relative min-h-0 w-full flex-1 overflow-hidden">
+        <div className="absolute inset-0 grid place-items-center overflow-visible">
+          <div className="relative h-full max-h-[min(68dvh,42rem)] min-h-[25rem] w-[min(84vw,38rem)] overflow-visible">
+        {visibleItems
+          .slice()
+          .reverse()
+          .map(({ item, offset }) => {
+            const isActive = offset === 0;
+            const distance = Math.abs(offset);
+            const x = offset * 72;
+            const y = distance * 12;
+            const scale = 1 - distance * 0.08;
+            const memory = item.memory;
           return (
             <article
-              className="grid gap-5 rounded-[36px] border border-text/10 bg-surface/35 p-5 sm:grid-cols-[9rem_1fr] sm:items-center sm:p-6 lg:grid-cols-[12rem_1fr_auto] lg:gap-8 lg:p-8"
+                aria-hidden={!isActive}
+                className={[
+                  "absolute inset-0 grid place-items-center overflow-visible transition duration-300",
+                  isActive ? "z-30" : "pointer-events-none opacity-65",
+                ].join(" ")}
               key={memory.id}
+                style={{
+                  transform: `translateX(${x}%) translateY(${y}px) scale(${scale})`,
+                  zIndex: 30 - distance,
+                }}
             >
-              <div className="grid justify-items-center overflow-hidden rounded-[32px]">
-                <AbstractMemoryVisual
-                  composition={memory.composition}
-                  encounters={item.encounters}
-                  gradientOnly
-                  size={176}
-                  visualId={`memory-list-${memory.id}`}
-                  {...memory.visualization}
-                />
-              </div>
-              <div>
-                <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
-                  {memoryDate(memory.date, "long")}
-                </p>
-                <h2 className="mt-3 max-w-xl font-display text-[34px] leading-[36px] tracking-[-0.04em] sm:text-[42px] sm:leading-[44px]">
-                  {archiveCarousel.dayHeadline(memory.totalEncounters)}
-                </h2>
-                <p className="mt-4 font-body text-sm leading-6 text-text-muted">
-                  {encounterWindow(item)}
-                </p>
-              </div>
-              <div className="justify-self-start lg:justify-self-end">
-                <TodayEncounterSoundPlayer
-                  date={memory.date}
-                  device={null}
-                  encounters={item.encounters}
-                  memory={memory}
-                  title="Play this memory"
-                />
-              </div>
+                <div className="grid h-full w-full place-items-center overflow-visible">
+                  <AbstractMemoryVisual
+                    bleed
+                    composition={memory.composition}
+                    encounters={item.encounters}
+                    gradientOnly
+                    size={420}
+                    visualId={`memory-stack-${memory.id}`}
+                    {...memory.visualization}
+                  />
+                </div>
+
+                <div
+                  className={[
+                    "absolute inset-x-0 bottom-4 z-10 mx-auto grid w-full justify-items-center gap-4 px-4 text-center transition-opacity sm:bottom-6",
+                    isActive ? "opacity-100" : "pointer-events-none opacity-0",
+                  ].join(" ")}
+                >
+                  <div>
+                    <h2 className="font-display text-[30px] leading-[32px] tracking-[-0.045em] sm:text-[40px] sm:leading-[42px]">
+                      {memoryDate(memory.date, "long")}
+                    </h2>
+                    <p className="mt-3 font-body text-sm leading-5 text-text-muted">
+                      {archiveCarousel.dayHeadline(memory.totalEncounters)}
+                    </p>
+                    <p className="mt-2 font-body text-xs uppercase tracking-[0.24em] text-text-muted">
+                      {encounterWindow(item)}
+                    </p>
+                  </div>
+
+                  <Link
+                    className="inline-flex w-fit rounded-full bg-nav-active px-6 py-3 font-body text-sm text-white transition hover:opacity-90"
+                    href={`/today?date=${memory.date}&back=%2Farchive`}
+                  >
+                    open a map
+                  </Link>
+                </div>
             </article>
           );
-        })}
+          })}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex shrink-0 items-center gap-4 sm:mt-5">
+        <button
+          aria-label="Previous memory"
+          className="grid h-12 w-12 place-items-center rounded-full border border-text/15 font-body text-lg text-text transition hover:bg-surface/55 disabled:opacity-30"
+          disabled={activeIndex === 0}
+          onClick={() => move(-1)}
+          type="button"
+        >
+          ←
+        </button>
+        <p className="font-body text-xs uppercase tracking-[0.24em] text-text-muted">
+          {activeIndex + 1} / {items.length}
+        </p>
+        <button
+          aria-label="Next memory"
+          className="grid h-12 w-12 place-items-center rounded-full border border-text/15 font-body text-lg text-text transition hover:bg-surface/55 disabled:opacity-30"
+          disabled={activeIndex === items.length - 1}
+          onClick={() => move(1)}
+          type="button"
+        >
+          →
+        </button>
       </div>
     </section>
   );
@@ -287,23 +343,19 @@ function ArchiveBody() {
     void load();
   }, [load]);
 
+  const backButton = (
+    <Link
+      className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-40 rounded-full border border-text/10 bg-surface/65 px-4 py-2 font-body text-sm text-text backdrop-blur-md transition hover:bg-surface sm:right-6 lg:right-8"
+      href="/profile"
+    >
+      back
+    </Link>
+  );
+
   if (state.kind === "loading") {
     return (
-      <AppShell
-        eyebrow={archiveHero.eyebrow}
-        intro={archiveHero.intro}
-        title={archiveHero.title}
-        viewportLocked
-      >
-        <div className="flex min-h-0 flex-1 flex-col">
-          <Link
-            className="mb-6 inline-flex self-start rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
-            href="/profile"
-          >
-            back to profile
-          </Link>
-          <PageLoading className="min-h-0 flex-1" label="Opening the archive" />
-        </div>
+      <AppShell viewportLocked>
+        <PageLoading className="min-h-0 flex-1" label="Loading" />
       </AppShell>
     );
   }
@@ -317,12 +369,7 @@ function ArchiveBody() {
         viewportLocked
       >
         <div className="space-y-4 px-1">
-          <Link
-            className="inline-flex rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
-            href="/profile"
-          >
-            back to profile
-          </Link>
+          {backButton}
           <p className="font-body text-sm text-red-900/90">{state.message}</p>
           <button
             type="button"
@@ -345,12 +392,7 @@ function ArchiveBody() {
         viewportLocked
       >
         <div className="space-y-5 px-1">
-          <Link
-            className="inline-flex rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
-            href="/profile"
-          >
-            back to profile
-          </Link>
+          {backButton}
           <p className="max-w-md font-body text-sm leading-6 text-text/80">
             No sound memories have settled here yet. After Echo rests on its
             station, days with company will begin to appear.
@@ -362,7 +404,14 @@ function ArchiveBody() {
 
   if (state.kind === "ok" && state.items.length > 0) {
     return (
-      <AppShell eyebrow={archiveHero.eyebrow} intro={archiveHero.intro} title="memories">
+      <AppShell
+        eyebrow={archiveHero.eyebrow}
+        fullBleed
+        intro={archiveHero.intro}
+        title="memories"
+        viewportLocked
+      >
+        {backButton}
         <MemoriesListView items={state.items} />
       </AppShell>
     );

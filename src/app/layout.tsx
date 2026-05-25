@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
+import { Averia_Serif_Libre } from "next/font/google";
 import "./globals.css";
+
+const averia = Averia_Serif_Libre({
+  subsets: ["latin"],
+  weight: ["300", "400", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-averia",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "ECHO",
@@ -18,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html className={averia.variable} lang="en">
       <body>{children}</body>
     </html>
   );

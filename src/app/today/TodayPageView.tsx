@@ -76,6 +76,7 @@ function encounterDisplayName(encounter: Encounter) {
 
 function TodayDataBody() {
   const searchParams = useSearchParams();
+  const backHref = searchParams.get("back") === "/archive" ? "/archive" : "/profile";
   const deviceId = searchParams.get("deviceId");
   const date = searchParams.get("date") ?? localIsoDate(new Date());
   const timeZone = useMemo(
@@ -198,6 +199,7 @@ function TodayDataBody() {
 
       {state.kind === "ok" ? (
         <SonicPresenceLandscape
+          backHref={backHref}
           device={state.data.device}
           encounters={previewEncounters}
           onSelectEncounter={selectEncounter}

@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        display: ["Francesco", "serif"],
-        body: ["Helvetica Neue", "system-ui", "sans-serif"],
+        display: ["var(--font-averia)", "serif"],
+        body: ["var(--font-averia)", "serif"],
       },
       colors: {
         bg: "rgb(var(--color-bg) / <alpha-value>)",

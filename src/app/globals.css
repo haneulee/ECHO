@@ -109,7 +109,7 @@ body {
   margin: 0;
   overflow-x: clip;
   background: var(--bg);
-  font-family: "Helvetica Neue", system-ui, sans-serif;
+  font-family: var(--font-averia), serif;
   transition:
     background-color 240ms ease,
     color 240ms ease;
@@ -131,22 +131,6 @@ input {
 
 .scrollbar-none::-webkit-scrollbar {
   display: none;
-}
-
-@font-face {
-  font-family: "Francesco";
-  src: url("/fonts/francescoweb-regular.woff") format("woff");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Francesco";
-  src: url("/fonts/francescoweb-italic.woff") format("woff");
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
 }
 
 .pearl-surface {

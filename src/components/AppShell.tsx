@@ -104,16 +104,16 @@ export function AppShell({
         ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden px-6 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 lg:px-12 lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
         : "min-h-screen px-6 pb-24 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 lg:px-12 lg:pb-20"
     : viewportLocked
-      ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10 lg:pt-28"
-      : "min-h-screen pb-24 lg:pb-20 lg:pt-28";
+      ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(5.5rem,calc(env(safe-area-inset-top)+5rem))] lg:pb-10 lg:pt-28"
+      : "min-h-screen pb-24 pt-[max(5.5rem,calc(env(safe-area-inset-top)+5rem))] lg:pb-20 lg:pt-28";
   const showHeader = !hideChrome && Boolean(eyebrow || title || intro);
 
   return (
     <main
       className={[
-        "mx-auto w-full min-w-0 overflow-x-clip text-text",
-        hideChrome && fullBleed ? "max-w-none" : "max-w-7xl",
-        hideChrome ? "" : "px-6 pt-6 sm:px-8 lg:px-12",
+        "mx-auto w-full min-w-0 text-text",
+        fullBleed ? "max-w-none overflow-x-visible" : "max-w-7xl overflow-x-clip",
+        hideChrome || fullBleed ? "" : "px-6 sm:px-8 lg:px-12",
         mainPad,
       ].join(" ")}
     >
@@ -130,13 +130,14 @@ export function AppShell({
           src="/brand/gradation.png"
           width={40}
         />
-        <span className="font-display text-3xl">Echo</span>
+        <span className="translate-y-[0.08em] font-display text-3xl">Echo</span>
       </Link>
 
       {showHeader ? (
         <header
           className={[
             "relative z-10 grid shrink-0 gap-5 bg-transparent sm:gap-6 lg:grid-cols-[minmax(0,0.88fr)_minmax(300px,0.58fr)] lg:items-end",
+            fullBleed && !hideChrome ? "px-6 sm:px-8 lg:px-12" : "",
             viewportLocked ? "mb-5 sm:mb-6 lg:mb-7" : "mb-9 sm:mb-11 lg:mb-14",
           ].join(" ")}
         >
