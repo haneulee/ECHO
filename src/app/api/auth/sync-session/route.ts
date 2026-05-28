@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 const ALLOWED_PREFIXES = [
   "/today",
   "/archive",
+  "/main",
   "/profile",
   "/evolution",
   "/onboarding",
@@ -28,7 +29,7 @@ function safeNext(raw: string | null, fallback: string): string {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const fallback = "/profile";
+  const fallback = "/main";
   const next = safeNext(searchParams.get("next"), fallback);
 
   const session = await getSession();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import {
@@ -8,13 +8,14 @@ import {
   howToLiveCompositionEmphasis,
   howToLiveEncountersBiased,
 } from "@/lib/onboardingHowToLivePanels";
+import { useOnboardingVisualSize } from "@/components/OnboardingModelCarousel";
+import { isValidEchoColor, normalizeEchoColor } from "@/lib/echoColor";
 import {
-  ONBOARDING_MODEL_ORDER,
-  OnboardingModelCarousel,
-  useOnboardingVisualSize,
-} from "@/components/OnboardingModelCarousel";
+  echoTypeFromFirmwareModelName,
+  isValidFirmwareModelName,
+  normalizeFirmwareModelName,
+} from "@/lib/echoFirmwareModelName";
 import { randomTwoWordEchoName } from "@/lib/onboardingNames";
-import type { EchoType } from "@/lib/types";
 import {
   onboardingDemoComposition,
   onboardingDemoEncounters,
@@ -22,8 +23,8 @@ import {
 } from "@/lib/onboardingDemoData";
 import { onboarding } from "@/lib/uiPoetics";
 
-/** Welcome → model → name → Day → Night → App */
-const TOTAL_STEPS = 6;
+/** Welcome → profile → Day → Night → App */
+const TOTAL_STEPS = 5;
 
 const primaryBtn =
   "flex-1 rounded-full bg-nav-active py-3.5 font-body text-sm text-white transition hover:opacity-90 sm:py-4 disabled:cursor-not-allowed disabled:opacity-40";
@@ -35,32 +36,10 @@ export function OnboardingFlow() {
   const router = useRouter();
   const nameStepVisualSize = useOnboardingVisualSize();
   const [step, setStep] = useState(0);
-  const [modelIndex, setModelIndex] = useState(0);
-  const [echoName, setEchoName] = useState("");
+  const [echoName, setEchoName] = useState(() => randomTwoWordEchoName("bounce"));
+  const [echoColor, setEchoColor] = useState("#FFE36E");
+  const [firmwareModelName, setFirmwareModelName] = useState("");
   const [finishing, setFinishing] = useState(false);
-  const [hasEchoDevice, setHasEchoDevice] = useState<boolean | null>(null);
-  const [claimUnitCode, setClaimUnitCode] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetch("/api/auth/me", { credentials: "include" })
-      .then((r) => r.json())
-      .then((d: { user?: { id: string } | null; hasEchoDevice?: boolean }) => {
-        if (cancelled) return;
-        if (d?.user) setHasEchoDevice(Boolean(d.hasEchoDevice));
-        else setHasEchoDevice(false);
-      })
-      .catch(() => {
-        if (!cancelled) setHasEchoDevice(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  function applySuggestedNameForModel(type: EchoType) {
-    setEchoName(randomTwoWordEchoName(type));
-  }
 
   function next() {
     setStep((current) => Math.min(TOTAL_STEPS - 1, current + 1));
@@ -75,34 +54,37 @@ export function OnboardingFlow() {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
     } else {
-      router.push("/profile");
+      router.push("/main");
     }
   }
 
   async function finish() {
     if (finishing) return;
-    if (hasEchoDevice === null) return;
-    const echoType = ONBOARDING_MODEL_ORDER[modelIndex];
+    const normalizedFirmwareModelName =
+      normalizeFirmwareModelName(firmwareModelName);
+    const echoType = echoTypeFromFirmwareModelName(normalizedFirmwareModelName);
     const name = echoName.trim() || randomTwoWordEchoName(echoType);
-    if (!hasEchoDevice && !claimUnitCode.trim()) {
-      window.alert("Enter your Echo unit code—the same value on the device.");
+    const normalizedEchoColor = normalizeEchoColor(echoColor);
+    if (!isValidFirmwareModelName(normalizedFirmwareModelName)) {
+      window.alert("Enter a firmware model name like ECHO_BOUNCE_001.");
+      return;
+    }
+    if (!isValidEchoColor(normalizedEchoColor)) {
+      window.alert("Choose a valid Echo color.");
       return;
     }
     setFinishing(true);
     try {
-      const body: {
-        echoName: string;
-        echoType: EchoType;
-        echoUnitCode?: string;
-      } = { echoName: name, echoType };
-      if (!hasEchoDevice) {
-        body.echoUnitCode = claimUnitCode.trim();
-      }
       const res = await fetch("/api/me/echo-device", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          echoName: name,
+          echoType,
+          echoColor: normalizedEchoColor,
+          firmwareModelName: normalizedFirmwareModelName,
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
@@ -113,7 +95,7 @@ export function OnboardingFlow() {
         }
         return;
       }
-      router.push("/profile");
+      router.push("/main");
       router.refresh();
     } catch (e) {
       window.alert(e instanceof Error ? e.message : "Network error");
@@ -133,7 +115,13 @@ export function OnboardingFlow() {
   };
 
   const howToPanel =
-    step >= 3 && step <= 5 ? HOW_TO_LIVE_PANELS[step - 3] : null;
+    step >= 2 && step <= 4 ? HOW_TO_LIVE_PANELS[step - 2] : null;
+  const normalizedFirmwareModelName =
+    normalizeFirmwareModelName(firmwareModelName);
+  const canContinueFromProfile =
+    Boolean(echoName.trim()) &&
+    isValidEchoColor(normalizeEchoColor(echoColor)) &&
+    isValidFirmwareModelName(normalizedFirmwareModelName);
 
   return (
     <div className="mx-auto flex min-h-0 w-full flex-1 flex-col">
@@ -157,13 +145,6 @@ export function OnboardingFlow() {
         ) : null}
 
         {step === 1 ? (
-          <OnboardingModelCarousel
-            className="min-h-0 flex-1"
-            onActiveIndexChange={setModelIndex}
-          />
-        ) : null}
-
-        {step === 2 ? (
           <div className="relative flex min-h-0 flex-1 flex-col">
             <div className="pointer-events-none flex min-h-0 flex-1 flex-col items-center justify-center px-4 pb-3 pt-2 sm:pb-2 sm:pt-1">
               <div className="flex w-full max-w-[min(100%,520px)] justify-center">
@@ -175,7 +156,7 @@ export function OnboardingFlow() {
             </div>
 
             <div className="pointer-events-auto shrink-0 px-4 pb-2 pt-0 sm:pb-3 lg:pb-4">
-              <div className="mx-auto w-full max-w-xl">
+              <div className="mx-auto grid w-full max-w-xl gap-5">
                 <label
                   className="font-body text-xs uppercase tracking-[0.22em] text-text-muted"
                   htmlFor="echo-name"
@@ -190,6 +171,57 @@ export function OnboardingFlow() {
                   type="text"
                   value={echoName}
                 />
+                <label
+                  className="font-body text-xs uppercase tracking-[0.22em] text-text-muted"
+                  htmlFor="firmware-model-name"
+                >
+                  Firmware model name
+                </label>
+                <input
+                  autoComplete="off"
+                  className="w-full border-b border-border bg-transparent pb-2 font-display text-2xl leading-8 text-text outline-none placeholder:text-text-muted/45 focus:border-text"
+                  id="firmware-model-name"
+                  onChange={(event) =>
+                    setFirmwareModelName(
+                      normalizeFirmwareModelName(event.target.value),
+                    )
+                  }
+                  placeholder="ECHO_BOUNCE_001"
+                  spellCheck={false}
+                  type="text"
+                  value={firmwareModelName}
+                />
+                <label
+                  className="font-body text-xs uppercase tracking-[0.22em] text-text-muted"
+                  htmlFor="echo-color"
+                >
+                  Echo color
+                </label>
+                <div className="flex items-center gap-4">
+                  <input
+                    aria-label="Echo color"
+                    className="h-12 w-16 rounded-full border border-border bg-transparent p-1"
+                    id="echo-color"
+                    onChange={(event) =>
+                      setEchoColor(normalizeEchoColor(event.target.value))
+                    }
+                    type="color"
+                    value={
+                      isValidEchoColor(echoColor)
+                        ? echoColor.toLowerCase()
+                        : "#000000"
+                    }
+                  />
+                  <input
+                    className="min-w-0 flex-1 border-b border-border bg-transparent pb-2 font-display text-xl leading-8 text-text outline-none placeholder:text-text-muted/45 focus:border-text"
+                    onChange={(event) =>
+                      setEchoColor(normalizeEchoColor(event.target.value))
+                    }
+                    placeholder="#FF9F6E"
+                    type="text"
+                    value={echoColor}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -236,33 +268,6 @@ export function OnboardingFlow() {
                   <p className="mt-3 font-body text-sm leading-6 text-text-muted sm:text-base sm:leading-7">
                     {howToPanel.body}
                   </p>
-                  {step === 5 && hasEchoDevice === null ? (
-                    <p className="mt-4 font-body text-xs text-text-muted">
-                      Checking your account…
-                    </p>
-                  ) : null}
-                  {step === 5 && hasEchoDevice === false ? (
-                    <div className="mt-5">
-                      <label
-                        className="font-body text-xs uppercase tracking-[0.22em] text-text-muted"
-                        htmlFor="echo-claim-unit"
-                      >
-                        {onboarding.echoUnitOnboardingLabel}
-                      </label>
-                      <input
-                        className="mt-3 w-full border-b border-border bg-transparent pb-2 font-display text-xl leading-8 text-text outline-none placeholder:text-text-muted/45 focus:border-text"
-                        id="echo-claim-unit"
-                        autoComplete="off"
-                        onChange={(event) => setClaimUnitCode(event.target.value)}
-                        spellCheck={false}
-                        type="text"
-                        value={claimUnitCode}
-                      />
-                      <p className="mt-2 font-body text-[11px] leading-4 text-text-muted/90">
-                        {onboarding.echoUnitOnboardingHelp}
-                      </p>
-                    </div>
-                  ) : null}
                 </div>
               </div>
             </div>
@@ -297,24 +302,7 @@ export function OnboardingFlow() {
             </button>
             <button
               className={primaryBtn}
-              onClick={() => {
-                applySuggestedNameForModel(ONBOARDING_MODEL_ORDER[modelIndex]);
-                next();
-              }}
-              type="button"
-            >
-              {onboarding.primaryContinue}
-            </button>
-          </>
-        ) : null}
-        {step === 2 ? (
-          <>
-            <button className={secondaryBtn} onClick={back} type="button">
-              {onboarding.back}
-            </button>
-            <button
-              className={primaryBtn}
-              disabled={!echoName.trim()}
+              disabled={!canContinueFromProfile}
               onClick={next}
               type="button"
             >
@@ -322,21 +310,16 @@ export function OnboardingFlow() {
             </button>
           </>
         ) : null}
-        {step >= 3 && step <= 5 ? (
+        {step >= 2 && step <= 4 ? (
           <>
             <button className={secondaryBtn} onClick={back} type="button">
               {onboarding.back}
             </button>
             <button
               className={primaryBtn}
-              disabled={
-                finishing ||
-                (step === 5 &&
-                  (hasEchoDevice === null ||
-                    (hasEchoDevice === false && !claimUnitCode.trim())))
-              }
+              disabled={finishing || (step === 4 && !canContinueFromProfile)}
               onClick={() => {
-                if (step < 5) {
+                if (step < 4) {
                   next();
                 } else {
                   void finish();
@@ -346,7 +329,7 @@ export function OnboardingFlow() {
             >
               {finishing
                 ? "Saving…"
-                : step < 5
+                : step < 4
                   ? onboarding.nextChapter
                   : onboarding.primaryFinish}
             </button>

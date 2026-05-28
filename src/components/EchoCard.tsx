@@ -18,8 +18,17 @@ export function EchoCard({ device }: EchoCardProps) {
         {device.echoName}
       </h2>
       <p className="mt-1 font-body text-sm leading-5 text-text-muted">
-        {echoTypeLabels[device.echoType]} · {device.serialNumber}
+        {echoTypeLabels[device.echoType]} ·{" "}
+        {device.firmwareModelName ?? device.serialNumber}
       </p>
+      <div className="mt-4 flex items-center gap-3 font-body text-xs uppercase tracking-[0.22em] text-text-muted">
+        <span
+          aria-hidden
+          className="h-4 w-4 rounded-full border border-text/10"
+          style={{ backgroundColor: device.echoColor }}
+        />
+        <span>{device.echoColor}</span>
+      </div>
 
       <div className="mt-8 grid grid-cols-3 gap-6 lg:gap-10">
         <SoftStat label="brightness" value={device.currentState.brightness} />

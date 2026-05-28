@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       id: item.id,
       deviceId: item.deviceId,
       otherEchoHash: item.otherEchoHash,
+      otherEchoModelName: item.otherEchoModelName,
       otherEchoType: item.otherEchoType,
       startedAt: item.startedAt,
       endedAt: item.endedAt,
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       update: {
         deviceId: data.deviceId,
         otherEchoHash: data.otherEchoHash,
+        otherEchoModelName: data.otherEchoModelName,
         otherEchoType: data.otherEchoType,
         startedAt: data.startedAt,
         endedAt: data.endedAt,

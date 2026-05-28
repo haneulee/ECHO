@@ -2,6 +2,7 @@ import {
   dailyMemoryRowToDto,
   encounterRowToDto,
 } from "@/lib/dbSerializers";
+import { attachEncounterEchoProfiles } from "@/lib/encounterProfileLookup";
 import { prisma } from "@/lib/prisma";
 import type { DailyMemory, Encounter } from "@/lib/types";
 import { zonedDayRangeUtc } from "@/lib/zonedDayRange";
@@ -35,7 +36,10 @@ export async function listArchiveForUser(
           });
     items.push({
       memory: dailyMemoryRowToDto(m),
-      encounters: encRows.map(encounterRowToDto),
+      encounters: await attachEncounterEchoProfiles(
+        prisma,
+        encRows.map(encounterRowToDto),
+      ),
     });
   }
   return items;

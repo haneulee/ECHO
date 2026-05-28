@@ -18,6 +18,7 @@ export async function GET() {
         ? { id: session.userId, name: "Local Mock" }
         : { id: "local_mock", name: "Local Mock" },
       hasEchoDevice: true,
+      echoColor: "#FF9F6E",
       echoType: "bounce" satisfies EchoType,
       mock: true,
     });
@@ -38,11 +39,12 @@ export async function GET() {
     const echoDevice = await prisma.echoDevice.findFirst({
       where: { userId: user.id },
       orderBy: { id: "asc" },
-      select: { echoType: true },
+      select: { echoColor: true, echoType: true },
     });
     return NextResponse.json({
       user,
       hasEchoDevice: Boolean(echoDevice),
+      echoColor: echoDevice?.echoColor ?? null,
       echoType: echoDevice?.echoType ?? null,
     });
   } catch (e) {
@@ -51,6 +53,7 @@ export async function GET() {
       return NextResponse.json({
         user: { id: session.userId, name: "Echo" },
         hasEchoDevice: true,
+        echoColor: "#FF9F6E",
         echoType: "bounce" satisfies EchoType,
         dbUnavailable: true,
       });

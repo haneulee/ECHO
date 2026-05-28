@@ -3,7 +3,7 @@ import { OnboardingFlow } from "@/components/OnboardingFlow";
 
 export default function OnboardingPage() {
   return (
-    <AppShell hideChrome viewportLocked>
+    <AppShell hideChrome neutralTheme viewportLocked>
       <OnboardingFlow />
     </AppShell>
   );

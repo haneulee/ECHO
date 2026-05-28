@@ -7,6 +7,8 @@ export type EchoDevice = {
   userId: string;
   serialNumber: string;
   echoName: string;
+  echoColor: string;
+  firmwareModelName: string | null;
   echoType: EchoType;
   currentSoundProfileId: string;
   currentState: {
@@ -69,6 +71,9 @@ export type Encounter = {
   id: string;
   deviceId: string;
   otherEchoHash: string;
+  otherEchoModelName?: string | null;
+  otherEchoName?: string | null;
+  otherEchoColor?: string | null;
   otherEchoType: EchoType;
   startedAt: string;
   endedAt: string;

@@ -20,8 +20,8 @@ export const profileLabels = {
 } as const;
 
 export const navItems = [
-  { kind: "link" as const, href: "/today", label: "Today’s Field" },
-  { kind: "link" as const, href: "/profile", label: "Companion" },
+  { kind: "link" as const, href: "/main", label: "Main" },
+  { kind: "link" as const, href: "/today", label: "Today" },
   { kind: "link" as const, href: "/archive", label: "Archive" },
   {
     kind: "account" as const,
@@ -33,7 +33,7 @@ export const navItems = [
 export type NavItem = (typeof navItems)[number];
 
 export const profileHero = {
-  eyebrow: "Companion",
+  eyebrow: "Main",
   intro:
     "Each Echo has a temperament. Alone it stays quiet; near others, it finds harmony.",
 } as const;

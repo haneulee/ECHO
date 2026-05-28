@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 
+import {
+  encounterDisplayName,
+  encounterDisplayPalette,
+} from "@/lib/encounterDisplay";
 import { getEchoColorPalette } from "@/lib/visualRules";
 import type { EchoDevice, Encounter } from "@/lib/types";
 
@@ -41,12 +45,6 @@ function hashUnit(value: string) {
     hash = Math.imul(hash, 16777619);
   }
   return (Math.abs(hash) % 10000) / 10000;
-}
-
-function echoAccentColor(echoType: EchoDevice["echoType"]) {
-  if (echoType === "shy") return "#0061FF";
-  if (echoType === "messy") return "#FF0080";
-  return "#FF6900";
 }
 
 function makeGlowTexture(color: string) {
@@ -114,18 +112,6 @@ function makeEchoTexture(colors: string[]) {
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
-}
-
-function encounterLabel(encounter: Encounter) {
-  const nicknamed = encounter as Encounter & {
-    otherEchoNickname?: string | null;
-    otherNickname?: string | null;
-    nickname?: string | null;
-  };
-  const nickname =
-    nicknamed.otherEchoNickname ?? nicknamed.otherNickname ?? nicknamed.nickname;
-  if (nickname?.trim()) return nickname.trim();
-  return `Echo ${encounter.otherEchoHash.replace(/^echo:/, "")}`;
 }
 
 function groundYAt(x: number, z: number) {
@@ -219,9 +205,8 @@ function makeAbstractGround() {
   return group;
 }
 
-function makeRockField(echoType: EchoDevice["echoType"]) {
+function makeRockField(colors: string[]) {
   const group = new THREE.Group();
-  const colors = getEchoColorPalette(echoType);
   const clusters = [
     { x: -15, z: 3, spread: 4.2 },
     { x: -8, z: -11, spread: 3.8 },
@@ -290,7 +275,7 @@ function disposeObject(object: THREE.Object3D) {
 }
 
 export function SonicPresenceLandscape({
-  backHref = "/profile",
+  backHref = "/main",
   device,
   encounters,
   title,
@@ -356,12 +341,13 @@ export function SonicPresenceLandscape({
 
     const ground = makeAbstractGround();
     world.add(ground);
-    const rocks = makeRockField(device?.echoType ?? "bounce");
-    world.add(rocks);
-
     const echoType = device?.echoType ?? "bounce";
-    const echoPalette = getEchoColorPalette(echoType);
-    const echoAccent = echoAccentColor(echoType);
+    const echoPalette = device?.echoColor
+      ? [device.echoColor, device.echoColor, device.echoColor]
+      : getEchoColorPalette(echoType);
+    const echoAccent = device?.echoColor ?? echoPalette[1] ?? "#FF6900";
+    const rocks = makeRockField(echoPalette);
+    world.add(rocks);
     const centerTexture = makeEchoTexture([
       echoPalette[0] ?? echoAccent,
       echoPalette[1] ?? echoAccent,
@@ -392,7 +378,7 @@ export function SonicPresenceLandscape({
     world.add(centerGroup);
 
     const bodies: PresenceBody[] = encounters.map((encounter, index) => {
-      const palette = getEchoColorPalette(encounter.otherEchoType);
+      const palette = encounterDisplayPalette(encounter);
       const [start, mid, end] = palette;
       const durationWeight = Math.min(1, Math.log1p(encounter.durationSec) / 8);
       const angle =
@@ -446,7 +432,8 @@ export function SonicPresenceLandscape({
       orbit.rotation.y = hashUnit(`${encounter.id}:turn`) * Math.PI;
       anchor.add(orbit);
 
-      const label = makeTextSprite(encounterLabel(encounter), LABEL_TEXT_COLOR);
+      // `otherEchoName` is attached by the today API via otherEchoModelName -> EchoDevice.firmwareModelName.
+      const label = makeTextSprite(encounterDisplayName(encounter), LABEL_TEXT_COLOR);
       if (label) {
         label.position.y = 0;
         label.scale.set(3.05, 0.74, 1);
@@ -673,6 +660,7 @@ export function SonicPresenceLandscape({
       renderer.dispose();
     };
   }, [
+    device?.echoColor,
     device?.echoName,
     device?.echoType,
     encounters,

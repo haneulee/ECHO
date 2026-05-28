@@ -5,6 +5,10 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 
+import {
+  applyEchoColorTheme,
+  applyNeutralEchoTheme,
+} from "@/lib/echoThemeColor";
 import type { EchoType } from "@/lib/types";
 
 type AppShellProps = {
@@ -20,16 +24,21 @@ type AppShellProps = {
   fullBleed?: boolean;
   /** Apply a known Echo theme immediately when a page already has device data. */
   echoTheme?: EchoType | null;
+  echoColorTheme?: string | null;
+  /** Keep this page neutral even when the signed-in user has a saved Echo color. */
+  neutralTheme?: boolean;
 };
 
 type AuthState = {
   userId: string | null;
   echoType: EchoType | null;
+  echoColor: string | null;
 };
 
 type AuthMeResponse = {
   user?: { id: string } | null;
   echoType?: EchoType | null;
+  echoColor?: string | null;
 };
 
 let cachedAuthState: AuthState | undefined;
@@ -43,6 +52,11 @@ function applyEchoTheme(echoType: EchoType | null) {
   }
 }
 
+function applyTheme(echoType: EchoType | null, echoColor: string | null) {
+  applyEchoTheme(echoType);
+  applyEchoColorTheme(document.documentElement, echoColor);
+}
+
 function loadAuthState(force = false): Promise<AuthState> {
   if (!force && cachedAuthState !== undefined) {
     return Promise.resolve(cachedAuthState);
@@ -53,11 +67,12 @@ function loadAuthState(force = false): Promise<AuthState> {
       cachedAuthState = {
         userId: d.user?.id ?? null,
         echoType: d.echoType ?? null,
+        echoColor: d.echoColor ?? null,
       };
       return cachedAuthState;
     })
     .catch(() => {
-      cachedAuthState = { userId: null, echoType: null };
+      cachedAuthState = { userId: null, echoType: null, echoColor: null };
       return cachedAuthState;
     })
     .finally(() => {
@@ -75,27 +90,38 @@ export function AppShell({
   hideChrome = false,
   fullBleed = false,
   echoTheme = null,
+  echoColorTheme = null,
+  neutralTheme = false,
 }: AppShellProps) {
   useEffect(() => {
     let cancelled = false;
+    if (neutralTheme) {
+      delete document.documentElement.dataset.echoTheme;
+      applyNeutralEchoTheme(document.documentElement);
+      return () => {
+        cancelled = true;
+      };
+    }
     if (echoTheme) {
-      applyEchoTheme(echoTheme);
+      applyTheme(echoTheme, echoColorTheme);
       cachedAuthState = cachedAuthState
-        ? { ...cachedAuthState, echoType: echoTheme }
-        : { userId: null, echoType: echoTheme };
+        ? { ...cachedAuthState, echoColor: echoColorTheme, echoType: echoTheme }
+        : { userId: null, echoColor: echoColorTheme, echoType: echoTheme };
     } else if (cachedAuthState) {
-      applyEchoTheme(cachedAuthState.echoType);
+      applyTheme(cachedAuthState.echoType, cachedAuthState.echoColor);
     }
     const shouldRefreshTheme =
-      cachedAuthState?.userId !== null && cachedAuthState?.echoType === null;
+      cachedAuthState?.userId !== null &&
+      cachedAuthState?.echoType === null &&
+      cachedAuthState?.echoColor === null;
     void loadAuthState(shouldRefreshTheme).then((state) => {
       if (cancelled) return;
-      applyEchoTheme(state.echoType);
+      applyTheme(state.echoType, state.echoColor);
     });
     return () => {
       cancelled = true;
     };
-  }, [echoTheme]);
+  }, [echoColorTheme, echoTheme, neutralTheme]);
 
   const mainPad = hideChrome
     ? fullBleed && viewportLocked
@@ -120,7 +146,7 @@ export function AppShell({
       <Link
         aria-label="Echo home"
         className="fixed left-4 top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex items-center justify-center sm:left-6 lg:left-8"
-        href="/profile"
+        href="/main"
       >
         <Image
           alt=""

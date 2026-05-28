@@ -346,7 +346,7 @@ function ArchiveBody() {
   const backButton = (
     <Link
       className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-40 rounded-full border border-text/10 bg-surface/65 px-4 py-2 font-body text-sm text-text backdrop-blur-md transition hover:bg-surface sm:right-6 lg:right-8"
-      href="/profile"
+      href="/main"
     >
       back
     </Link>

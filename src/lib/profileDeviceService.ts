@@ -5,6 +5,7 @@ import {
   encounterRowToDto,
 } from "@/lib/dbSerializers";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
+import { attachEncounterEchoProfiles } from "@/lib/encounterProfileLookup";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import {
   localMockEchoDevice,
@@ -84,6 +85,9 @@ export async function getProfileDeviceContext(
     device: echoDeviceRowToDto(row),
     evolutions: row.evolutions.map(echoEvolutionRowToDto),
     todayMemory,
-    todayEncounters: todayEncounterRows.map(encounterRowToDto),
+    todayEncounters: await attachEncounterEchoProfiles(
+      prisma,
+      todayEncounterRows.map(encounterRowToDto),
+    ),
   };
 }

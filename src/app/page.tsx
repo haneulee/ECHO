@@ -9,15 +9,15 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   if (isLocalMockMode()) {
     logDatabaseUnavailable("/ home local mock mode");
-    redirect("/profile");
+    redirect("/main");
   }
   const r = await resolveSessionUser();
   if (r.kind === "ok") {
-    redirect("/profile");
+    redirect("/main");
   }
   if (r.kind === "db_unavailable") {
     logDatabaseUnavailable("/ home");
-    redirect("/profile");
+    redirect("/main");
   }
   if (r.kind === "stale_jwt") {
     redirect("/api/auth/sync-session?next=%2F");

@@ -8,6 +8,7 @@ import {
 } from "@/lib/dbSerializers";
 import { getSession } from "@/lib/auth/session";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
+import { attachEncounterEchoProfiles } from "@/lib/encounterProfileLookup";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { mockTodayPayload } from "@/lib/mockTodayPayload";
 import { prisma } from "@/lib/prisma";
@@ -104,7 +105,10 @@ export async function GET(request: Request) {
     }
 
     const payload: TodayApiResponse = {
-      encounters: encounters.map(encounterRowToDto),
+      encounters: await attachEncounterEchoProfiles(
+        prisma,
+        encounters.map(encounterRowToDto),
+      ),
       dailyMemory: dailyMemoryRow ? dailyMemoryRowToDto(dailyMemoryRow) : null,
       device: primaryDevice ? echoDeviceRowToDto(primaryDevice) : null,
     };

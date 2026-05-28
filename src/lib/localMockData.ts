@@ -6,6 +6,8 @@ export const localMockEchoDevice: EchoDevice = {
   id: "ECHO_BOUNCE_001",
   serialNumber: "ECHO_BOUNCE_001",
   echoName: "Sweet Potato",
+  echoColor: "#FF9F6E",
+  firmwareModelName: "ECHO_BOUNCE_001",
   echoType: "bounce",
   currentState: {
     melody: ["C5", "E5", "G5", "A5", "G5", "E5", "D5", "C5"],

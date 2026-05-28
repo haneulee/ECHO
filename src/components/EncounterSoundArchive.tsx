@@ -1,4 +1,5 @@
 import { echoTypeLabels } from "@/lib/echoTypeMeta";
+import { encounterDisplayColor, encounterDisplayName } from "@/lib/encounterDisplay";
 import type { DailyMemory, Encounter } from "@/lib/types";
 import { encounterArchive, proximityWhisper } from "@/lib/uiPoetics";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";
@@ -56,7 +57,17 @@ export function EncounterSoundArchive({
               </div>
 
               <div className="relative z-10 flex min-h-[360px] flex-col justify-end pb-4 pt-60 md:min-h-[420px] md:pt-72">
-                <p className="font-display text-[34px] leading-[38px] tracking-[-0.03em]">
+                <div className="flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="h-4 w-4 rounded-full border border-text/10"
+                    style={{ backgroundColor: encounterDisplayColor(encounter) }}
+                  />
+                  <p className="font-display text-[34px] leading-[38px] tracking-[-0.03em]">
+                    {encounterDisplayName(encounter)}
+                  </p>
+                </div>
+                <p className="mt-1 font-body text-xs uppercase tracking-[0.22em] text-text-muted">
                   {echoTypeLabels[encounter.otherEchoType]}
                 </p>
                 <p className="mt-3 max-w-56 font-body text-sm leading-5 text-text-muted">

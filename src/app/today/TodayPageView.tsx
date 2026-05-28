@@ -7,6 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { PageLoading } from "@/components/PageLoading";
 import { SonicPresenceLandscape } from "@/components/SonicPresenceLandscape";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
+import { encounterDisplayName } from "@/lib/encounterDisplay";
 import { mockEncounters } from "@/lib/mockData";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
 import type { Encounter } from "@/lib/types";
@@ -60,23 +61,9 @@ function previewEncountersFor(date: string, data: TodayApiResponse) {
   });
 }
 
-function encounterDisplayName(encounter: Encounter) {
-  const nicknamed = encounter as Encounter & {
-    otherEchoNickname?: string | null;
-    otherNickname?: string | null;
-    nickname?: string | null;
-  };
-  const nickname =
-    nicknamed.otherEchoNickname ??
-    nicknamed.otherNickname ??
-    nicknamed.nickname;
-  if (nickname?.trim()) return nickname.trim();
-  return `Echo ${encounter.otherEchoHash.replace(/^echo:/, "")}`;
-}
-
 function TodayDataBody() {
   const searchParams = useSearchParams();
-  const backHref = searchParams.get("back") === "/archive" ? "/archive" : "/profile";
+  const backHref = searchParams.get("back") === "/archive" ? "/archive" : "/main";
   const deviceId = searchParams.get("deviceId");
   const date = searchParams.get("date") ?? localIsoDate(new Date());
   const timeZone = useMemo(

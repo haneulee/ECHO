@@ -3,13 +3,13 @@ import { redirect } from "next/navigation";
 import { resolveSessionUser } from "@/lib/auth/resolveSessionUser";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 
-export default async function ProfileLayout({
+export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   if (isLocalMockMode()) {
-    logDatabaseUnavailable("/profile layout local mock mode");
+    logDatabaseUnavailable("/main layout local mock mode");
     return children;
   }
   const r = await resolveSessionUser();
@@ -20,7 +20,7 @@ export default async function ProfileLayout({
     redirect("/api/auth/sync-session?next=%2Fmain");
   }
   if (r.kind === "db_unavailable") {
-    logDatabaseUnavailable("/profile layout");
+    logDatabaseUnavailable("/main layout");
     return children;
   }
   return children;

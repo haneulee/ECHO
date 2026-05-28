@@ -1,5 +1,10 @@
 import { z, coerce } from "zod";
 
+import {
+  isValidFirmwareModelName,
+  normalizeFirmwareModelName,
+} from "@/lib/echoFirmwareModelName";
+
 const echoType = z.enum(["shy", "messy", "bounce"]);
 const proximityZone = z.enum(["far", "near", "close", "very_close"]);
 
@@ -12,6 +17,11 @@ export const ingestEncounterItemSchema = z.object({
   id: z.string().trim().min(1),
   deviceId: z.string().trim().min(1),
   otherEchoHash: z.string().trim().min(1),
+  otherEchoModelName: z
+    .string()
+    .transform(normalizeFirmwareModelName)
+    .refine(isValidFirmwareModelName, "expected ECHO_[A-Z0-9_-]+")
+    .optional(),
   otherEchoType: echoType,
   startedAt: coerce.date(),
   endedAt: coerce.date(),

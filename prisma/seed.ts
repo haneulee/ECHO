@@ -32,6 +32,8 @@ async function main() {
       userId: "user_haneul",
       serialNumber: "ECHO-LS-0428",
       echoName: "Namu",
+      echoColor: "#8FE6C4",
+      firmwareModelName: "ECHO_SHY_001",
       echoType: "shy",
       currentSoundProfileId: "ambient3_meditation_v1",
       currentState: {
@@ -45,6 +47,8 @@ async function main() {
     },
     update: {
       echoName: "Namu",
+      echoColor: "#8FE6C4",
+      firmwareModelName: "ECHO_SHY_001",
       echoType: "shy",
       currentSoundProfileId: "ambient3_meditation_v1",
     },

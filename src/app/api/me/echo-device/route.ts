@@ -3,6 +3,12 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { clearSessionCookie } from "@/lib/auth/sessionCookie";
 import { defaultStateForType } from "@/lib/echoDeviceDefaults";
+import { isValidEchoColor, normalizeEchoColor } from "@/lib/echoColor";
+import {
+  echoTypeFromFirmwareModelName,
+  isValidFirmwareModelName,
+  normalizeFirmwareModelName,
+} from "@/lib/echoFirmwareModelName";
 import { isValidEchoUnitCode, normalizeEchoUnitCode } from "@/lib/echoUnitCode";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { prisma } from "@/lib/prisma";
@@ -29,10 +35,36 @@ export async function POST(request: Request) {
   }
   const o = body as Record<string, unknown>;
   const echoName = typeof o.echoName === "string" ? o.echoName.trim() : "";
-  const echoType = o.echoType;
+  const echoColor =
+    typeof o.echoColor === "string" ? normalizeEchoColor(o.echoColor) : "";
+  const firmwareModelName =
+    typeof o.firmwareModelName === "string"
+      ? normalizeFirmwareModelName(o.firmwareModelName)
+      : typeof o.echoUnitCode === "string"
+        ? normalizeEchoUnitCode(o.echoUnitCode)
+        : "";
+  const echoType =
+    typeof o.echoType === "string"
+      ? o.echoType
+      : echoTypeFromFirmwareModelName(firmwareModelName);
 
   if (!echoName) {
     return NextResponse.json({ error: "echoName is required." }, { status: 400 });
+  }
+  if (!isValidEchoColor(echoColor)) {
+    return NextResponse.json(
+      { error: "echoColor must be a hex color like #FF9F6E." },
+      { status: 400 },
+    );
+  }
+  if (!isValidFirmwareModelName(firmwareModelName)) {
+    return NextResponse.json(
+      {
+        error:
+          "firmwareModelName must match the firmware Config.h ECHO_UNIQUE_MODEL_NAME, e.g. ECHO_BOUNCE_001.",
+      },
+      { status: 400 },
+    );
   }
   if (typeof echoType !== "string" || !ECHO_TYPES.includes(echoType as EchoType)) {
     return NextResponse.json({ error: "Invalid echoType." }, { status: 400 });
@@ -42,7 +74,7 @@ export async function POST(request: Request) {
     logDatabaseUnavailable("/api/me/echo-device local mock mode");
     return NextResponse.json({
       ok: true,
-      deviceId: "ECHO_BOUNCE_001",
+      deviceId: firmwareModelName,
       updated: true,
       mock: true,
     });
@@ -65,31 +97,38 @@ export async function POST(request: Request) {
     return res;
   }
 
-  const existing = await prisma.echoDevice.findFirst({
-    where: { userId },
-    orderBy: { id: "asc" },
+  const existingByModel = await prisma.echoDevice.findUnique({
+    where: { firmwareModelName },
+    select: { id: true, userId: true },
   });
-
-  if (existing) {
+  if (existingByModel && existingByModel.userId !== userId) {
+    return NextResponse.json(
+      { error: "This firmware model name is already registered to another account." },
+      { status: 409 },
+    );
+  }
+  if (existingByModel && existingByModel.userId === userId) {
     const updated = await prisma.echoDevice.update({
-      where: { id: existing.id },
+      where: { id: existingByModel.id },
       data: {
         echoName,
+        echoColor,
+        firmwareModelName,
         echoType: echoType as EchoType,
         currentState: defaultStateForType(echoType as EchoType),
+        lastSyncedAt: new Date(),
       },
       select: { id: true },
     });
     return NextResponse.json({ ok: true, deviceId: updated.id, updated: true });
   }
 
-  const unitRaw = typeof o.echoUnitCode === "string" ? o.echoUnitCode : "";
-  const unit = normalizeEchoUnitCode(unitRaw);
+  const unit = firmwareModelName;
   if (!isValidEchoUnitCode(unit)) {
     return NextResponse.json(
       {
         error:
-          "echoUnitCode is required when no device exists yet. Use the same 3–64 character code as on your Echo (letters, digits, hyphen, underscore).",
+          "firmwareModelName must also be a valid Echo unit code (3–64 characters, letters, digits, hyphen, underscore).",
       },
       { status: 400 },
     );
@@ -110,6 +149,8 @@ export async function POST(request: Request) {
       where: { id: unit },
       data: {
         echoName,
+        echoColor,
+        firmwareModelName,
         echoType: echoType as EchoType,
         currentState: defaultStateForType(echoType as EchoType),
         lastSyncedAt: new Date(),
@@ -125,6 +166,8 @@ export async function POST(request: Request) {
       userId,
       serialNumber: unit,
       echoName,
+      echoColor,
+      firmwareModelName,
       echoType: echoType as EchoType,
       currentSoundProfileId: "ambient3_meditation_v1",
       currentState: defaultStateForType(echoType as EchoType),

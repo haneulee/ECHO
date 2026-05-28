@@ -1,3 +1,4 @@
+import { encounterDisplayPalette } from "@/lib/encounterDisplay";
 import type { DailyMemory, Encounter } from "@/lib/types";
 import {
   getBlobSizeFromDuration,
@@ -46,7 +47,7 @@ export function AbstractMemoryVisual({
 
   const blobs = safeEncounters.flatMap((encounter, encounterIndex) => {
     const repeats = Math.max(2, Math.round(2 + density * 4));
-    const palette = getEchoColorPalette(encounter.otherEchoType);
+    const palette = encounterDisplayPalette(encounter);
 
     return Array.from({ length: repeats }).map((_, repeatIndex) => {
       const progress =
