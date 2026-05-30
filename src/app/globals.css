@@ -4,93 +4,27 @@
 
 :root {
   color-scheme: light;
-  --color-bg: 255 238 140;
-  --color-surface: 255 246 190;
-  --color-surface-soft: 249 224 121;
-  --color-border: 212 169 60;
-  --color-text: 230 82 0;
-  --color-text-muted: 186 75 0;
-  --color-nav-active: 255 105 0;
-  --color-nav-inactive: 202 91 0;
+  --color-bg: 247 245 240;
+  --color-surface: 255 255 255;
+  --color-surface-soft: 241 239 234;
+  --color-border: 220 216 208;
+  --color-text: 26 26 26;
+  --color-text-muted: 92 92 92;
+  --color-nav-active: 26 26 26;
+  --color-nav-inactive: 140 140 140;
   --bg: rgb(var(--color-bg));
-  --surface: #fff6be;
-  --surface-soft: #f9e079;
-  --border: #d4a93c;
-  --text: #e65200;
-  --text-muted: #ba4b00;
-  --nav-active: #ff6900;
-  --nav-inactive: #ca5b00;
-  --pearl-pink: rgba(255, 197, 211, 0.24);
-  --pearl-blue: rgba(179, 235, 242, 0.22);
-  --pearl-violet: rgba(255, 238, 140, 0.3);
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-soft: rgb(var(--color-surface-soft));
+  --border: rgb(var(--color-border));
+  --text: rgb(var(--color-text));
+  --text-muted: rgb(var(--color-text-muted));
+  --nav-active: rgb(var(--color-nav-active));
+  --nav-inactive: rgb(var(--color-nav-inactive));
+  --pearl-pink: rgba(255, 255, 255, 0.35);
+  --pearl-blue: rgba(255, 255, 255, 0.2);
+  --pearl-violet: rgba(247, 245, 240, 0.55);
   background: var(--bg);
   color: var(--text);
-}
-
-:root[data-echo-theme="shy"] {
-  --color-bg: 179 235 242;
-  --color-surface: 216 247 250;
-  --color-surface-soft: 146 220 231;
-  --color-border: 82 175 190;
-  --color-text: 0 118 255;
-  --color-text-muted: 0 132 188;
-  --color-nav-active: 0 97 255;
-  --color-nav-inactive: 0 139 205;
-  --bg: rgb(var(--color-bg));
-  --surface: #d8f7fa;
-  --surface-soft: #92dce7;
-  --border: #52afbe;
-  --text: #0076ff;
-  --text-muted: #0084bc;
-  --nav-active: #0061ff;
-  --nav-inactive: #008bcd;
-  --pearl-pink: rgba(255, 197, 211, 0.2);
-  --pearl-blue: rgba(179, 235, 242, 0.34);
-  --pearl-violet: rgba(255, 238, 140, 0.18);
-}
-
-:root[data-echo-theme="messy"] {
-  --color-bg: 255 197 211;
-  --color-surface: 255 225 232;
-  --color-surface-soft: 246 170 189;
-  --color-border: 218 112 141;
-  --color-text: 229 0 118;
-  --color-text-muted: 190 0 117;
-  --color-nav-active: 255 0 128;
-  --color-nav-inactive: 202 0 126;
-  --bg: rgb(var(--color-bg));
-  --surface: #ffe1e8;
-  --surface-soft: #f6aabd;
-  --border: #da708d;
-  --text: #e50076;
-  --text-muted: #be0075;
-  --nav-active: #ff0080;
-  --nav-inactive: #ca007e;
-  --pearl-pink: rgba(255, 197, 211, 0.38);
-  --pearl-blue: rgba(179, 235, 242, 0.18);
-  --pearl-violet: rgba(255, 238, 140, 0.18);
-}
-
-:root[data-echo-theme="bounce"] {
-  --color-bg: 255 238 140;
-  --color-surface: 255 246 190;
-  --color-surface-soft: 249 224 121;
-  --color-border: 212 169 60;
-  --color-text: 230 82 0;
-  --color-text-muted: 186 75 0;
-  --color-nav-active: 255 105 0;
-  --color-nav-inactive: 202 91 0;
-  --bg: rgb(var(--color-bg));
-  --surface: #fff6be;
-  --surface-soft: #f9e079;
-  --border: #d4a93c;
-  --text: #e65200;
-  --text-muted: #ba4b00;
-  --nav-active: #ff6900;
-  --nav-inactive: #ca5b00;
-  --pearl-pink: rgba(255, 197, 211, 0.18);
-  --pearl-blue: rgba(179, 235, 242, 0.2);
-  --pearl-violet: rgba(255, 238, 140, 0.38);
 }
 
 * {
@@ -214,4 +148,45 @@ input {
   100% {
     transform: translate3d(1.2%, 0.8%, 0) rotate(0.4deg);
   }
+}
+
+.glass-panel {
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 12px 40px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(18px);
+}
+
+.glass-btn-primary {
+  border: 1px solid transparent;
+  background: var(--nav-active);
+  color: #ffffff;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--nav-active) 35%, transparent);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.glass-btn-primary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.glass-btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.48);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(14px);
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.glass-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.68);
+  transform: translateY(-1px);
 }

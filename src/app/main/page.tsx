@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
 import { getSession } from "@/lib/auth/session";
-import { echoTypeLabels } from "@/lib/echoTypeMeta";
 import { isLocalMockMode } from "@/lib/localMockMode";
 import { getProfileDeviceContext } from "@/lib/profileDeviceService";
 import type { DailyMemory, EchoDevice, Encounter } from "@/lib/types";
@@ -109,7 +108,6 @@ export default async function MainPage() {
   return (
     <AppShell
       echoColorTheme={echoDevice.echoColor}
-      echoTheme={echoDevice.echoType}
       hideChrome
       viewportLocked
     >
@@ -132,9 +130,11 @@ export default async function MainPage() {
             <p className="font-display text-[clamp(0.8rem,5vw,2rem)] leading-none tracking-[-0.045em]">
               {echoDevice.echoName}
             </p>
-            <p className="mt-2 font-body text-xs uppercase tracking-[0.24em] text-text-muted">
-              {echoTypeLabels[echoDevice.echoType]}
-            </p>
+            <p
+              className="mx-auto mt-2 h-2 w-2 rounded-full"
+              style={{ backgroundColor: echoDevice.echoColor }}
+              aria-hidden
+            />
           </div>
           {!hasTodayEncounters ? (
             <p className="mt-3 max-w-sm font-body text-sm leading-6 text-text-muted">
@@ -144,13 +144,13 @@ export default async function MainPage() {
           ) : null}
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Link
-              className="rounded-full bg-nav-active px-6 py-3 font-body text-sm text-white transition hover:opacity-90"
+              className="glass-btn-primary rounded-full px-6 py-3 font-body text-sm"
               href="/overview"
             >
               Overview
             </Link>
             <Link
-              className="rounded-full border border-border bg-surface/65 px-6 py-3 font-body text-sm text-text transition hover:bg-surface"
+              className="glass-btn-secondary rounded-full px-6 py-3 font-body text-sm"
               href="/archive"
             >
               Archive

@@ -8,8 +8,10 @@ import {
   encounterDisplayName,
   encounterDisplayPalette,
 } from "@/lib/encounterDisplay";
-import { getEchoColorPalette } from "@/lib/visualRules";
 import type { EchoDevice, Encounter } from "@/lib/types";
+
+const DEFAULT_ECHO_ACCENT = "#FF9F6E";
+const SCENE_FOG = 0xf7f4ee;
 
 type SonicPresenceLandscapeProps = {
   backHref?: string;
@@ -24,10 +26,12 @@ type SonicPresenceLandscapeProps = {
 type PresenceBody = {
   encounter: Encounter;
   anchor: THREE.Group;
+  shell: THREE.Mesh;
   core: THREE.Mesh;
   halo: THREE.Sprite;
   orbit: THREE.LineLoop;
   base: THREE.Vector3;
+  baseScale: number;
   phase: number;
   driftRadius: number;
   driftSpeed: number;
@@ -36,7 +40,32 @@ type PresenceBody = {
   spin: number;
 };
 
-const LABEL_TEXT_COLOR = "#2A1D14";
+const LABEL_TEXT_COLOR = "#1a1a1a";
+
+function makeGlassMaterial(
+  accentHex: string,
+  options?: {
+    emissiveIntensity?: number;
+    opacity?: number;
+    transmission?: number;
+  },
+) {
+  const accent = new THREE.Color(accentHex);
+  return new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color("#ffffff"),
+    emissive: accent,
+    emissiveIntensity: options?.emissiveIntensity ?? 0.48,
+    transparent: true,
+    opacity: options?.opacity ?? 0.9,
+    roughness: 0.06,
+    metalness: 0,
+    transmission: options?.transmission ?? 0.68,
+    thickness: 0.65,
+    ior: 1.45,
+    clearcoat: 1,
+    clearcoatRoughness: 0.1,
+  });
+}
 
 function hashUnit(value: string) {
   let hash = 2166136261;
@@ -126,31 +155,41 @@ function groundYAt(x: number, z: number) {
   );
 }
 
-function makeTextSprite(label: string, color: string) {
+function makeTextSprite(
+  label: string,
+  color: string,
+  options?: { compact?: boolean },
+) {
+  const compact = options?.compact ?? false;
   const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 128;
+  canvas.width = compact ? 384 : 512;
+  canvas.height = compact ? 96 : 128;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  ctx.font = '38px "Averia Serif Libre", serif';
+  const fontSize = compact ? 30 : 38;
+  ctx.font = `${fontSize}px "Averia Serif Libre", serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = color;
-  ctx.fillText(label, 256, 64);
+  ctx.fillText(label, canvas.width / 2, canvas.height / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   const material = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
-    opacity: 1,
+    opacity: compact ? 0.82 : 1,
     depthTest: false,
     depthWrite: false,
   });
   const sprite = new THREE.Sprite(material);
-  sprite.scale.set(3.05, 0.74, 1);
+  sprite.scale.set(compact ? 2.05 : 3.05, compact ? 0.48 : 0.74, 1);
   return sprite;
+}
+
+function labelYAboveSphere(sphereRadius: number, labelScaleY: number) {
+  return sphereRadius + labelScaleY * 0.5 + 0.04;
 }
 
 function makeOrbit(radius: number, color: string) {
@@ -191,12 +230,12 @@ function makeAbstractGround() {
   const points = new THREE.Points(
     geometry,
     new THREE.PointsMaterial({
-      color: 0xff4f00,
+      color: 0xc8c4bc,
       map: dotTexture,
       alphaMap: dotTexture,
       transparent: true,
-      opacity: 0.82,
-      size: 0.16,
+      opacity: 0.34,
+      size: 0.14,
       depthWrite: false,
       sizeAttenuation: true,
     }),
@@ -205,48 +244,38 @@ function makeAbstractGround() {
   return group;
 }
 
-function makeRockField(colors: string[]) {
+function makeAmbientMotes(accentHex: string) {
   const group = new THREE.Group();
+  const accent = new THREE.Color(accentHex);
   const clusters = [
-    { x: -15, z: 3, spread: 4.2 },
-    { x: -8, z: -11, spread: 3.8 },
-    { x: 7, z: 2, spread: 4.4 },
-    { x: 14, z: -13, spread: 4.8 },
-    { x: 0, z: -22, spread: 5.4 },
-    { x: 19, z: 8, spread: 3.6 },
+    { x: -14, z: 2, spread: 5.2 },
+    { x: -7, z: -10, spread: 4.6 },
+    { x: 8, z: 1, spread: 5 },
+    { x: 15, z: -12, spread: 5.4 },
+    { x: 1, z: -20, spread: 6 },
+    { x: 18, z: 7, spread: 4.2 },
   ];
-  for (let index = 0; index < 96; index += 1) {
-    const height = 0.55 + hashUnit(`tree:${index}:h`) * 1.75;
-    const radius = 0.075 + hashUnit(`tree:${index}:r`) * 0.24;
-    const geometry = new THREE.ConeGeometry(radius, height, 5, 1);
-    const color = colors[index % colors.length] ?? colors[0] ?? "#ffffff";
-    const material = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(color),
-      emissive: new THREE.Color(color),
-      emissiveIntensity: 0.28,
-      flatShading: true,
+  for (let index = 0; index < 88; index += 1) {
+    const size = 0.03 + hashUnit(`mote:${index}:s`) * 0.08;
+    const geometry = new THREE.SphereGeometry(size, 12, 12);
+    const material = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#fafaf8"),
+      emissive: accent,
+      emissiveIntensity: 0.1 + hashUnit(`mote:${index}:e`) * 0.14,
       transparent: true,
-      opacity: 0.76,
-      roughness: 0.68,
+      opacity: 0.18 + hashUnit(`mote:${index}:o`) * 0.22,
+      roughness: 0.04,
+      transmission: 0.52,
+      thickness: 0.35,
     });
-    const tree = new THREE.Mesh(geometry, material);
+    const mote = new THREE.Mesh(geometry, material);
     const cluster = clusters[index % clusters.length]!;
-    const angle = hashUnit(`tree:${index}:cluster-angle`) * Math.PI * 2;
-    const distance = Math.sqrt(hashUnit(`tree:${index}:cluster-distance`)) * cluster.spread;
+    const angle = hashUnit(`mote:${index}:a`) * Math.PI * 2;
+    const distance = Math.sqrt(hashUnit(`mote:${index}:d`)) * cluster.spread;
     const x = cluster.x + Math.cos(angle) * distance;
     const z = cluster.z + Math.sin(angle) * distance;
-    const groundY = groundYAt(x, z);
-    tree.position.set(
-      x,
-      groundY + height / 2 + 0.04,
-      z,
-    );
-    tree.rotation.set(
-      (hashUnit(`tree:${index}:rx`) - 0.5) * 0.18,
-      hashUnit(`tree:${index}:turn`) * Math.PI,
-      (hashUnit(`tree:${index}:rz`) - 0.5) * 0.18,
-    );
-    group.add(tree);
+    mote.position.set(x, groundYAt(x, z) + 0.2 + hashUnit(`mote:${index}:y`) * 1.4, z);
+    group.add(mote);
   }
   return group;
 }
@@ -294,6 +323,7 @@ export function SonicPresenceLandscape({
     }
     void document.fonts
       .load('38px "Averia Serif Libre"')
+      .then(() => document.fonts.load('30px "Averia Serif Libre"'))
       .catch(() => null)
       .finally(() => {
         if (!cancelled) setFontReady(true);
@@ -308,7 +338,7 @@ export function SonicPresenceLandscape({
     if (!container || !fontReady) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xffee8c, 0.022);
+    scene.fog = new THREE.FogExp2(SCENE_FOG, 0.028);
 
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
     camera.position.set(0, 5.4, 15.5);
@@ -331,7 +361,7 @@ export function SonicPresenceLandscape({
     const key = new THREE.PointLight(0xffffff, 2.6, 42);
     key.position.set(0, 6, 8);
     scene.add(key);
-    const horizon = new THREE.PointLight(0xffc5d3, 2.4, 36);
+    const horizon = new THREE.PointLight(0xfff0e8, 1.6, 36);
     horizon.position.set(-8, -2, -10);
     scene.add(horizon);
 
@@ -341,37 +371,54 @@ export function SonicPresenceLandscape({
 
     const ground = makeAbstractGround();
     world.add(ground);
-    const echoType = device?.echoType ?? "bounce";
-    const echoPalette = device?.echoColor
-      ? [device.echoColor, device.echoColor, device.echoColor]
-      : getEchoColorPalette(echoType);
-    const echoAccent = device?.echoColor ?? echoPalette[1] ?? "#FF6900";
-    const rocks = makeRockField(echoPalette);
-    world.add(rocks);
+    const echoAccent = device?.echoColor ?? DEFAULT_ECHO_ACCENT;
+    const motes = makeAmbientMotes(echoAccent);
+    world.add(motes);
     const centerTexture = makeEchoTexture([
-      echoPalette[0] ?? echoAccent,
-      echoPalette[1] ?? echoAccent,
+      echoAccent,
+      "#ffffff",
       echoAccent,
     ]);
     const centerGroup = new THREE.Group();
-    const centerGeometry = new THREE.SphereGeometry(0.72, 64, 64);
-    const centerMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#ffffff"),
-      emissive: new THREE.Color(echoAccent),
-      emissiveIntensity: 0.22,
-      map: centerTexture,
-      roughness: 0.34,
-      metalness: 0.02,
-    });
-    const center = new THREE.Mesh(centerGeometry, centerMaterial);
-    centerGroup.add(center);
+    const centerShell = new THREE.Mesh(
+      new THREE.SphereGeometry(0.92, 48, 48),
+      makeGlassMaterial(echoAccent, {
+        emissiveIntensity: 0.22,
+        opacity: 0.55,
+        transmission: 0.78,
+      }),
+    );
+    const centerCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.42, 48, 48),
+      new THREE.MeshStandardMaterial({
+        color: new THREE.Color("#ffffff"),
+        emissive: new THREE.Color(echoAccent),
+        emissiveIntensity: 0.52,
+        map: centerTexture,
+        roughness: 0.12,
+        metalness: 0,
+        transparent: true,
+        opacity: 0.94,
+      }),
+    );
+    const centerShellRadius = 0.92;
+    centerGroup.add(centerShell);
+    centerGroup.add(centerCore);
+    const centerCoreMaterial = centerCore.material as THREE.MeshStandardMaterial;
+    const centerOrbitRadius = 1.08;
+    const centerOrbit = makeOrbit(centerOrbitRadius, echoAccent);
+    centerOrbit.rotation.x = 0.18;
+    centerGroup.add(centerOrbit);
     const centerLabel = makeTextSprite(
       device?.echoName ?? "my Echo",
       LABEL_TEXT_COLOR,
+      { compact: true },
     );
     if (centerLabel) {
-      centerLabel.position.y = 0;
-      centerLabel.scale.set(3.05, 0.74, 1);
+      centerLabel.position.y = labelYAboveSphere(
+        centerShellRadius,
+        centerLabel.scale.y,
+      );
       centerGroup.add(centerLabel);
     }
     centerGroup.position.set(0, 0.25, 0.2);
@@ -399,15 +446,25 @@ export function SonicPresenceLandscape({
       );
       anchor.position.copy(base);
 
+      const accent = mid ?? start ?? DEFAULT_ECHO_ACCENT;
+      const shell = new THREE.Mesh(
+        new THREE.SphereGeometry(size, 28, 28),
+        makeGlassMaterial(accent, {
+          emissiveIntensity: 0.28 + durationWeight * 0.22,
+          opacity: 0.42 + durationWeight * 0.28,
+          transmission: 0.72,
+        }),
+      );
+      anchor.add(shell);
       const core = new THREE.Mesh(
-        new THREE.SphereGeometry(size, 32, 32),
+        new THREE.SphereGeometry(size * 0.58, 28, 28),
         new THREE.MeshStandardMaterial({
-          color: new THREE.Color(mid),
+          color: new THREE.Color("#ffffff"),
           emissive: new THREE.Color(start),
-          emissiveIntensity: 0.42 + durationWeight * 0.46,
+          emissiveIntensity: 0.5 + durationWeight * 0.38,
           transparent: true,
-          opacity: 0.46 + durationWeight * 0.36,
-          roughness: 0.62,
+          opacity: 0.88,
+          roughness: 0.1,
         }),
       );
       anchor.add(core);
@@ -433,10 +490,13 @@ export function SonicPresenceLandscape({
       anchor.add(orbit);
 
       // `otherEchoName` is attached by the today API via otherEchoModelName -> EchoDevice.firmwareModelName.
-      const label = makeTextSprite(encounterDisplayName(encounter), LABEL_TEXT_COLOR);
+      const label = makeTextSprite(
+        encounterDisplayName(encounter),
+        LABEL_TEXT_COLOR,
+        { compact: true },
+      );
       if (label) {
-        label.position.y = 0;
-        label.scale.set(3.05, 0.74, 1);
+        label.position.y = labelYAboveSphere(size, label.scale.y);
         anchor.add(label);
       }
 
@@ -444,10 +504,12 @@ export function SonicPresenceLandscape({
       return {
         encounter,
         anchor,
+        shell,
         core,
         halo,
         orbit,
         base,
+        baseScale: size,
         phase: hashUnit(`${encounter.id}:phase`) * Math.PI * 2,
         driftRadius:
           0.35 +
@@ -530,7 +592,7 @@ export function SonicPresenceLandscape({
         pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         pointer.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
         raycaster.setFromCamera(pointer, camera);
-        const selfHit = raycaster.intersectObject(center, false)[0];
+        const selfHit = raycaster.intersectObject(centerShell, false)[0];
         if (selfHit) {
           onSelectSelf?.();
           isDragging = false;
@@ -618,8 +680,14 @@ export function SonicPresenceLandscape({
       world.rotation.x = -0.03;
       ground.position.z = Math.sin(t * 0.12) * 0.24;
       ground.rotation.y = Math.sin(t * 0.06) * 0.025;
-      rocks.rotation.y = Math.sin(t * 0.08) * 0.04;
-      center.rotation.y = t * 0.06;
+      motes.rotation.y = Math.sin(t * 0.06) * 0.03;
+      const centerBreathe = 1 + Math.sin(t * 1.1) * 0.06;
+      centerShell.scale.setScalar(centerBreathe);
+      centerCore.scale.setScalar(0.46 * centerBreathe);
+      centerShell.rotation.y = t * 0.05;
+      centerCore.rotation.y = -t * 0.07;
+      centerCoreMaterial.emissiveIntensity =
+        0.38 + Math.sin(t * 1.35) * 0.16;
       stars.rotation.y = t * 0.018;
 
       for (const body of bodies) {
@@ -631,6 +699,10 @@ export function SonicPresenceLandscape({
         body.anchor.position.z =
           body.base.z + Math.sin(drift * body.driftTilt) * body.driftRadius * 0.75;
         body.anchor.rotation.y += 0.004 * body.spin;
+        const peerBreathe = 1 + Math.sin(t * 1.2 + body.phase) * 0.05;
+        body.shell.scale.setScalar(body.baseScale * peerBreathe);
+        body.core.scale.setScalar(body.baseScale * 0.58 * peerBreathe);
+        body.shell.rotation.y += 0.004 * body.spin;
         body.core.rotation.y += 0.006 * body.spin;
         body.halo.material.rotation += 0.002 * body.spin;
         body.orbit.rotation.z += 0.003 * body.spin;
@@ -662,7 +734,6 @@ export function SonicPresenceLandscape({
   }, [
     device?.echoColor,
     device?.echoName,
-    device?.echoType,
     encounters,
     fontReady,
     onSelectEncounter,
@@ -678,7 +749,7 @@ export function SonicPresenceLandscape({
       />
 
       <Link
-        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-40 rounded-full border border-text/10 bg-surface/65 px-4 py-2 font-body text-sm text-text backdrop-blur-md transition hover:bg-surface sm:right-6 lg:right-8"
+        className="glass-panel absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-40 rounded-full px-4 py-2 font-body text-sm text-text transition hover:opacity-90 sm:right-6 lg:right-8"
         href={backHref}
       >
         back

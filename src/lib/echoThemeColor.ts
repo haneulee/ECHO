@@ -22,6 +22,16 @@ const THEME_PROPS = [
   "--pearl-violet",
 ] as const;
 
+const NEUTRAL = {
+  bg: { r: 247, g: 245, b: 240 },
+  surface: { r: 255, g: 255, b: 255 },
+  surfaceSoft: { r: 241, g: 239, b: 234 },
+  border: { r: 220, g: 216, b: 208 },
+  text: { r: 26, g: 26, b: 26 },
+  muted: { r: 92, g: 92, b: 92 },
+  inactive: { r: 140, g: 140, b: 140 },
+} satisfies Record<string, Rgb>;
+
 function hexToRgb(hex: string): Rgb | null {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   if (!m) return null;
@@ -33,14 +43,6 @@ function hexToRgb(hex: string): Rgb | null {
   };
 }
 
-function mix(a: Rgb, b: Rgb, amount: number): Rgb {
-  return {
-    r: Math.round(a.r + (b.r - a.r) * amount),
-    g: Math.round(a.g + (b.g - a.g) * amount),
-    b: Math.round(a.b + (b.b - a.b) * amount),
-  };
-}
-
 function rgbTriplet(rgb: Rgb): string {
   return `${rgb.r} ${rgb.g} ${rgb.b}`;
 }
@@ -49,70 +51,61 @@ function rgbCss(rgb: Rgb): string {
   return `rgb(${rgb.r} ${rgb.g} ${rgb.b})`;
 }
 
+function applyBaseTheme(target: HTMLElement, accent: Rgb | null) {
+  const active = accent ?? NEUTRAL.text;
+  target.style.setProperty("--color-bg", rgbTriplet(NEUTRAL.bg));
+  target.style.setProperty("--color-surface", rgbTriplet(NEUTRAL.surface));
+  target.style.setProperty("--color-surface-soft", rgbTriplet(NEUTRAL.surfaceSoft));
+  target.style.setProperty("--color-border", rgbTriplet(NEUTRAL.border));
+  target.style.setProperty("--color-text", rgbTriplet(NEUTRAL.text));
+  target.style.setProperty("--color-text-muted", rgbTriplet(NEUTRAL.muted));
+  target.style.setProperty("--color-nav-active", rgbTriplet(active));
+  target.style.setProperty("--color-nav-inactive", rgbTriplet(NEUTRAL.inactive));
+  target.style.setProperty("--bg", rgbCss(NEUTRAL.bg));
+  target.style.setProperty("--surface", "rgba(255, 255, 255, 0.72)");
+  target.style.setProperty("--surface-soft", rgbCss(NEUTRAL.surfaceSoft));
+  target.style.setProperty("--border", rgbCss(NEUTRAL.border));
+  target.style.setProperty("--text", rgbCss(NEUTRAL.text));
+  target.style.setProperty("--text-muted", rgbCss(NEUTRAL.muted));
+  target.style.setProperty("--nav-active", rgbCss(active));
+  target.style.setProperty("--nav-inactive", rgbCss(NEUTRAL.inactive));
+  if (accent) {
+    target.style.setProperty(
+      "--pearl-pink",
+      `rgba(${accent.r}, ${accent.g}, ${accent.b}, 0.14)`,
+    );
+    target.style.setProperty(
+      "--pearl-blue",
+      `rgba(${accent.r}, ${accent.g}, ${accent.b}, 0.08)`,
+    );
+    target.style.setProperty(
+      "--pearl-violet",
+      `rgba(${NEUTRAL.bg.r}, ${NEUTRAL.bg.g}, ${NEUTRAL.bg.b}, 0.5)`,
+    );
+  } else {
+    target.style.setProperty("--pearl-pink", "rgba(0, 0, 0, 0)");
+    target.style.setProperty("--pearl-blue", "rgba(0, 0, 0, 0)");
+    target.style.setProperty("--pearl-violet", "rgba(255, 255, 255, 0.4)");
+  }
+}
+
 export function clearEchoColorTheme(target: HTMLElement): void {
   for (const prop of THEME_PROPS) target.style.removeProperty(prop);
 }
 
 export function applyNeutralEchoTheme(target: HTMLElement): void {
-  target.style.setProperty("--color-bg", "255 255 255");
-  target.style.setProperty("--color-surface", "255 255 255");
-  target.style.setProperty("--color-surface-soft", "245 245 245");
-  target.style.setProperty("--color-border", "210 210 210");
-  target.style.setProperty("--color-text", "0 0 0");
-  target.style.setProperty("--color-text-muted", "82 82 82");
-  target.style.setProperty("--color-nav-active", "0 0 0");
-  target.style.setProperty("--color-nav-inactive", "82 82 82");
-  target.style.setProperty("--bg", "rgb(255 255 255)");
-  target.style.setProperty("--surface", "rgb(255 255 255)");
-  target.style.setProperty("--surface-soft", "rgb(245 245 245)");
-  target.style.setProperty("--border", "rgb(210 210 210)");
-  target.style.setProperty("--text", "rgb(0 0 0)");
-  target.style.setProperty("--text-muted", "rgb(82 82 82)");
-  target.style.setProperty("--nav-active", "rgb(0 0 0)");
-  target.style.setProperty("--nav-inactive", "rgb(82 82 82)");
-  target.style.setProperty("--pearl-pink", "rgba(0, 0, 0, 0)");
-  target.style.setProperty("--pearl-blue", "rgba(0, 0, 0, 0)");
-  target.style.setProperty("--pearl-violet", "rgba(0, 0, 0, 0)");
+  applyBaseTheme(target, null);
 }
 
 export function applyEchoColorTheme(target: HTMLElement, hex: string | null): void {
   if (!hex) {
-    clearEchoColorTheme(target);
+    applyNeutralEchoTheme(target);
     return;
   }
   const accent = hexToRgb(hex);
   if (!accent) {
-    clearEchoColorTheme(target);
+    applyNeutralEchoTheme(target);
     return;
   }
-
-  const white = { r: 255, g: 255, b: 255 };
-  const black = { r: 42, g: 29, b: 20 };
-  const bg = mix(accent, white, 0.72);
-  const surface = mix(accent, white, 0.82);
-  const surfaceSoft = mix(accent, white, 0.55);
-  const border = mix(accent, black, 0.28);
-  const text = mix(accent, black, 0.42);
-  const muted = mix(accent, black, 0.28);
-  const inactive = mix(accent, black, 0.18);
-
-  target.style.setProperty("--color-bg", rgbTriplet(bg));
-  target.style.setProperty("--color-surface", rgbTriplet(surface));
-  target.style.setProperty("--color-surface-soft", rgbTriplet(surfaceSoft));
-  target.style.setProperty("--color-border", rgbTriplet(border));
-  target.style.setProperty("--color-text", rgbTriplet(text));
-  target.style.setProperty("--color-text-muted", rgbTriplet(muted));
-  target.style.setProperty("--color-nav-active", rgbTriplet(accent));
-  target.style.setProperty("--color-nav-inactive", rgbTriplet(inactive));
-  target.style.setProperty("--bg", rgbCss(bg));
-  target.style.setProperty("--surface", rgbCss(surface));
-  target.style.setProperty("--surface-soft", rgbCss(surfaceSoft));
-  target.style.setProperty("--border", rgbCss(border));
-  target.style.setProperty("--text", rgbCss(text));
-  target.style.setProperty("--text-muted", rgbCss(muted));
-  target.style.setProperty("--nav-active", rgbCss(accent));
-  target.style.setProperty("--nav-inactive", rgbCss(inactive));
-  target.style.setProperty("--pearl-pink", `rgba(${accent.r}, ${accent.g}, ${accent.b}, 0.22)`);
-  target.style.setProperty("--pearl-blue", `rgba(${surfaceSoft.r}, ${surfaceSoft.g}, ${surfaceSoft.b}, 0.26)`);
-  target.style.setProperty("--pearl-violet", `rgba(${bg.r}, ${bg.g}, ${bg.b}, 0.34)`);
+  applyBaseTheme(target, accent);
 }

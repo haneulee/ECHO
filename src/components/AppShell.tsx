@@ -44,16 +44,8 @@ type AuthMeResponse = {
 let cachedAuthState: AuthState | undefined;
 let authStateRequest: Promise<AuthState> | null = null;
 
-function applyEchoTheme(echoType: EchoType | null) {
-  if (echoType) {
-    document.documentElement.dataset.echoTheme = echoType;
-  } else {
-    delete document.documentElement.dataset.echoTheme;
-  }
-}
-
-function applyTheme(echoType: EchoType | null, echoColor: string | null) {
-  applyEchoTheme(echoType);
+function applyTheme(_echoType: EchoType | null, echoColor: string | null) {
+  delete document.documentElement.dataset.echoTheme;
   applyEchoColorTheme(document.documentElement, echoColor);
 }
 
@@ -138,7 +130,9 @@ export function AppShell({
     <main
       className={[
         "mx-auto w-full min-w-0 text-text",
-        fullBleed ? "max-w-none overflow-x-visible" : "max-w-7xl overflow-x-clip",
+        fullBleed
+          ? "max-w-none overflow-x-visible"
+          : "max-w-7xl overflow-x-clip",
         hideChrome || fullBleed ? "" : "px-6 sm:px-8 lg:px-12",
         mainPad,
       ].join(" ")}
@@ -156,7 +150,7 @@ export function AppShell({
           src="/brand/gradation.png"
           width={40}
         />
-        <span className="translate-y-[0.08em] font-display text-3xl">Echo</span>
+        <span className="translate-y-[0.04em] font-display text-3xl">Echo</span>
       </Link>
 
       {showHeader ? (

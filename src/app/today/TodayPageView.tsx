@@ -244,8 +244,16 @@ function TodayDataBody() {
     );
   }
 
+  const echoColorTheme =
+    state.kind === "ok" ? (state.data.device?.echoColor ?? null) : null;
+
   return (
-    <AppShell fullBleed hideChrome viewportLocked>
+    <AppShell
+      echoColorTheme={echoColorTheme}
+      fullBleed
+      hideChrome
+      viewportLocked
+    >
       {state.kind === "error" ? (
         <div className="mx-auto max-w-[920px] space-y-4 px-4 py-8">
           <p className="font-body text-sm text-red-900/90">{state.message}</p>
