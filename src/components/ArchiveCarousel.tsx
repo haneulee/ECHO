@@ -141,7 +141,7 @@ export function ArchiveCarousel({ items }: ArchiveCarouselProps) {
 
         <div className="shrink-0 space-y-4 pb-1 pt-2 sm:gap-5 sm:pb-2 sm:pt-3 lg:gap-6 lg:pb-3 lg:pt-4">
           <div className="max-w-xl">
-            <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+            <p className="font-body text-xs uppercase text-text-muted">
               {new Date(`${activeMemory.date}T12:00:00`).toLocaleDateString(
                 "en",
                 {
@@ -171,7 +171,7 @@ export function ArchiveCarousel({ items }: ArchiveCarouselProps) {
               />
             </div>
           </div>
-          <div className="flex justify-center font-body text-xs tabular-nums tracking-[0.2em] text-text-muted">
+          <div className="flex justify-center font-body text-xs tabular-nums text-text-muted">
             {String(activeIndex + 1).padStart(2, "0")} /{" "}
             {String(items.length).padStart(2, "0")}
           </div>

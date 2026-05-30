@@ -10,7 +10,7 @@ type EvolutionCardProps = {
 export function EvolutionCard({ evolution, echoName }: EvolutionCardProps) {
   return (
     <article className="py-6">
-      <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+      <p className="font-body text-xs uppercase text-text-muted">
         {evolutionCard.eyebrow(evolution.sourceEchoHash)}
       </p>
       <p className="mt-4 font-display text-[32px] leading-[38px] tracking-[-0.02em] lg:text-[40px] lg:leading-[46px]">

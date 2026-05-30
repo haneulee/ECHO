@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
+import { MainHomeView } from "@/app/main/MainHomeView";
 import { getSession } from "@/lib/auth/session";
 import { isLocalMockMode } from "@/lib/localMockMode";
 import { getProfileDeviceContext } from "@/lib/profileDeviceService";
@@ -38,7 +38,7 @@ function ownEchoVisualization(
     seed,
     density: Math.max(0.34, device.currentState.densityBias),
     brightness: Math.max(0.6, device.currentState.brightness),
-    movement: 0.2,
+    movement: 0.28,
   };
 }
 
@@ -74,15 +74,14 @@ export default async function MainPage() {
   if (!ctx) {
     return (
       <AppShell
-        eyebrow={profileHero.eyebrow}
         intro={profileHero.intro}
-        title={profileNoDevice.title}
+        pageTitle={profileNoDevice.title}
       >
         <p className="max-w-lg font-body text-sm leading-6 text-text/80">
           {profileNoDevice.body}
         </p>
         <Link
-          className="mt-8 inline-flex rounded-full bg-nav-active px-6 py-3 font-body text-sm text-white transition hover:opacity-90"
+          className="glass-btn-primary mt-8 inline-flex rounded-full px-6 py-3 font-body text-sm"
           href={profileNoDevice.ctaHref}
         >
           {profileNoDevice.ctaLabel}
@@ -102,62 +101,16 @@ export default async function MainPage() {
     : [ownEchoEncounter(echoDevice)];
   const visualSettings =
     hasTodayEncounters && todayMemory
-      ? todayMemory.visualization
+      ? { ...todayMemory.visualization, movement: 0.32 }
       : ownEchoVisualization(echoDevice);
 
   return (
-    <AppShell
-      echoColorTheme={echoDevice.echoColor}
-      hideChrome
-      viewportLocked
-    >
-      <section className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col items-center justify-between pt-16 text-center sm:pt-14 lg:pt-8">
-        <h1 className="shrink-0 font-display text-[clamp(1rem,7vw,3rem)] leading-[0.9] tracking-[-0.055em]">
-          Your daily encounters
-        </h1>
-        <div className="grid min-h-0 flex-1 place-items-center py-2 sm:py-3 lg:py-1">
-          <AbstractMemoryVisual
-            composition={visualComposition}
-            encounters={visualEncounters}
-            gradientOnly
-            size={320}
-            visualId={`main-home-${echoDevice.id}`}
-            {...visualSettings}
-          />
-        </div>
-        <div className="shrink-0 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:pb-[max(3rem,env(safe-area-inset-bottom))] lg:pb-[max(3.75rem,env(safe-area-inset-bottom))]">
-          <div>
-            <p className="font-display text-[clamp(0.8rem,5vw,2rem)] leading-none tracking-[-0.045em]">
-              {echoDevice.echoName}
-            </p>
-            <p
-              className="mx-auto mt-2 h-2 w-2 rounded-full"
-              style={{ backgroundColor: echoDevice.echoColor }}
-              aria-hidden
-            />
-          </div>
-          {!hasTodayEncounters ? (
-            <p className="mt-3 max-w-sm font-body text-sm leading-6 text-text-muted">
-              No one has crossed its field yet, so today holds only your
-              Echo&apos;s own color.
-            </p>
-          ) : null}
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Link
-              className="glass-btn-primary rounded-full px-6 py-3 font-body text-sm"
-              href="/overview"
-            >
-              Overview
-            </Link>
-            <Link
-              className="glass-btn-secondary rounded-full px-6 py-3 font-body text-sm"
-              href="/archive"
-            >
-              Archive
-            </Link>
-          </div>
-        </div>
-      </section>
-    </AppShell>
+    <MainHomeView
+      echoDevice={echoDevice}
+      hasTodayEncounters={hasTodayEncounters}
+      visualComposition={visualComposition}
+      visualEncounters={visualEncounters}
+      visualSettings={visualSettings}
+    />
   );
 }

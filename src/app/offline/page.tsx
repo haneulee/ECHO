@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function OfflinePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-16 text-text">
-      <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+      <p className="font-body text-xs uppercase text-text-muted">
         Echo
       </p>
       <h1 className="mt-4 font-display text-[32px] leading-9 tracking-[-0.03em] sm:text-[40px] sm:leading-[44px]">
@@ -25,13 +25,13 @@ export default function OfflinePage() {
       </p>
       <div className="mt-10 flex flex-wrap gap-3">
         <Link
-          className="rounded-full bg-nav-active px-6 py-3 font-body text-sm text-white transition hover:opacity-90"
+          className="glass-btn-primary rounded-full px-6 py-3 font-body text-sm"
           href="/"
         >
           Try again
         </Link>
         <Link
-          className="rounded-full border border-border bg-surface/65 px-6 py-3 font-body text-sm text-text transition hover:bg-surface"
+          className="glass-btn-secondary rounded-full px-6 py-3 font-body text-sm"
           href="/api/auth/offline-exit"
         >
           Sign out &amp; go home

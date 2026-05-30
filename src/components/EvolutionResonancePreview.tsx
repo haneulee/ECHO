@@ -94,7 +94,7 @@ export function EvolutionResonancePreview({
     <article className="grid gap-10">
       <div className="grid gap-8 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
         <div>
-          <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+          <p className="font-body text-xs uppercase text-text-muted">
             Before
           </p>
           <p className="mt-2 font-body text-sm text-text-muted">
@@ -110,7 +110,7 @@ export function EvolutionResonancePreview({
           →
         </div>
         <div>
-          <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+          <p className="font-body text-xs uppercase text-text-muted">
             After
           </p>
           <p className="mt-2 font-body text-sm text-text-muted">
@@ -125,7 +125,7 @@ export function EvolutionResonancePreview({
       </div>
 
       <div className="max-w-xl">
-        <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+        <p className="font-body text-xs uppercase text-text-muted">
           Tonal shift
         </p>
         <div className="mt-5 grid grid-cols-[auto_1fr_auto] items-center gap-4 font-display text-2xl text-text">

@@ -51,7 +51,7 @@ export function EchoPersonalitySliders({
 
   return (
     <section className="mt-12 max-w-2xl">
-      <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+      <p className="font-body text-xs uppercase text-text-muted">
         Twisting the voice
       </p>
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
@@ -60,7 +60,7 @@ export function EchoPersonalitySliders({
             className="group relative min-h-44 overflow-hidden rounded-[28px] bg-[#26231F]/[0.045] p-4"
             key={trait.id}
           >
-            <p className="font-body text-xs uppercase tracking-[0.22em] text-text-muted">
+            <p className="font-body text-xs uppercase text-text-muted">
               {trait.label}
             </p>
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">

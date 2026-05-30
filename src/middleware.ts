@@ -60,6 +60,7 @@ export async function middleware(request: NextRequest) {
     "/evolution",
     "/onboarding",
     "/sound-test",
+    "/info",
   ];
   const isProtected = protectedPrefixes.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
@@ -86,6 +87,7 @@ export const config = {
     "/evolution/:path*",
     "/onboarding/:path*",
     "/sound-test/:path*",
+    "/info/:path*",
     "/api/today",
     "/api/archive",
     "/api/me/echo-device",

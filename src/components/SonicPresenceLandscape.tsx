@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 
@@ -11,16 +10,17 @@ import {
 import type { EchoDevice, Encounter } from "@/lib/types";
 
 const DEFAULT_ECHO_ACCENT = "#FF9F6E";
-const SCENE_FOG = 0xf7f4ee;
+const SCENE_FOG = 0xfcfaf6;
 
 type SonicPresenceLandscapeProps = {
-  backHref?: string;
   device: EchoDevice | null;
   encounters: Encounter[];
   title: ReactNode;
   soundControl?: ReactNode;
   onSelectEncounter?: (encounter: Encounter) => void;
   onSelectSelf?: () => void;
+  playingEncounterId?: string | null;
+  playingSelf?: boolean;
 };
 
 type PresenceBody = {
@@ -209,6 +209,9 @@ function makeOrbit(radius: number, color: string) {
 function makeAbstractGround() {
   const group = new THREE.Group();
   const positions: number[] = [];
+  const colors: number[] = [];
+  const fogColor = new THREE.Color(SCENE_FOG);
+  const dotColor = new THREE.Color(0xc8c4bc);
   const columns = 260;
   const rows = 168;
   for (let row = 0; row < rows; row += 1) {
@@ -219,6 +222,10 @@ function makeAbstractGround() {
       const z = 11 - v * 40;
       const y = groundYAt(x, z);
       positions.push(x, y, z);
+      const dist = Math.hypot(x * 0.9, z + 4);
+      const fade = Math.max(0, Math.min(1, 1 - (dist - 14) / 16));
+      const mixed = dotColor.clone().lerp(fogColor, 1 - fade);
+      colors.push(mixed.r, mixed.g, mixed.b);
     }
   }
   const geometry = new THREE.BufferGeometry();
@@ -226,18 +233,19 @@ function makeAbstractGround() {
     "position",
     new THREE.Float32BufferAttribute(positions, 3),
   );
+  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   const dotTexture = makeDotTexture();
   const points = new THREE.Points(
     geometry,
     new THREE.PointsMaterial({
-      color: 0xc8c4bc,
       map: dotTexture,
       alphaMap: dotTexture,
       transparent: true,
-      opacity: 0.34,
+      opacity: 0.38,
       size: 0.14,
       depthWrite: false,
       sizeAttenuation: true,
+      vertexColors: true,
     }),
   );
   group.add(points);
@@ -257,7 +265,7 @@ function makeAmbientMotes(accentHex: string) {
   ];
   for (let index = 0; index < 88; index += 1) {
     const size = 0.03 + hashUnit(`mote:${index}:s`) * 0.08;
-    const geometry = new THREE.SphereGeometry(size, 12, 12);
+    const geometry = new THREE.SphereGeometry(size, 20, 20);
     const material = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color("#fafaf8"),
       emissive: accent,
@@ -303,17 +311,37 @@ function disposeObject(object: THREE.Object3D) {
   });
 }
 
+function formatEncounterWindow(encounter: Encounter) {
+  const format = new Intl.DateTimeFormat("en", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const start = new Date(encounter.startedAt);
+  const end = new Date(encounter.endedAt);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return "Time unknown";
+  }
+  return `${format.format(start)} – ${format.format(end)}`;
+}
+
 export function SonicPresenceLandscape({
-  backHref = "/main",
   device,
   encounters,
   title,
   soundControl,
   onSelectEncounter,
   onSelectSelf,
+  playingEncounterId = null,
+  playingSelf = false,
 }: SonicPresenceLandscapeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [fontReady, setFontReady] = useState(false);
+  const [hoveredEncounter, setHoveredEncounter] = useState<Encounter | null>(null);
+  const playingEncounterIdRef = useRef(playingEncounterId);
+  const playingSelfRef = useRef(playingSelf);
+  playingEncounterIdRef.current = playingEncounterId;
+  playingSelfRef.current = playingSelf;
 
   useEffect(() => {
     let cancelled = false;
@@ -560,12 +588,37 @@ export function SonicPresenceLandscape({
     let zoom = 1;
     let isDragging = false;
     let lastTouchDistance: number | null = null;
+    const pickHover = (event: PointerEvent) => {
+      const rect = container.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObjects(
+        [centerShell, ...bodies.map((body) => body.shell)],
+        false,
+      )[0];
+      if (!hit) {
+        container.style.cursor = isDragging ? "grabbing" : "grab";
+        setHoveredEncounter(null);
+        return;
+      }
+      if (hit.object === centerShell) {
+        container.style.cursor = "pointer";
+        setHoveredEncounter(null);
+        return;
+      }
+      const body = bodies.find((item) => item.shell === hit.object);
+      container.style.cursor = "pointer";
+      setHoveredEncounter(body?.encounter ?? null);
+    };
+
     const onPointerMove = (event: PointerEvent) => {
       const rect = container.getBoundingClientRect();
       if (!viewport.isMobile) {
         hoverX = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
         hoverY = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
       }
+      if (!isDragging) pickHover(event);
       if (isDragging) {
         yaw += event.movementX * (viewport.isMobile ? 0.014 : 0.008);
         pitch = Math.max(
@@ -681,27 +734,44 @@ export function SonicPresenceLandscape({
       ground.position.z = Math.sin(t * 0.12) * 0.24;
       ground.rotation.y = Math.sin(t * 0.06) * 0.025;
       motes.rotation.y = Math.sin(t * 0.06) * 0.03;
-      const centerBreathe = 1 + Math.sin(t * 1.1) * 0.06;
+      const centerPlaying = playingSelfRef.current;
+      const centerPulse = centerPlaying ? Math.sin(t * 5.5) * 0.12 : 0;
+      const centerBreathe = 1 + Math.sin(t * 1.1) * 0.06 + centerPulse;
       centerShell.scale.setScalar(centerBreathe);
       centerCore.scale.setScalar(0.46 * centerBreathe);
       centerShell.rotation.y = t * 0.05;
       centerCore.rotation.y = -t * 0.07;
-      centerCoreMaterial.emissiveIntensity =
-        0.38 + Math.sin(t * 1.35) * 0.16;
+      centerCoreMaterial.emissiveIntensity = centerPlaying
+        ? 0.62 + Math.sin(t * 5.5) * 0.28
+        : 0.38 + Math.sin(t * 1.35) * 0.16;
+      if (centerPlaying) {
+        centerGroup.position.y = 0.25 + Math.sin(t * 5.5) * 0.08;
+      } else {
+        centerGroup.position.y = 0.25;
+      }
       stars.rotation.y = t * 0.018;
 
       for (const body of bodies) {
+        const isPlaying =
+          playingEncounterIdRef.current === body.encounter.id;
+        const playPulse = isPlaying ? Math.sin(t * 5.5 + body.phase) * 0.14 : 0;
         const drift = t * body.driftSpeed + body.phase;
         body.anchor.position.x =
           body.base.x + Math.cos(drift) * body.driftRadius;
         body.anchor.position.y =
-          body.base.y + Math.sin(t * body.bob + body.phase) * 0.42;
+          body.base.y +
+          Math.sin(t * body.bob + body.phase) * 0.42 +
+          (isPlaying ? Math.sin(t * 5.5 + body.phase) * 0.2 : 0);
         body.anchor.position.z =
           body.base.z + Math.sin(drift * body.driftTilt) * body.driftRadius * 0.75;
         body.anchor.rotation.y += 0.004 * body.spin;
-        const peerBreathe = 1 + Math.sin(t * 1.2 + body.phase) * 0.05;
+        const peerBreathe = 1 + Math.sin(t * 1.2 + body.phase) * 0.05 + playPulse;
         body.shell.scale.setScalar(body.baseScale * peerBreathe);
         body.core.scale.setScalar(body.baseScale * 0.58 * peerBreathe);
+        const coreMat = body.core.material as THREE.MeshStandardMaterial;
+        coreMat.emissiveIntensity = isPlaying
+          ? 0.78 + Math.sin(t * 5.5) * 0.22
+          : 0.5;
         body.shell.rotation.y += 0.004 * body.spin;
         body.core.rotation.y += 0.006 * body.spin;
         body.halo.material.rotation += 0.002 * body.spin;
@@ -738,6 +808,8 @@ export function SonicPresenceLandscape({
     fontReady,
     onSelectEncounter,
     onSelectSelf,
+    playingEncounterId,
+    playingSelf,
   ]);
 
   return (
@@ -748,12 +820,16 @@ export function SonicPresenceLandscape({
         aria-label="A three-dimensional sonic landscape of today's co-presence"
       />
 
-      <Link
-        className="glass-panel absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-40 rounded-full px-4 py-2 font-body text-sm text-text transition hover:opacity-90 sm:right-6 lg:right-8"
-        href={backHref}
-      >
-        back
-      </Link>
+      {hoveredEncounter ? (
+        <div className="glass-panel pointer-events-none absolute left-1/2 top-[max(7.5rem,calc(env(safe-area-inset-top)+6.5rem))] z-30 -translate-x-1/2 rounded-2xl px-4 py-2 text-center">
+          <p className="font-display text-lg tracking-[-0.04em]">
+            {encounterDisplayName(hoveredEncounter)}
+          </p>
+          <p className="mt-1 font-body text-xs text-text-muted">
+            {formatEncounterWindow(hoveredEncounter)}
+          </p>
+        </div>
+      ) : null}
 
       <div className="pointer-events-none absolute inset-x-0 top-[max(4.25rem,calc(env(safe-area-inset-top)+3.75rem))] z-20 flex justify-center px-6 text-center sm:top-[max(4.75rem,calc(env(safe-area-inset-top)+4.25rem))] sm:px-24 lg:top-[max(4rem,calc(env(safe-area-inset-top)+3.5rem))]">
         <h1 className="max-w-[min(86vw,56rem)] font-display text-[clamp(2.35rem,7vw,5.2rem)] leading-[0.9] tracking-[-0.055em]">

@@ -31,7 +31,7 @@ export function MemoryCard({ memory, encounters }: MemoryCardProps) {
       </div>
 
       <div className="relative z-10 flex min-h-[360px] flex-col justify-end">
-        <p className="font-body text-xs uppercase tracking-[0.24em] text-text-muted">
+        <p className="font-body text-xs uppercase text-text-muted">
           {new Date(memory.date).toLocaleDateString("en", {
             month: "short",
             day: "numeric",

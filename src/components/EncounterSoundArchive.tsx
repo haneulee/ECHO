@@ -19,7 +19,7 @@ export function EncounterSoundArchive({
     <section className="mt-20">
       <div className="mb-8 flex items-end justify-between gap-6">
         <div>
-          <p className="font-body text-xs uppercase tracking-[0.32em] text-text-muted">
+          <p className="font-body text-xs uppercase text-text-muted">
             {encounterArchive.eyebrow}
           </p>
           <h2 className="mt-3 font-display text-[40px] leading-[44px] tracking-[-0.03em] lg:text-[64px] lg:leading-[68px]">
@@ -67,7 +67,7 @@ export function EncounterSoundArchive({
                     {encounterDisplayName(encounter)}
                   </p>
                 </div>
-                <p className="mt-1 font-body text-xs uppercase tracking-[0.22em] text-text-muted">
+                <p className="mt-1 font-body text-xs uppercase text-text-muted">
                   {echoTypeLabels[encounter.otherEchoType]}
                 </p>
                 <p className="mt-3 max-w-56 font-body text-sm leading-5 text-text-muted">

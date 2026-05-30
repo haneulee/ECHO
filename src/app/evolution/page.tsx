@@ -103,7 +103,7 @@ function EvolutionStudy({
     <section className="grid gap-12 lg:grid-cols-[0.34fr_0.66fr] lg:items-start">
       <aside className="space-y-10">
         <div>
-          <p className="font-body text-xs uppercase tracking-[0.34em] text-text-muted">
+          <p className="font-body text-xs uppercase text-text-muted">
             Echo evolution
           </p>
           <h2 className="mt-6 max-w-xs font-display text-[44px] leading-[48px] tracking-[-0.04em] sm:text-[56px] sm:leading-[60px]">
@@ -115,7 +115,7 @@ function EvolutionStudy({
           </p>
         </div>
 
-        <div className="grid gap-6 font-body text-xs uppercase tracking-[0.22em] text-text-muted">
+        <div className="grid gap-6 font-body text-xs uppercase text-text-muted">
           <div className="flex items-center gap-4">
             <span className="grid h-7 w-7 place-items-center rounded-full border border-text/30 text-[11px] text-text">
               i
@@ -154,7 +154,7 @@ function EvolutionStudy({
       <div className="grid gap-10">
         <div className="grid gap-8 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
           <div>
-            <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+            <p className="font-body text-xs uppercase text-text-muted">
               Before
             </p>
             <p className="mt-2 font-body text-sm text-text-muted">
@@ -166,7 +166,7 @@ function EvolutionStudy({
             →
           </div>
           <div>
-            <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+            <p className="font-body text-xs uppercase text-text-muted">
               After
             </p>
             <p className="mt-2 font-body text-sm text-text-muted">
@@ -177,7 +177,7 @@ function EvolutionStudy({
         </div>
 
         <div className="max-w-xl">
-          <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+          <p className="font-body text-xs uppercase text-text-muted">
             Tonal shift
           </p>
           <div className="mt-5 grid grid-cols-[auto_1fr_auto] items-center gap-4 font-display text-2xl text-text">
@@ -205,9 +205,8 @@ export default async function EvolutionPage() {
   if (!ctx) {
     return (
       <AppShell
-        eyebrow="Echo evolution"
         intro="When Echo stays near others, parts of their sound become part of its own."
-        title="Resonance changes your Echo."
+        pageTitle="Resonance changes your Echo."
       >
         <p className="max-w-lg font-body text-sm text-text/80">
           No device for this user yet.

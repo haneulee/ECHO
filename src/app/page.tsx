@@ -25,7 +25,7 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-16 text-text">
-      <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+      <p className="font-body text-xs uppercase text-text-muted">
         Echo companion
       </p>
       <h1 className="mt-4 max-w-xl font-display text-[44px] leading-[46px] tracking-[-0.04em] sm:text-[64px] sm:leading-[64px]">
@@ -52,13 +52,13 @@ export default async function HomePage() {
       </div>
       <div className="mt-10 flex flex-wrap gap-3">
         <Link
-          className="rounded-full bg-nav-active px-6 py-3 font-body text-sm text-white transition hover:opacity-90"
+          className="glass-btn-primary rounded-full px-6 py-3 font-body text-sm"
           href="/login"
         >
           Enter
         </Link>
         <Link
-          className="rounded-full border border-border bg-surface/65 px-6 py-3 font-body text-sm text-text transition hover:bg-surface"
+          className="glass-btn-secondary rounded-full px-6 py-3 font-body text-sm"
           href="/signup"
         >
           Begin with Echo

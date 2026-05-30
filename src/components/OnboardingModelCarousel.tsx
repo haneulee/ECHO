@@ -205,7 +205,7 @@ export function OnboardingModelCarousel({
         <div className="shrink-0 px-4 pb-2 pt-0 sm:pb-3 lg:pb-4">
           <div className="mx-auto flex w-full max-w-xl flex-col gap-2">
             <div className="max-w-xl">
-              <p className="h-4 font-body text-xs uppercase leading-4 tracking-[0.28em] text-text-muted">
+              <p className="h-4 font-body text-xs uppercase leading-4 text-text-muted">
                 Choose your color
               </p>
               <h2 className="mt-2 flex min-h-[3rem] items-center font-display text-[clamp(1.5rem,6vw,2.75rem)] leading-[1.1] tracking-[-0.04em] sm:mt-3 sm:min-h-[3.25rem] sm:text-[40px] sm:leading-[44px] lg:min-h-[3.5rem] lg:text-[clamp(2.25rem,4vw,4.25rem)] lg:leading-[1.05]">
@@ -240,7 +240,7 @@ export function OnboardingModelCarousel({
             </div>
           </div>
 
-          <div className="mt-3 flex justify-center font-body text-xs tabular-nums tracking-[0.2em] text-text-muted sm:mt-4">
+          <div className="mt-3 flex justify-center font-body text-xs tabular-nums text-text-muted sm:mt-4">
             {String(activeIndex + 1).padStart(2, "0")} /{" "}
             {String(ONBOARDING_MODEL_ORDER.length).padStart(2, "0")}
           </div>

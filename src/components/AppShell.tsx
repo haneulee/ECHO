@@ -5,11 +5,12 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 
+import { AppAccountMenu } from "@/components/AppAccountMenu";
 import {
   applyEchoColorTheme,
   applyNeutralEchoTheme,
 } from "@/lib/echoThemeColor";
-import type { EchoType } from "@/lib/types";
+import type { EchoDevice, EchoType } from "@/lib/types";
 
 type AppShellProps = {
   children: ReactNode;
@@ -27,6 +28,13 @@ type AppShellProps = {
   echoColorTheme?: string | null;
   /** Keep this page neutral even when the signed-in user has a saved Echo color. */
   neutralTheme?: boolean;
+  echoDevice?: EchoDevice | null;
+  /** Show account menu (settings, info, logout). */
+  showAccountMenu?: boolean;
+  /** When set, shows a back link beside the menu (top right). */
+  backHref?: string | null;
+  /** Shown on the same row as the logo (overrides large header title). */
+  pageTitle?: ReactNode;
 };
 
 type AuthState = {
@@ -84,7 +92,12 @@ export function AppShell({
   echoTheme = null,
   echoColorTheme = null,
   neutralTheme = false,
+  echoDevice = null,
+  showAccountMenu = true,
+  backHref = null,
+  pageTitle = null,
 }: AppShellProps) {
+  const inlineTitle = pageTitle ?? title ?? null;
   useEffect(() => {
     let cancelled = false;
     if (neutralTheme) {
@@ -124,7 +137,7 @@ export function AppShell({
     : viewportLocked
       ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(5.5rem,calc(env(safe-area-inset-top)+5rem))] lg:pb-10 lg:pt-28"
       : "min-h-screen pb-24 pt-[max(5.5rem,calc(env(safe-area-inset-top)+5rem))] lg:pb-20 lg:pt-28";
-  const showHeader = !hideChrome && Boolean(eyebrow || title || intro);
+  const showHeader = !hideChrome && Boolean(eyebrow || intro);
 
   return (
     <main
@@ -137,21 +150,49 @@ export function AppShell({
         mainPad,
       ].join(" ")}
     >
-      <Link
-        aria-label="Echo home"
-        className="fixed left-4 top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex items-center justify-center sm:left-6 lg:left-8"
-        href="/main"
-      >
-        <Image
-          alt=""
-          aria-hidden
-          className="h-15 w-15 shrink-0 rounded-full object-cover"
-          height={40}
-          src="/brand/gradation.png"
-          width={40}
-        />
-        <span className="translate-y-[0.04em] font-display text-3xl">Echo</span>
-      </Link>
+      <div className="fixed left-4 right-[min(11rem,34vw)] top-[max(1rem,env(safe-area-inset-top))] z-50 w-full flex min-w-0 items-center gap-3 sm:left-6 sm:right-[12rem] sm:gap-3.5 lg:left-8">
+        <Link
+          aria-label="Echo home"
+          className="shell-brand inline-flex shrink-0 items-center gap-2.5"
+          href="/main"
+        >
+          <Image
+            alt=""
+            aria-hidden
+            className="h-9 w-9 shrink-0 object-contain"
+            height={36}
+            src="/brand/gradation.png"
+            width={36}
+          />
+          <span className="font-display text-[1.35rem] leading-none tracking-[-0.03em]">
+            Echo
+          </span>
+        </Link>
+        {inlineTitle ? (
+          <>
+            <span aria-hidden className="shell-title-sep">
+              /
+            </span>
+            <h1 className="shell-page-title min-w-0">{inlineTitle}</h1>
+          </>
+        ) : null}
+      </div>
+      {showAccountMenu || backHref ? (
+        <div className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 flex items-center gap-2 sm:right-6 lg:right-8">
+          {backHref ? (
+            <Link
+              aria-label="Go back"
+              className="glass-panel glass-interactive grid h-10 w-10 place-items-center rounded-full text-text"
+              href={backHref}
+            >
+              <span aria-hidden className="font-display text-2xl leading-none">
+                ‹
+              </span>
+            </Link>
+          ) : null}
+          {showAccountMenu ? <AppAccountMenu device={echoDevice} /> : null}
+        </div>
+      ) : null}
 
       {showHeader ? (
         <header
@@ -163,21 +204,9 @@ export function AppShell({
         >
           <div>
             {eyebrow ? (
-              <p className="mb-3 font-body text-[11px] uppercase tracking-[0.36em] text-text-muted">
+              <p className="mb-3 font-body text-[11px] uppercase text-text-muted">
                 {eyebrow}
               </p>
-            ) : null}
-            {title ? (
-              <h1
-                className={[
-                  "max-w-3xl font-display tracking-[-0.035em]",
-                  viewportLocked
-                    ? "text-[32px] leading-[35px] sm:text-[42px] sm:leading-[45px] lg:text-[50px] lg:leading-[52px]"
-                    : "text-[42px] leading-[44px] sm:text-[58px] sm:leading-[60px] lg:text-[76px] lg:leading-[76px]",
-                ].join(" ")}
-              >
-                {title}
-              </h1>
             ) : null}
           </div>
           {intro ? (

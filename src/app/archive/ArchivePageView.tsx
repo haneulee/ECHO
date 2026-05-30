@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { NavigateWithLoader } from "@/components/NavigateWithLoader";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type ArchiveCarouselItem } from "@/components/ArchiveCarousel";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
@@ -9,7 +11,7 @@ import { AppShell } from "@/components/AppShell";
 import { PageLoading } from "@/components/PageLoading";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import type { ArchiveApiResponse } from "@/lib/archiveApiTypes";
-import { archiveCarousel, archiveHero } from "@/lib/uiPoetics";
+import { archiveCarousel, archiveHero, overviewLabels } from "@/lib/uiPoetics";
 
 type LoadState =
   | { kind: "loading" }
@@ -63,15 +65,9 @@ export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) 
     <section className="hidden min-h-[calc(100dvh-8rem)] grid-rows-[1fr_auto] lg:grid">
       <div className="grid min-h-0 grid-cols-[0.28fr_0.44fr_0.28fr] items-center gap-10">
         <aside className="self-center">
-          <p className="font-body text-xs uppercase tracking-[0.34em] text-text-muted">
-            {archiveHero.eyebrow}
-          </p>
-          <h1 className="mt-6 max-w-xs font-display text-[56px] leading-[58px] tracking-[-0.04em]">
+          <h1 className="max-w-xs font-display text-[56px] leading-[58px] tracking-[-0.04em]">
             {archiveHero.title}
           </h1>
-          <p className="mt-7 max-w-xs font-body text-sm leading-6 text-text-muted">
-            {archiveHero.intro}
-          </p>
           <span className="mt-10 block h-px w-12 bg-text/20" />
         </aside>
 
@@ -101,7 +97,7 @@ export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) 
 
         <aside className="self-center justify-self-end">
           <div className="max-w-56">
-            <p className="font-body text-xs uppercase tracking-[0.24em] text-text-muted">
+            <p className="font-body text-xs uppercase text-text-muted">
               {memoryDate(activeMemory.date, "long")}
             </p>
             <p className="mt-6 max-w-xs font-display text-[42px] leading-[44px] tracking-[-0.04em]">
@@ -110,7 +106,7 @@ export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) 
             <span className="my-8 block h-px w-12 bg-text/15" />
             <div className="space-y-6 font-body text-sm text-text-muted">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em]">
+                <p className="text-xs uppercase">
                   The air changed
                 </p>
                 <p className="mt-1 text-text">{encounterWindow(activeItem)}</p>
@@ -123,7 +119,7 @@ export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) 
       <footer className="border-t border-text/10 pt-5">
         <div className="grid grid-cols-[1fr_auto] items-start gap-8">
           <div>
-            <p className="mb-4 font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+            <p className="mb-4 font-body text-xs uppercase text-text-muted">
               Recent traces
             </p>
             <div className="grid max-w-4xl grid-cols-3 gap-8">
@@ -162,25 +158,10 @@ export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) 
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button
-              aria-label="Previous memory"
-              className="grid h-12 w-12 place-items-center rounded-full border border-text/10 text-xl text-text-muted transition hover:text-text disabled:opacity-30"
-              disabled={activeIndex === 0}
-              onClick={() => move(-1)}
-              type="button"
-            >
-              ←
-            </button>
-            <button
-              aria-label="Next memory"
-              className="grid h-12 w-12 place-items-center rounded-full border border-text/10 text-xl text-text-muted transition hover:text-text disabled:opacity-30"
-              disabled={activeIndex === items.length - 1}
-              onClick={() => move(1)}
-              type="button"
-            >
-              →
-            </button>
+          <div className="flex items-center gap-3 font-body text-xs text-text-muted">
+            <span className="tabular-nums">
+              {activeIndex + 1} / {items.length}
+            </span>
           </div>
         </div>
       </footer>
@@ -188,112 +169,198 @@ export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) 
   );
 }
 
+const STAGE = {
+  mobile: { visualSize: 288 },
+  desktop: { visualSize: 480 },
+} as const;
+
+function getStageConfig(isMobile: boolean) {
+  return isMobile ? STAGE.mobile : STAGE.desktop;
+}
+
+function memorySlotTransform(offset: number, isMobile: boolean) {
+  if (isMobile) {
+    switch (offset) {
+      case -1:
+        return "translate(-50%, 0) translate(-47vw, -0.5vh) rotate(-10deg)";
+      case 1:
+        return "translate(-50%, 0) translate(47vw, -0.5vh) rotate(10deg)";
+      default:
+        return "translate(-50%, 0) translate(0, -30vh) rotate(0deg)";
+    }
+  }
+  switch (offset) {
+    case -1:
+      return "translate(-50%, 0) translate(-44vw, -0.5vh) rotate(-10deg)";
+    case 1:
+      return "translate(-50%, 0) translate(44vw, -0.5vh) rotate(10deg)";
+    default:
+      return "translate(-50%, 0) translate(0, -34vh) rotate(0deg)";
+  }
+}
+
+/** Small horizontal movement switches memories. */
+const MEMORY_DRAG_THRESHOLD_PX = 4;
+
+function isMemoryDragBlockedTarget(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    Boolean(
+      target.closest(
+        "a, button, input, textarea, select, label, [data-memory-no-drag]",
+      ),
+    )
+  );
+}
+
 function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const pointerStartX = useRef<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const stageConfig = getStageConfig(isMobile);
+  const activeItem = items[activeIndex]!;
+  const activeMemory = activeItem.memory;
   const visibleItems = items
     .map((item, index) => ({ item, index, offset: index - activeIndex }))
-    .filter(({ offset }) => Math.abs(offset) <= 2);
+    .filter(({ offset }) => Math.abs(offset) <= 1);
 
-  function move(delta: number) {
+  const move = useCallback((delta: number) => {
     setActiveIndex((current) =>
       Math.min(items.length - 1, Math.max(0, current + delta)),
     );
-  }
+  }, [items.length]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "ArrowLeft") move(-1);
+      if (event.key === "ArrowRight") move(1);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [move]);
+
+  const finishPointerDrag = useCallback(
+    (clientX: number) => {
+      const start = pointerStartX.current;
+      pointerStartX.current = null;
+      setIsDragging(false);
+      if (start == null) return;
+      const dx = clientX - start;
+      if (dx > MEMORY_DRAG_THRESHOLD_PX) move(-1);
+      else if (dx < -MEMORY_DRAG_THRESHOLD_PX) move(1);
+    },
+    [move],
+  );
+
+  const beginPointerDrag = useCallback(
+    (clientX: number) => {
+      pointerStartX.current = clientX;
+      setIsDragging(true);
+
+      const endDrag = (event: PointerEvent) => {
+        finishPointerDrag(event.clientX);
+        window.removeEventListener("pointerup", endDrag);
+        window.removeEventListener("pointercancel", endDrag);
+      };
+
+      window.addEventListener("pointerup", endDrag);
+      window.addEventListener("pointercancel", endDrag);
+    },
+    [finishPointerDrag],
+  );
 
   return (
-    <section className="mx-auto flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden">
-      <div className="relative min-h-0 w-full flex-1 overflow-hidden">
-        <div className="absolute inset-0 grid place-items-center overflow-visible">
-          <div className="relative h-full max-h-[min(68dvh,42rem)] min-h-[25rem] w-[min(84vw,38rem)] overflow-visible">
+    <section
+      aria-label="Sound memories"
+      className={[
+        "memory-stage",
+        isDragging ? "memory-stage--dragging" : "",
+      ].join(" ")}
+      onPointerDown={(event) => {
+        if (event.button !== 0 || isMemoryDragBlockedTarget(event.target)) return;
+        beginPointerDrag(event.clientX);
+      }}
+    >
+      <div className="memory-stage-orbit">
         {visibleItems
           .slice()
           .reverse()
           .map(({ item, offset }) => {
             const isActive = offset === 0;
-            const distance = Math.abs(offset);
-            const x = offset * 72;
-            const y = distance * 12;
-            const scale = 1 - distance * 0.08;
             const memory = item.memory;
-          return (
-            <article
+            return (
+              <article
                 aria-hidden={!isActive}
                 className={[
-                  "absolute inset-0 grid place-items-center overflow-visible transition duration-300",
-                  isActive ? "z-30" : "pointer-events-none opacity-65",
+                  "memory-stage-card memory-stage-card--orbit",
+                  isActive ? "memory-stage-card--active" : "memory-stage-card--side",
                 ].join(" ")}
-              key={memory.id}
+                key={memory.id}
                 style={{
-                  transform: `translateX(${x}%) translateY(${y}px) scale(${scale})`,
-                  zIndex: 30 - distance,
+                  transform: memorySlotTransform(offset, isMobile),
+                  zIndex: isActive ? 15 : 8 - Math.abs(offset),
                 }}
-            >
-                <div className="grid h-full w-full place-items-center overflow-visible">
+              >
+                <div className="memory-stage-visual">
                   <AbstractMemoryVisual
                     bleed
                     composition={memory.composition}
                     encounters={item.encounters}
                     gradientOnly
-                    size={420}
+                    size={stageConfig.visualSize}
                     visualId={`memory-stack-${memory.id}`}
                     {...memory.visualization}
                   />
                 </div>
-
-                <div
-                  className={[
-                    "absolute inset-x-0 bottom-4 z-10 mx-auto grid w-full justify-items-center gap-4 px-4 text-center transition-opacity sm:bottom-6",
-                    isActive ? "opacity-100" : "pointer-events-none opacity-0",
-                  ].join(" ")}
-                >
-                  <div>
-                    <h2 className="font-display text-[30px] leading-[32px] tracking-[-0.045em] sm:text-[40px] sm:leading-[42px]">
-                      {memoryDate(memory.date, "long")}
-                    </h2>
-                    <p className="mt-3 font-body text-sm leading-5 text-text-muted">
-                      {archiveCarousel.dayHeadline(memory.totalEncounters)}
-                    </p>
-                    <p className="mt-2 font-body text-xs uppercase tracking-[0.24em] text-text-muted">
-                      {encounterWindow(item)}
-                    </p>
-                  </div>
-
-                  <Link
-                    className="inline-flex w-fit rounded-full bg-nav-active px-6 py-3 font-body text-sm text-white transition hover:opacity-90"
-                    href={`/overview?date=${memory.date}&back=%2Farchive`}
-                  >
-                    open a map
-                  </Link>
-                </div>
-            </article>
-          );
+              </article>
+            );
           })}
-          </div>
-        </div>
       </div>
 
-      <div className="mt-4 flex shrink-0 items-center gap-4 sm:mt-5">
-        <button
-          aria-label="Previous memory"
-          className="grid h-12 w-12 place-items-center rounded-full border border-text/15 font-body text-lg text-text transition hover:bg-surface/55 disabled:opacity-30"
-          disabled={activeIndex === 0}
-          onClick={() => move(-1)}
-          type="button"
-        >
-          ←
-        </button>
-        <p className="font-body text-xs uppercase tracking-[0.24em] text-text-muted">
-          {activeIndex + 1} / {items.length}
-        </p>
-        <button
-          aria-label="Next memory"
-          className="grid h-12 w-12 place-items-center rounded-full border border-text/15 font-body text-lg text-text transition hover:bg-surface/55 disabled:opacity-30"
-          disabled={activeIndex === items.length - 1}
-          onClick={() => move(1)}
-          type="button"
-        >
-          →
-        </button>
+      <div aria-hidden className="memory-stage-fill" />
+
+      <div className="memory-stage-bottom">
+        <div className="memory-stage-copy">
+          <h2 className="font-display text-[clamp(1.65rem,7vw,2.35rem)] leading-[1.05] tracking-[-0.045em]">
+            {memoryDate(activeMemory.date, "long")}
+          </h2>
+          <p className="mt-2 font-body text-sm leading-5 text-text-muted">
+            {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
+          </p>
+          <p className="mt-1.5 font-body text-xs uppercase text-text-muted">
+            {encounterWindow(activeItem)}
+          </p>
+          <NavigateWithLoader
+            className="glass-btn-primary mt-4 inline-flex w-fit rounded-full px-6 py-2.5 font-body text-sm"
+            href={`/overview?date=${activeMemory.date}&back=%2Farchive`}
+            loaderLabel="Opening encounters"
+          >
+            {overviewLabels.openFromMemory}
+          </NavigateWithLoader>
+        </div>
+
+        <footer className="memory-stage-footer">
+          <p className="font-body text-xs tabular-nums text-text-muted">
+            {activeIndex + 1} / {items.length}
+          </p>
+          <div aria-hidden className="memory-stage-progress">
+            <div
+              className="memory-stage-progress-fill"
+              style={{
+                width: `${((activeIndex + 1) / items.length) * 100}%`,
+              }}
+            />
+          </div>
+        </footer>
       </div>
     </section>
   );
@@ -343,18 +410,9 @@ function ArchiveBody() {
     void load();
   }, [load]);
 
-  const backButton = (
-    <Link
-      className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-40 rounded-full border border-text/10 bg-surface/65 px-4 py-2 font-body text-sm text-text backdrop-blur-md transition hover:bg-surface sm:right-6 lg:right-8"
-      href="/main"
-    >
-      back
-    </Link>
-  );
-
   if (state.kind === "loading") {
     return (
-      <AppShell viewportLocked>
+      <AppShell hideChrome pageTitle={archiveHero.title} viewportLocked>
         <PageLoading className="min-h-0 flex-1" label="Loading" />
       </AppShell>
     );
@@ -362,19 +420,13 @@ function ArchiveBody() {
 
   if (state.kind === "error") {
     return (
-      <AppShell
-        eyebrow={archiveHero.eyebrow}
-        intro={archiveHero.intro}
-        title={archiveHero.title}
-        viewportLocked
-      >
-        <div className="space-y-4 px-1">
-          {backButton}
+      <AppShell backHref="/main" hideChrome pageTitle={archiveHero.title} viewportLocked>
+        <div className="space-y-4 px-1 pt-4">
           <p className="font-body text-sm text-red-900/90">{state.message}</p>
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
+            className="glass-btn-secondary rounded-full px-4 py-2 font-body text-sm"
           >
             Try again
           </button>
@@ -385,14 +437,8 @@ function ArchiveBody() {
 
   if (state.kind === "ok" && state.items.length === 0) {
     return (
-      <AppShell
-        eyebrow={archiveHero.eyebrow}
-        intro={archiveHero.intro}
-        title={archiveHero.title}
-        viewportLocked
-      >
-        <div className="space-y-5 px-1">
-          {backButton}
+      <AppShell backHref="/main" hideChrome pageTitle={archiveHero.title} viewportLocked>
+        <div className="space-y-5 px-1 pt-4">
           <p className="max-w-md font-body text-sm leading-6 text-text/80">
             No sound memories have settled here yet. After Echo rests on its
             station, days with company will begin to appear.
@@ -405,13 +451,12 @@ function ArchiveBody() {
   if (state.kind === "ok" && state.items.length > 0) {
     return (
       <AppShell
-        eyebrow={archiveHero.eyebrow}
+        backHref="/main"
         fullBleed
-        intro={archiveHero.intro}
-        title="memories"
+        hideChrome
+        pageTitle={archiveHero.title}
         viewportLocked
       >
-        {backButton}
         <MemoriesListView items={state.items} />
       </AppShell>
     );

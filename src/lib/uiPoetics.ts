@@ -60,19 +60,63 @@ export const todayHero = {
 export const todaySoundTitle = "Let the day play";
 
 export const archiveHero = {
-  eyebrow: "After the station",
-  title: "Sound memories",
-  intro: "At the station, the day returns as sound memory.",
+  title: "Memories",
+} as const;
+
+export const mainHome = {
+  title: "Your daily encounters",
+  encountersOverviewCta: "Encounters overview",
+  memoriesCta: "Memories",
+} as const;
+
+export const overviewPage = {
+  title: "Encounters overview",
+} as const;
+
+export const overviewLabels = {
+  timespanDaily: "Daily",
+  timespanWeekly: "Weekly",
+  timespanMonthly: "Monthly",
+  prev: "Previous",
+  next: "Next",
+  openFromMemory: "Encounters overview",
 } as const;
 
 /** Archive carousel — headline under the date */
 export const archiveCarousel = {
-  dayHeadline: (encounterCount: number) =>
-    encounterCount === 0
-      ? "A quiet day stayed quiet."
-      : encounterCount === 1
-        ? "One nearness left a small trace."
-        : `${encounterCount} moments of nearness stayed behind.`,
+  dayHeadline: (encounterCount: number) => {
+    if (encounterCount === 0) return "Not so much today…";
+    if (encounterCount === 1) return "One nearness left a small trace.";
+    if (encounterCount >= 8) return "Wow—that’s a lot of nearness.";
+    return `${encounterCount} moments of nearness stayed behind.`;
+  },
+} as const;
+
+export const aboutPage = {
+  title: "About",
+  brandName: "Echo",
+  tagline: "A sonic companion for co-presence",
+  paragraphs: [
+    "Echo is a small companion device that reacts to the presence of its peers through sound. Released as three different types, each has its own temperament expressed through sonic identity. When alone, it remains quiet. As two or more devices share proximity, they start playing sound in harmony thanks to layered tones and shifting rhythms. Echo somehow reflects the subtle sense of connection that can emerge when real-life encounters happen. It transforms physical proximity into a playful collective experience.",
+    "Over time, encounters leave traces within each Echo companions. At the end of the day, users place it on its station, where moments of co-presence recorded during the day are transferred into a digital interface to revisit over time an evolving archive of sound memories displayed as audio-reactive visual landscapes.",
+    "Echo invites us to explore how subtle moments of co-presence can gradually become a sense of connection.",
+  ],
+  credits: {
+    author: {
+      name: "Haneul Lee",
+      url: "https://www.haneul-lee.com",
+    },
+    school: "HEAD – Genève (Haute école d'art et de design)",
+    program: "Master Media Design",
+    tutor: "Amaury Hamon",
+    professors: [
+      "Alexia Mathieu",
+      "Daniel Sciboz",
+      "Dominic Robson",
+      "Douglas Edric Stanley",
+      "Pierre Rossel",
+    ],
+  },
 } as const;
 
 export const encounterArchive = {

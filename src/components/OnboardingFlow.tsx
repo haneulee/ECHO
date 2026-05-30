@@ -27,10 +27,10 @@ import { onboarding } from "@/lib/uiPoetics";
 const TOTAL_STEPS = 5;
 
 const primaryBtn =
-  "flex-1 rounded-full bg-nav-active py-3.5 font-body text-sm text-white transition hover:opacity-90 sm:py-4 disabled:cursor-not-allowed disabled:opacity-40";
+  "glass-btn-primary flex-1 rounded-full py-3.5 font-body text-sm sm:py-4 disabled:cursor-not-allowed disabled:opacity-40";
 
 const secondaryBtn =
-  "flex-1 rounded-full border border-border bg-surface/65 py-3.5 font-body text-sm text-text transition hover:bg-surface sm:py-4";
+  "glass-btn-secondary flex-1 rounded-full py-3.5 font-body text-sm sm:py-4";
 
 export function OnboardingFlow() {
   const router = useRouter();
@@ -127,7 +127,7 @@ export function OnboardingFlow() {
     <div className="mx-auto flex min-h-0 w-full flex-1 flex-col">
       <p
         aria-live="polite"
-        className="mb-3 shrink-0 text-center font-body text-xs tabular-nums tracking-[0.24em] text-text-muted sm:mb-4"
+        className="mb-3 shrink-0 text-center font-body text-xs tabular-nums text-text-muted sm:mb-4"
       >
         {onboarding.stepCounter(step, TOTAL_STEPS)}
       </p>
@@ -158,7 +158,7 @@ export function OnboardingFlow() {
             <div className="pointer-events-auto shrink-0 px-4 pb-2 pt-0 sm:pb-3 lg:pb-4">
               <div className="mx-auto grid w-full max-w-xl gap-5">
                 <label
-                  className="font-body text-xs uppercase tracking-[0.22em] text-text-muted"
+                  className="font-body text-xs uppercase text-text-muted"
                   htmlFor="echo-name"
                 >
                   {onboarding.nameFieldLabel}
@@ -172,7 +172,7 @@ export function OnboardingFlow() {
                   value={echoName}
                 />
                 <label
-                  className="font-body text-xs uppercase tracking-[0.22em] text-text-muted"
+                  className="font-body text-xs uppercase text-text-muted"
                   htmlFor="firmware-model-name"
                 >
                   Firmware model name
@@ -192,7 +192,7 @@ export function OnboardingFlow() {
                   value={firmwareModelName}
                 />
                 <label
-                  className="font-body text-xs uppercase tracking-[0.22em] text-text-muted"
+                  className="font-body text-xs uppercase text-text-muted"
                   htmlFor="echo-color"
                 >
                   Echo color
@@ -249,7 +249,7 @@ export function OnboardingFlow() {
             <div className="pointer-events-auto shrink-0 px-4 pb-2 pt-0 sm:pb-3 lg:pb-4">
               <div className="mx-auto w-full max-w-xl">
                 <div>
-                  <p className="h-4 font-display text-xs uppercase leading-4 tracking-[0.28em] text-text-muted">
+                  <p className="h-4 font-display text-xs uppercase leading-4 text-text-muted">
                     {onboarding.howToLiveEyebrow}
                   </p>
                   {step === 3 ? (

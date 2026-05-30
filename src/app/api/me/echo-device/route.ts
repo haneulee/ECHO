@@ -178,3 +178,80 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true, deviceId: created.id, updated: false });
 }
+
+export async function PATCH(request: Request) {
+  const session = await getSession();
+  if (!session && !isLocalMockMode()) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  if (typeof body !== "object" || body === null) {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
+  const o = body as Record<string, unknown>;
+  const deviceId = typeof o.deviceId === "string" ? o.deviceId.trim() : "";
+  const echoName =
+    typeof o.echoName === "string" ? o.echoName.trim() : undefined;
+  const echoColor =
+    typeof o.echoColor === "string"
+      ? normalizeEchoColor(o.echoColor)
+      : undefined;
+
+  if (echoName !== undefined && !echoName) {
+    return NextResponse.json({ error: "echoName is required." }, { status: 400 });
+  }
+  if (echoColor !== undefined && !isValidEchoColor(echoColor)) {
+    return NextResponse.json(
+      { error: "echoColor must be a hex color like #FF9F6E." },
+      { status: 400 },
+    );
+  }
+  if (echoName === undefined && echoColor === undefined) {
+    return NextResponse.json(
+      { error: "Provide echoName and/or echoColor to update." },
+      { status: 400 },
+    );
+  }
+
+  if (isLocalMockMode()) {
+    logDatabaseUnavailable("/api/me/echo-device PATCH local mock mode");
+    return NextResponse.json({
+      ok: true,
+      deviceId: deviceId || "ECHO_BOUNCE_001",
+      updated: true,
+      mock: true,
+    });
+  }
+
+  const userId = session!.userId;
+  const device = deviceId
+    ? await prisma.echoDevice.findFirst({
+        where: { id: deviceId, userId },
+      })
+    : await prisma.echoDevice.findFirst({
+        where: { userId },
+        orderBy: { id: "asc" },
+      });
+
+  if (!device) {
+    return NextResponse.json({ error: "Echo device not found." }, { status: 404 });
+  }
+
+  const updated = await prisma.echoDevice.update({
+    where: { id: device.id },
+    data: {
+      ...(echoName !== undefined ? { echoName } : {}),
+      ...(echoColor !== undefined ? { echoColor } : {}),
+      lastSyncedAt: new Date(),
+    },
+    select: { id: true },
+  });
+
+  return NextResponse.json({ ok: true, deviceId: updated.id, updated: true });
+}

@@ -23,6 +23,32 @@ export function zonedDayRangeUtc(
   };
 }
 
+export type OverviewSpan = "daily" | "weekly" | "monthly";
+
+export function zonedSpanRangeUtc(
+  dateStr: string,
+  timeZone: string,
+  span: OverviewSpan,
+): { start: Date; end: Date } | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  const endDay = DateTime.fromISO(`${dateStr}T00:00:00`, { zone: timeZone });
+  if (!endDay.isValid) return null;
+  const days =
+    span === "daily" ? 1 : span === "weekly" ? 7 : span === "monthly" ? 30 : 1;
+  const startDay = endDay.minus({ days: days - 1 });
+  return {
+    start: startDay.toUTC().toJSDate(),
+    end: endDay.plus({ days: 1 }).toUTC().toJSDate(),
+  };
+}
+
+export function shiftIsoDate(dateStr: string, deltaDays: number): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  const dt = DateTime.fromISO(dateStr);
+  if (!dt.isValid) return null;
+  return dt.plus({ days: deltaDays }).toISODate();
+}
+
 export function formatCalendarEyebrow(
   isoDay: string,
   timeZone: string,

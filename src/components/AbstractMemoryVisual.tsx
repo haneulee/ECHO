@@ -137,13 +137,15 @@ export function AbstractMemoryVisual({
         ))}
       </defs>
 
-      <circle
-        cx={center}
-        cy={center}
-        fill={`url(#${id}-paper)`}
-        filter={`url(#${id}-paper-soften)`}
-        r={svgRound(size * 0.46)}
-      />
+      {!gradientOnly ? (
+        <circle
+          cx={center}
+          cy={center}
+          fill={`url(#${id}-paper)`}
+          filter={`url(#${id}-paper-soften)`}
+          r={svgRound(size * 0.46)}
+        />
+      ) : null}
       <g
         className="memory-drift"
         style={{

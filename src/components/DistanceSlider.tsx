@@ -8,7 +8,7 @@ type DistanceSliderProps = {
 export function DistanceSlider({ value, onChange }: DistanceSliderProps) {
   return (
     <label className="block">
-      <span className="mb-2 flex items-center justify-between font-body text-xs uppercase tracking-[0.24em] text-text-muted">
+      <span className="mb-2 flex items-center justify-between font-body text-xs uppercase text-text-muted">
         <span>How near</span>
         <span>{value.toFixed(2)}</span>
       </span>

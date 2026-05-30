@@ -11,7 +11,7 @@ export function EchoCard({ device }: EchoCardProps) {
 
   return (
     <section className="py-2">
-      <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+      <p className="font-body text-xs uppercase text-text-muted">
         Your Echo
       </p>
       <h2 className="mt-3 font-display text-[40px] leading-[44px] tracking-[-0.03em] lg:text-[56px] lg:leading-[60px]">
@@ -21,7 +21,7 @@ export function EchoCard({ device }: EchoCardProps) {
         {echoTypeLabels[device.echoType]} ·{" "}
         {device.firmwareModelName ?? device.serialNumber}
       </p>
-      <div className="mt-4 flex items-center gap-3 font-body text-xs uppercase tracking-[0.22em] text-text-muted">
+      <div className="mt-4 flex items-center gap-3 font-body text-xs uppercase text-text-muted">
         <span
           aria-hidden
           className="h-4 w-4 rounded-full border border-text/10"
@@ -41,7 +41,7 @@ export function EchoCard({ device }: EchoCardProps) {
       </div>
 
       <div className="mt-6">
-        <p className="mb-3 font-body text-xs uppercase tracking-[0.26em] text-text-muted">
+        <p className="mb-3 font-body text-xs uppercase text-text-muted">
           Influence state
         </p>
         <div className="space-y-3">
@@ -67,7 +67,7 @@ export function EchoCard({ device }: EchoCardProps) {
 function SoftStat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="font-body text-[11px] uppercase tracking-[0.2em] text-text-muted">
+      <p className="font-body text-[11px] uppercase text-text-muted">
         {label}
       </p>
       <p className="mt-2 font-display text-2xl leading-7">

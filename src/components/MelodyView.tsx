@@ -8,7 +8,7 @@ export function MelodyView({ melody, label, large = false }: MelodyViewProps) {
   return (
     <div>
       {label ? (
-        <p className="mb-3 font-body text-xs uppercase tracking-[0.26em] text-text-muted">
+        <p className="mb-3 font-body text-xs uppercase text-text-muted">
           {label}
         </p>
       ) : null}

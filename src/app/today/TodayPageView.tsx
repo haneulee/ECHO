@@ -4,14 +4,16 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
+import { OverviewRangeControls } from "@/components/OverviewRangeControls";
 import { PageLoading } from "@/components/PageLoading";
 import { SonicPresenceLandscape } from "@/components/SonicPresenceLandscape";
+import type { OverviewSpan } from "@/lib/zonedDayRange";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import { encounterDisplayName } from "@/lib/encounterDisplay";
 import { mockEncounters } from "@/lib/mockData";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
 import type { Encounter } from "@/lib/types";
-import { todaySoundTitle } from "@/lib/uiPoetics";
+import { overviewPage, todaySoundTitle } from "@/lib/uiPoetics";
 
 function localIsoDate(d: Date): string {
   const y = d.getFullYear();
@@ -137,6 +139,9 @@ function TodayDataBody() {
   const backHref = searchParams.get("back") === "/archive" ? "/archive" : "/main";
   const deviceId = searchParams.get("deviceId");
   const date = searchParams.get("date") ?? localIsoDate(new Date());
+  const spanParam = searchParams.get("span");
+  const span: OverviewSpan =
+    spanParam === "weekly" || spanParam === "monthly" ? spanParam : "daily";
   const timeZone = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone,
     [],
@@ -151,7 +156,7 @@ function TodayDataBody() {
     const startedAt = performance.now();
     setState({ kind: "loading" });
     try {
-      const qs = new URLSearchParams({ date, timeZone });
+      const qs = new URLSearchParams({ date, timeZone, span });
       if (deviceId) qs.set("deviceId", deviceId);
       const res = await fetch(`/api/today?${qs.toString()}`, {
         cache: "no-store",
@@ -178,7 +183,7 @@ function TodayDataBody() {
       await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
       setState({ kind: "error", message });
     }
-  }, [date, deviceId, timeZone]);
+  }, [date, deviceId, span, timeZone]);
 
   useEffect(() => {
     void load();
@@ -238,7 +243,7 @@ function TodayDataBody() {
 
   if (state.kind === "loading") {
     return (
-      <AppShell viewportLocked>
+      <AppShell pageTitle={overviewPage.title} viewportLocked>
         <PageLoading className="min-h-0 flex-1" label="Listening for the day" />
       </AppShell>
     );
@@ -249,18 +254,24 @@ function TodayDataBody() {
 
   return (
     <AppShell
+      backHref={backHref}
       echoColorTheme={echoColorTheme}
+      echoDevice={state.kind === "ok" ? state.data.device : null}
       fullBleed
       hideChrome
+      pageTitle={overviewPage.title}
       viewportLocked
     >
+      {state.kind === "ok" ? (
+        <OverviewRangeControls backHref={backHref} date={date} span={span} />
+      ) : null}
       {state.kind === "error" ? (
         <div className="mx-auto max-w-[920px] space-y-4 px-4 py-8">
           <p className="font-body text-sm text-red-900/90">{state.message}</p>
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-full border border-border bg-surface/65 px-4 py-2 font-body text-sm text-text transition hover:bg-surface"
+            className="glass-btn-secondary rounded-full px-4 py-2 font-body text-sm"
           >
             Try again
           </button>
@@ -269,11 +280,16 @@ function TodayDataBody() {
 
       {state.kind === "ok" ? (
         <SonicPresenceLandscape
-          backHref={backHref}
           device={state.data.device}
           encounters={orbitEncounters}
           onSelectEncounter={selectEncounter}
           onSelectSelf={selectSelf}
+          playingEncounterId={
+            soundTarget?.kind === "encounter"
+              ? soundTarget.encounter.id
+              : null
+          }
+          playingSelf={soundTarget?.kind === "global"}
           soundControl={
             hasEncounters ? (
               <>
@@ -311,7 +327,7 @@ function TodayDataBody() {
 
 function TodayPageFallback() {
   return (
-    <AppShell viewportLocked>
+    <AppShell pageTitle={overviewPage.title} viewportLocked>
       <PageLoading className="min-h-0 flex-1" label="Listening for the day" />
     </AppShell>
   );

@@ -13,7 +13,12 @@ import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { mockTodayPayload } from "@/lib/mockTodayPayload";
 import { prisma } from "@/lib/prisma";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
-import { isValidIanaTimeZone, zonedDayRangeUtc } from "@/lib/zonedDayRange";
+import {
+  isValidIanaTimeZone,
+  zonedDayRangeUtc,
+  zonedSpanRangeUtc,
+  type OverviewSpan,
+} from "@/lib/zonedDayRange";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +44,13 @@ export async function GET(request: Request) {
     );
   }
 
-  const range = zonedDayRangeUtc(dateStr, timeZone);
+  const spanParam = searchParams.get("span");
+  const span: OverviewSpan =
+    spanParam === "weekly" || spanParam === "monthly" ? spanParam : "daily";
+  const range =
+    span === "daily"
+      ? zonedDayRangeUtc(dateStr, timeZone)
+      : zonedSpanRangeUtc(dateStr, timeZone, span);
   if (!range) {
     return NextResponse.json(
       { error: "Invalid date; use YYYY-MM-DD" },

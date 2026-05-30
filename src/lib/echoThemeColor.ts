@@ -23,7 +23,7 @@ const THEME_PROPS = [
 ] as const;
 
 const NEUTRAL = {
-  bg: { r: 247, g: 245, b: 240 },
+  bg: { r: 252, g: 250, b: 246 },
   surface: { r: 255, g: 255, b: 255 },
   surfaceSoft: { r: 241, g: 239, b: 234 },
   border: { r: 220, g: 216, b: 208 },
@@ -52,14 +52,13 @@ function rgbCss(rgb: Rgb): string {
 }
 
 function applyBaseTheme(target: HTMLElement, accent: Rgb | null) {
-  const active = accent ?? NEUTRAL.text;
   target.style.setProperty("--color-bg", rgbTriplet(NEUTRAL.bg));
   target.style.setProperty("--color-surface", rgbTriplet(NEUTRAL.surface));
   target.style.setProperty("--color-surface-soft", rgbTriplet(NEUTRAL.surfaceSoft));
   target.style.setProperty("--color-border", rgbTriplet(NEUTRAL.border));
   target.style.setProperty("--color-text", rgbTriplet(NEUTRAL.text));
   target.style.setProperty("--color-text-muted", rgbTriplet(NEUTRAL.muted));
-  target.style.setProperty("--color-nav-active", rgbTriplet(active));
+  target.style.setProperty("--color-nav-active", rgbTriplet(NEUTRAL.text));
   target.style.setProperty("--color-nav-inactive", rgbTriplet(NEUTRAL.inactive));
   target.style.setProperty("--bg", rgbCss(NEUTRAL.bg));
   target.style.setProperty("--surface", "rgba(255, 255, 255, 0.72)");
@@ -67,7 +66,7 @@ function applyBaseTheme(target: HTMLElement, accent: Rgb | null) {
   target.style.setProperty("--border", rgbCss(NEUTRAL.border));
   target.style.setProperty("--text", rgbCss(NEUTRAL.text));
   target.style.setProperty("--text-muted", rgbCss(NEUTRAL.muted));
-  target.style.setProperty("--nav-active", rgbCss(active));
+  target.style.setProperty("--nav-active", rgbCss(NEUTRAL.text));
   target.style.setProperty("--nav-inactive", rgbCss(NEUTRAL.inactive));
   if (accent) {
     target.style.setProperty(

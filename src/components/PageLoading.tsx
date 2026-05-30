@@ -1,4 +1,4 @@
-import { LoadingPulse } from "@/components/LoadingPulse";
+import { EchoGradientLoader } from "@/components/EchoGradientLoader";
 
 type PageLoadingProps = {
   label?: string;
@@ -10,8 +10,14 @@ export function PageLoading({
   className = "min-h-screen",
 }: PageLoadingProps) {
   return (
-    <div className={["grid place-items-center bg-transparent text-text", className].join(" ")}>
-      <LoadingPulse label={label} />
+    <div
+      className={[
+        "grid place-items-center gap-4 bg-transparent text-text",
+        className,
+      ].join(" ")}
+    >
+      <EchoGradientLoader size="md" />
+      <span className="sr-only">{label}</span>
     </div>
   );
 }

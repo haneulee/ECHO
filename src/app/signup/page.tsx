@@ -7,7 +7,7 @@ import { useState } from "react";
 import { onboarding } from "@/lib/uiPoetics";
 
 const inputClass =
-  "mt-1 w-full rounded-xl border border-border bg-white px-4 py-3 font-body text-sm text-text outline-none transition focus:border-nav-active";
+  "mt-1 w-full rounded-xl border border-border bg-white/80 px-4 py-3 font-body text-sm text-text outline-none backdrop-blur-sm transition focus:border-text/35";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -48,7 +48,7 @@ export default function SignupPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16 text-text">
-      <p className="font-body text-xs uppercase tracking-[0.28em] text-text-muted">
+      <p className="font-body text-xs uppercase text-text-muted">
         Echo
       </p>
       <h1 className="mt-3 font-display text-3xl tracking-[-0.03em]">Sign up</h1>
@@ -111,7 +111,7 @@ export default function SignupPage() {
           <p className="font-body text-sm text-red-900/90">{error}</p>
         ) : null}
         <button
-          className="w-full rounded-full bg-nav-active py-3.5 font-body text-sm text-white transition hover:opacity-90 disabled:opacity-50"
+          className="glass-btn-primary w-full rounded-full py-3.5 font-body text-sm disabled:opacity-50"
           disabled={pending}
           type="submit"
         >
@@ -120,7 +120,7 @@ export default function SignupPage() {
       </form>
       <p className="mt-8 text-center font-body text-sm text-text-muted">
         Already have an account?{" "}
-        <Link className="text-nav-active underline-offset-2 hover:underline" href="/login">
+        <Link className="text-text underline-offset-2 hover:underline" href="/login">
           Log in
         </Link>
       </p>
