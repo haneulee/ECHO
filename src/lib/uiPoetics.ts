@@ -21,7 +21,7 @@ export const profileLabels = {
 
 export const navItems = [
   { kind: "link" as const, href: "/main", label: "Main" },
-  { kind: "link" as const, href: "/today", label: "Today" },
+  { kind: "link" as const, href: "/overview", label: "Overview" },
   { kind: "link" as const, href: "/archive", label: "Archive" },
   {
     kind: "account" as const,

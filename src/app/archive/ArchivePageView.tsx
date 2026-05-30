@@ -260,7 +260,7 @@ function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
 
                   <Link
                     className="inline-flex w-fit rounded-full bg-nav-active px-6 py-3 font-body text-sm text-white transition hover:opacity-90"
-                    href={`/today?date=${memory.date}&back=%2Farchive`}
+                    href={`/overview?date=${memory.date}&back=%2Farchive`}
                   >
                     open a map
                   </Link>

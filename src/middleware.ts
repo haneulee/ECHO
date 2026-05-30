@@ -53,6 +53,7 @@ export async function middleware(request: NextRequest) {
 
   const protectedPrefixes = [
     "/main",
+    "/overview",
     "/today",
     "/archive",
     "/profile",
@@ -77,6 +78,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/overview/:path*",
     "/today/:path*",
     "/archive/:path*",
     "/main/:path*",

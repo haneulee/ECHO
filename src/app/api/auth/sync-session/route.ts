@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const ALLOWED_PREFIXES = [
+  "/overview",
   "/today",
   "/archive",
   "/main",

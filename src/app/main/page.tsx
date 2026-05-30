@@ -145,9 +145,9 @@ export default async function MainPage() {
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Link
               className="rounded-full bg-nav-active px-6 py-3 font-body text-sm text-white transition hover:opacity-90"
-              href="/today"
+              href="/overview"
             >
-              Today
+              Overview
             </Link>
             <Link
               className="rounded-full border border-border bg-surface/65 px-6 py-3 font-body text-sm text-text transition hover:bg-surface"

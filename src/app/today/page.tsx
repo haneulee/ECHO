@@ -1,5 +1,5 @@
-import { TodayPageView } from "@/app/today/TodayPageView";
+import { redirect } from "next/navigation";
 
-export default function TodayPage() {
-  return <TodayPageView />;
+export default function TodayRedirectPage() {
+  redirect("/overview");
 }
