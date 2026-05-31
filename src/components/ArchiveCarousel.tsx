@@ -9,6 +9,8 @@ import { TodayEncounterSoundPlayer } from "./TodayEncounterSoundPlayer";
 export type ArchiveCarouselItem = {
   memory: DailyMemory;
   encounters: Encounter[];
+  periodStart?: string;
+  periodEnd?: string;
 };
 
 type ArchiveCarouselProps = {

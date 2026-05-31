@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
 import { EchoSettingsDialog } from "@/components/EchoSettingsDialog";
 import { NavigateWithLoader } from "@/components/NavigateWithLoader";
+import {
+  memoriesPath,
+  overviewPath,
+  readPersistedTimespan,
+} from "@/lib/timespanNavigation";
 import type { DailyMemory, EchoDevice, Encounter } from "@/lib/types";
 import { mainHome } from "@/lib/uiPoetics";
 
@@ -26,6 +31,14 @@ export function MainHomeView({
 }: MainHomeViewProps) {
   const [echoDevice, setEchoDevice] = useState(initialDevice);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [timespan] = useState(readPersistedTimespan);
+
+  useEffect(() => {
+    setEchoDevice(initialDevice);
+  }, [initialDevice]);
+
+  const overviewHref = overviewPath({ span: timespan, back: "/main" });
+  const memoriesHref = memoriesPath(timespan);
 
   return (
     <AppShell
@@ -70,14 +83,14 @@ export function MainHomeView({
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <NavigateWithLoader
               className="glass-btn-primary rounded-full px-6 py-3 font-body text-sm"
-              href="/overview"
+              href={overviewHref}
               loaderLabel="Opening encounters"
             >
               {mainHome.encountersOverviewCta}
             </NavigateWithLoader>
             <NavigateWithLoader
               className="glass-btn-secondary rounded-full px-6 py-3 font-body text-sm"
-              href="/archive"
+              href={memoriesHref}
               loaderLabel="Opening memories"
             >
               {mainHome.memoriesCta}

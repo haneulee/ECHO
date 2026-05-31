@@ -21,6 +21,8 @@ export type AbstractMemoryVisualProps = {
   gradientOnly?: boolean;
   visualId?: string;
   bleed?: boolean;
+  /** Slow breathing drift for the gradient blobs (e.g. active memory on /memories). */
+  gradientMotion?: boolean;
 };
 
 export function AbstractMemoryVisual({
@@ -35,6 +37,7 @@ export function AbstractMemoryVisual({
   gradientOnly = false,
   visualId,
   bleed = false,
+  gradientMotion = false,
 }: AbstractMemoryVisualProps) {
   const random = seededRandom(seed);
   const center = svgRound(size / 2);
@@ -147,11 +150,15 @@ export function AbstractMemoryVisual({
         />
       ) : null}
       <g
-        className="memory-drift"
-        style={{
-          animationDuration: duration,
-          transformOrigin: `${center}px ${center}px`,
-        }}
+        className={gradientMotion ? "memory-active-drift" : undefined}
+        style={
+          gradientMotion
+            ? {
+                animationDuration: duration,
+                transformOrigin: `${center}px ${center}px`,
+              }
+            : { transformOrigin: `${center}px ${center}px` }
+        }
       >
         {!gradientOnly ? (
           <>
@@ -196,16 +203,41 @@ export function AbstractMemoryVisual({
         ) : null}
 
         <g filter={`url(#${id}-diffuse)`}>
-          {blobs.map((blob) => (
-            <circle
-              cx={blob.x}
-              cy={blob.y}
-              fill={`url(#${id}-${blob.key})`}
-              key={blob.key}
-              opacity={blob.opacity}
-              r={blob.radius}
-            />
-          ))}
+          {blobs.map((blob, blobIndex) => {
+            const driftVariant = !gradientMotion
+              ? undefined
+              : blobIndex % 3 === 0
+                ? "memory-active-blob-drift"
+                : blobIndex % 3 === 1
+                  ? "memory-active-blob-drift memory-active-blob-drift--b"
+                  : "memory-active-blob-drift memory-active-blob-drift--c";
+            const driftDuration = 16 + (blob.key.length % 9) + movement * 4;
+            const driftDelay = -(blob.key.charCodeAt(0) % 11);
+
+            return (
+              <g key={blob.key} transform={`translate(${blob.x} ${blob.y})`}>
+                <g
+                  className={driftVariant}
+                  style={
+                    gradientMotion
+                      ? {
+                          animationDuration: `${driftDuration}s`,
+                          animationDelay: `${driftDelay}s`,
+                        }
+                      : undefined
+                  }
+                >
+                  <circle
+                    cx={0}
+                    cy={0}
+                    fill={`url(#${id}-${blob.key})`}
+                    opacity={blob.opacity}
+                    r={blob.radius}
+                  />
+                </g>
+              </g>
+            );
+          })}
         </g>
 
         {showMutation && !gradientOnly ? (

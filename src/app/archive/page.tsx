@@ -1,5 +1,5 @@
-import { ArchivePageView } from "@/app/archive/ArchivePageView";
+import { redirect } from "next/navigation";
 
-export default function ArchivePage() {
-  return <ArchivePageView />;
+export default function ArchiveRedirectPage() {
+  redirect("/memories");
 }

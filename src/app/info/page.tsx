@@ -5,8 +5,8 @@ import { aboutPage } from "@/lib/uiPoetics";
 export default function InfoPage() {
   return (
     <AppShell pageTitle={aboutPage.title} viewportLocked>
-      <div className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto px-1 py-4 sm:py-6">
-        <AboutContent />
+      <div className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-10">
+        <AboutContent variant="page" />
       </div>
     </AppShell>
   );

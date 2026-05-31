@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AboutCanvasGlow } from "@/components/AboutCanvasGlow";
 import { aboutPage } from "@/lib/uiPoetics";
 
 type AboutContentVariant = "page" | "modal";
@@ -15,79 +16,108 @@ export function AboutContent({
   id,
   variant = "page",
 }: AboutContentProps) {
-  const { credits } = aboutPage;
+  const { credits, paragraphs, sections, creditGroups } = aboutPage;
   const inModal = variant === "modal";
+  const [lead, ...rest] = paragraphs;
+  const reflection = rest.pop();
+  const aboutParagraphs = rest;
 
   return (
-    <article className={["text-left text-text", className].join(" ")}>
-      <header>
-        <h2
-          className={
-            inModal
-              ? "font-display text-2xl tracking-[-0.04em]"
-              : "font-display text-2xl leading-tight tracking-[-0.04em] sm:text-3xl"
-          }
-          id={id}
-        >
-          {aboutPage.brandName}
-        </h2>
-        <p className="mt-2 font-body text-sm leading-6 text-text-muted">
-          {aboutPage.tagline}
-        </p>
-      </header>
+    <article
+      className={[
+        "about-canvas text-left text-text",
+        inModal
+          ? "about-canvas--modal about-canvas--modal-body w-full"
+          : "about-canvas--page",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {!inModal ? <AboutCanvasGlow scope="page" /> : null}
 
-      <div
-        className={
-          inModal
-            ? "mt-6 space-y-4 font-body text-sm leading-6 text-text/90"
-            : "mt-6 space-y-4 font-body text-xs leading-6 text-text/90 sm:text-sm sm:leading-7"
-        }
-      >
-        {aboutPage.paragraphs.map((paragraph) => (
-          <p key={paragraph.slice(0, 48)}>{paragraph}</p>
-        ))}
+      <div className="about-layout">
+        <div className="about-hero-head">
+          <p className="about-eyebrow">{aboutPage.title}</p>
+          <h1 className="about-title font-display tracking-[-0.055em]" id={id}>
+            {aboutPage.brandName}
+          </h1>
+          <p className="about-tagline font-body text-text-muted">
+            {aboutPage.tagline}
+          </p>
+        </div>
+
+        {lead ? (
+          <p className="about-lead about-column--lead font-body text-text/88">
+            {lead}
+          </p>
+        ) : null}
+
+        <div className="about-column about-column--story space-y-10 sm:space-y-12">
+          {aboutParagraphs.length > 0 ? (
+            <section className="about-block">
+              {sections.about ? (
+                <h2 className="about-section-title">{sections.about}</h2>
+              ) : null}
+              <div className={sections.about ? "about-prose" : "about-prose about-prose--leadless"}>
+                {aboutParagraphs.map((paragraph) => (
+                  <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {reflection ? (
+            <section className="about-block">
+              {sections.reflection ? (
+                <h2 className="about-section-title">{sections.reflection}</h2>
+              ) : null}
+              <div className={sections.reflection ? "about-prose" : "about-prose about-prose--leadless"}>
+                <p>{reflection}</p>
+              </div>
+            </section>
+          ) : null}
+        </div>
+
+        <aside className="about-column about-column--meta">
+          <section className="about-meta-group">
+            <h3 className="about-meta-label">{creditGroups.team}</h3>
+            <ul className="about-meta-list">
+              <li>
+                <Link
+                  className="about-meta-link"
+                  href={credits.author.url}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {credits.author.name}
+                </Link>
+              </li>
+            </ul>
+          </section>
+
+          <section className="about-meta-group">
+            <h3 className="about-meta-label">{creditGroups.institution}</h3>
+            <ul className="about-meta-list">
+              <li>{credits.school}</li>
+              <li>{credits.program}</li>
+            </ul>
+          </section>
+
+          <section className="about-meta-group">
+            <h3 className="about-meta-label">{creditGroups.guidance}</h3>
+            <ul className="about-meta-list">
+              <li>
+                <span className="text-text/55">Tutor · </span>
+                {credits.tutor}
+              </li>
+              <li>
+                <span className="text-text/55">Professors · </span>
+                {credits.professors.join(", ")}
+              </li>
+            </ul>
+          </section>
+        </aside>
       </div>
-
-      <footer
-        className={
-          inModal
-            ? "mt-6 border-t border-text/10 pt-4 font-body text-sm leading-6 text-text-muted"
-            : "mt-8 border-t border-text/10 pt-6 font-body text-xs leading-6 text-text-muted sm:text-sm sm:leading-7"
-        }
-      >
-        <dl className="space-y-1.5">
-          <div>
-            <dt className="sr-only">Author</dt>
-            <dd>
-              Made by{" "}
-              <Link
-                className="text-text underline decoration-text/25 underline-offset-2 transition hover:decoration-text/50"
-                href={credits.author.url}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                {credits.author.name}
-              </Link>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-text/55">School</dt>
-            <dd className="text-text/80">{credits.school}</dd>
-          </div>
-          <div>
-            <dt className="text-text/55">Program</dt>
-            <dd className="text-text/80">{credits.program}</dd>
-          </div>
-          <div>
-            <dt className="text-text/55">Tutor</dt>
-            <dd className="text-text/80">{credits.tutor}</dd>
-          </div>
-          <div>
-            <dt className="text-text/55">Professors</dt>
-            <dd className="text-text/80">{credits.professors.join(", ")}</dd>
-          </div>
-        </dl>
-      </footer>
     </article>
   );
 }

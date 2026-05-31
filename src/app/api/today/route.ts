@@ -9,6 +9,7 @@ import {
 import { getSession } from "@/lib/auth/session";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
 import { attachEncounterEchoProfiles } from "@/lib/encounterProfileLookup";
+import { adjacentPeriodAvailability } from "@/lib/encounterPeriodAvailability";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { mockTodayPayload } from "@/lib/mockTodayPayload";
 import { prisma } from "@/lib/prisma";
@@ -60,7 +61,7 @@ export async function GET(request: Request) {
 
   if (isLocalMockMode()) {
     logDatabaseUnavailable("/api/today local mock mode");
-    return NextResponse.json(mockTodayPayload(dateStr));
+    return NextResponse.json(mockTodayPayload(dateStr, span, timeZone));
   }
 
   const session = await getSession();
@@ -90,17 +91,35 @@ export async function GET(request: Request) {
         encounters: [],
         dailyMemory: null,
         device: null,
+        hasPrevPeriod: false,
+        hasNextPeriod: false,
       };
       return NextResponse.json(payload);
     }
 
-    const encounters = await prisma.encounter.findMany({
-      where: {
-        deviceId: { in: deviceIds },
-        startedAt: { gte: range.start, lt: range.end },
-      },
-      orderBy: { startedAt: "asc" },
-    });
+    const countEncounters = async (range: { start: Date; end: Date }) =>
+      prisma.encounter.count({
+        where: {
+          deviceId: { in: deviceIds },
+          startedAt: { gte: range.start, lt: range.end },
+        },
+      });
+
+    const [{ hasPrev, hasNext }, encounters] = await Promise.all([
+      adjacentPeriodAvailability(
+        countEncounters,
+        dateStr,
+        span,
+        timeZone,
+      ),
+      prisma.encounter.findMany({
+        where: {
+          deviceId: { in: deviceIds },
+          startedAt: { gte: range.start, lt: range.end },
+        },
+        orderBy: { startedAt: "asc" },
+      }),
+    ]);
 
     let dailyMemoryRow = null;
     if (deviceId && deviceIds.length > 0) {
@@ -122,13 +141,15 @@ export async function GET(request: Request) {
       ),
       dailyMemory: dailyMemoryRow ? dailyMemoryRowToDto(dailyMemoryRow) : null,
       device: primaryDevice ? echoDeviceRowToDto(primaryDevice) : null,
+      hasPrevPeriod: hasPrev,
+      hasNextPeriod: hasNext,
     };
 
     return NextResponse.json(payload);
   } catch (e) {
     if (isDatabaseConnectFailure(e)) {
       logDatabaseUnavailable("/api/today", e);
-      return NextResponse.json(mockTodayPayload(dateStr));
+      return NextResponse.json(mockTodayPayload(dateStr, span, timeZone));
     }
     throw e;
   }

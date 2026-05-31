@@ -11,6 +11,9 @@ import type { EchoDevice, Encounter } from "@/lib/types";
 
 const DEFAULT_ECHO_ACCENT = "#FF9F6E";
 const SCENE_FOG = 0xfcfaf6;
+/** Lowers orbits + terrain in the viewport so the cluster sits nearer screen center. */
+const SCENE_LAYOUT_Y = -2.05;
+const SCENE_FOCUS = new THREE.Vector3(0, -1.12, -3.2);
 
 type SonicPresenceLandscapeProps = {
   device: EchoDevice | null;
@@ -29,7 +32,13 @@ type PresenceBody = {
   shell: THREE.Mesh;
   core: THREE.Mesh;
   halo: THREE.Sprite;
-  orbit: THREE.LineLoop;
+  label: THREE.Sprite | null;
+  timeLabel: THREE.Sprite | null;
+  haloRestColor: THREE.Color;
+  haloPlayColor: THREE.Color;
+  haloBaseOpacity: number;
+  haloBaseScale: number;
+  shellBaseEmissive: number;
   base: THREE.Vector3;
   baseScale: number;
   phase: number;
@@ -41,6 +50,7 @@ type PresenceBody = {
 };
 
 const LABEL_TEXT_COLOR = "#1a1a1a";
+const LABEL_TIME_COLOR = "#5c5c5c";
 
 function makeGlassMaterial(
   accentHex: string,
@@ -65,6 +75,17 @@ function makeGlassMaterial(
     clearcoat: 1,
     clearcoatRoughness: 0.1,
   });
+}
+
+function playGlowColor(hex: string) {
+  const color = new THREE.Color(hex);
+  const hsl = { h: 0, s: 0, l: 0 };
+  color.getHSL(hsl);
+  return new THREE.Color().setHSL(
+    hsl.h,
+    Math.min(1, hsl.s * 1.62 + 0.14),
+    Math.min(0.58, hsl.l * 1.1 + 0.04),
+  );
 }
 
 function hashUnit(value: string) {
@@ -158,16 +179,17 @@ function groundYAt(x: number, z: number) {
 function makeTextSprite(
   label: string,
   color: string,
-  options?: { compact?: boolean },
+  options?: { compact?: boolean; variant?: "name" | "time" },
 ) {
-  const compact = options?.compact ?? false;
+  const variant = options?.variant ?? "name";
+  const compact = variant === "name" && (options?.compact ?? false);
   const canvas = document.createElement("canvas");
-  canvas.width = compact ? 384 : 512;
-  canvas.height = compact ? 96 : 128;
+  canvas.width = variant === "time" ? 320 : compact ? 384 : 512;
+  canvas.height = variant === "time" ? 64 : compact ? 96 : 128;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  const fontSize = compact ? 30 : 38;
+  const fontSize = variant === "time" ? 22 : compact ? 30 : 38;
   ctx.font = `${fontSize}px "Averia Serif Libre", serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -179,12 +201,16 @@ function makeTextSprite(
   const material = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
-    opacity: compact ? 0.82 : 1,
+    opacity: variant === "time" ? 0.88 : compact ? 0.82 : 1,
     depthTest: false,
     depthWrite: false,
   });
   const sprite = new THREE.Sprite(material);
-  sprite.scale.set(compact ? 2.05 : 3.05, compact ? 0.48 : 0.74, 1);
+  if (variant === "time") {
+    sprite.scale.set(1.72, 0.34, 1);
+  } else {
+    sprite.scale.set(compact ? 2.05 : 3.05, compact ? 0.48 : 0.74, 1);
+  }
   return sprite;
 }
 
@@ -192,18 +218,31 @@ function labelYAboveSphere(sphereRadius: number, labelScaleY: number) {
   return sphereRadius + labelScaleY * 0.5 + 0.04;
 }
 
-function makeOrbit(radius: number, color: string) {
-  const points = Array.from({ length: 96 }, (_, index) => {
-    const angle = (index / 96) * Math.PI * 2;
-    return new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
-  });
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
-  const material = new THREE.LineBasicMaterial({
-    color,
-    transparent: true,
-    opacity: 0.16,
-  });
-  return new THREE.LineLoop(geometry, material);
+const NAME_LABEL_FONT = 30;
+const NAME_LABEL_CANVAS_H = 96;
+const TIME_LABEL_FONT = 22;
+const TIME_LABEL_CANVAS_H = 64;
+const LABEL_STACK_GAP = 0.015;
+
+function spriteTextHalfHeight(
+  fontSize: number,
+  canvasHeight: number,
+  scaleY: number,
+) {
+  return ((fontSize * 0.5) / canvasHeight) * scaleY;
+}
+
+function timeLabelYBelowName(
+  nameY: number,
+  nameScaleY: number,
+  timeScaleY: number,
+) {
+  return (
+    nameY -
+    spriteTextHalfHeight(NAME_LABEL_FONT, NAME_LABEL_CANVAS_H, nameScaleY) -
+    LABEL_STACK_GAP -
+    spriteTextHalfHeight(TIME_LABEL_FONT, TIME_LABEL_CANVAS_H, timeScaleY)
+  );
 }
 
 function makeAbstractGround() {
@@ -282,7 +321,11 @@ function makeAmbientMotes(accentHex: string) {
     const distance = Math.sqrt(hashUnit(`mote:${index}:d`)) * cluster.spread;
     const x = cluster.x + Math.cos(angle) * distance;
     const z = cluster.z + Math.sin(angle) * distance;
-    mote.position.set(x, groundYAt(x, z) + 0.2 + hashUnit(`mote:${index}:y`) * 1.4, z);
+    mote.position.set(
+      x,
+      groundYAt(x, z) + 0.2 + hashUnit(`mote:${index}:y`) * 1.4,
+      z,
+    );
     group.add(mote);
   }
   return group;
@@ -297,7 +340,9 @@ function disposeObject(object: THREE.Object3D) {
       child instanceof THREE.Points
     ) {
       child.geometry.dispose();
-      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
       for (const material of materials) {
         material.dispose();
         if ("map" in material) material.map?.dispose();
@@ -337,9 +382,9 @@ export function SonicPresenceLandscape({
 }: SonicPresenceLandscapeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [fontReady, setFontReady] = useState(false);
-  const [hoveredEncounter, setHoveredEncounter] = useState<Encounter | null>(null);
   const playingEncounterIdRef = useRef(playingEncounterId);
   const playingSelfRef = useRef(playingSelf);
+  const cameraStateRef = useRef({ yaw: 0, pitch: 0, zoom: 1 });
   playingEncounterIdRef.current = playingEncounterId;
   playingSelfRef.current = playingSelf;
 
@@ -352,6 +397,7 @@ export function SonicPresenceLandscape({
     void document.fonts
       .load('38px "Averia Serif Libre"')
       .then(() => document.fonts.load('30px "Averia Serif Libre"'))
+      .then(() => document.fonts.load('22px "Averia Serif Libre"'))
       .catch(() => null)
       .finally(() => {
         if (!cancelled) setFontReady(true);
@@ -370,7 +416,7 @@ export function SonicPresenceLandscape({
 
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
     camera.position.set(0, 5.4, 15.5);
-    camera.lookAt(0, -0.85, -3.2);
+    camera.lookAt(SCENE_FOCUS);
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
@@ -394,6 +440,7 @@ export function SonicPresenceLandscape({
     scene.add(horizon);
 
     const world = new THREE.Group();
+    world.position.y = SCENE_LAYOUT_Y;
     world.rotation.x = -0.12;
     scene.add(world);
 
@@ -402,11 +449,7 @@ export function SonicPresenceLandscape({
     const echoAccent = device?.echoColor ?? DEFAULT_ECHO_ACCENT;
     const motes = makeAmbientMotes(echoAccent);
     world.add(motes);
-    const centerTexture = makeEchoTexture([
-      echoAccent,
-      "#ffffff",
-      echoAccent,
-    ]);
+    const centerTexture = makeEchoTexture([echoAccent, "#ffffff", echoAccent]);
     const centerGroup = new THREE.Group();
     const centerShell = new THREE.Mesh(
       new THREE.SphereGeometry(0.92, 48, 48),
@@ -432,11 +475,10 @@ export function SonicPresenceLandscape({
     const centerShellRadius = 0.92;
     centerGroup.add(centerShell);
     centerGroup.add(centerCore);
-    const centerCoreMaterial = centerCore.material as THREE.MeshStandardMaterial;
-    const centerOrbitRadius = 1.08;
-    const centerOrbit = makeOrbit(centerOrbitRadius, echoAccent);
-    centerOrbit.rotation.x = 0.18;
-    centerGroup.add(centerOrbit);
+    const centerCoreMaterial =
+      centerCore.material as THREE.MeshStandardMaterial;
+    const centerShellMaterial =
+      centerShell.material as THREE.MeshPhysicalMaterial;
     const centerLabel = makeTextSprite(
       device?.echoName ?? "my Echo",
       LABEL_TEXT_COLOR,
@@ -462,9 +504,12 @@ export function SonicPresenceLandscape({
         2.6 +
         (1 - durationWeight) * 14 +
         hashUnit(`${encounter.id}:r`) * (1.2 + (1 - durationWeight) * 2.2);
-      const vertical = 1.2 + durationWeight * 1.2 + hashUnit(`${encounter.id}:y`) * 2.8;
+      const vertical =
+        1.2 + durationWeight * 1.2 + hashUnit(`${encounter.id}:y`) * 2.8;
       const depth =
-        -9.5 + durationWeight * 9.8 + (hashUnit(`${encounter.id}:z`) - 0.5) * 2.2;
+        -9.5 +
+        durationWeight * 9.8 +
+        (hashUnit(`${encounter.id}:z`) - 0.5) * 2.2;
       const size = 0.14 + durationWeight * 1.08;
       const anchor = new THREE.Group();
       const base = new THREE.Vector3(
@@ -498,24 +543,23 @@ export function SonicPresenceLandscape({
       anchor.add(core);
 
       const haloTexture = makeGlowTexture(start);
+      const haloRestColor = new THREE.Color(end);
+      const haloPlayColor = playGlowColor(mid ?? start);
+      const haloBaseOpacity = 0.38 + durationWeight * 0.28;
+      const haloBaseScale = size * 4.4;
+      const shellBaseEmissive = 0.28 + durationWeight * 0.22;
       const halo = new THREE.Sprite(
         new THREE.SpriteMaterial({
           map: haloTexture,
-          color: new THREE.Color(end),
+          color: haloRestColor.clone(),
           transparent: true,
-          opacity: 0.38 + durationWeight * 0.28,
+          opacity: haloBaseOpacity,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         }),
       );
-      halo.scale.set(size * 4.4, size * 4.4, 1);
+      halo.scale.set(haloBaseScale, haloBaseScale, 1);
       anchor.add(halo);
-
-      const orbitRadius = 0.46 + durationWeight * 2.8;
-      const orbit = makeOrbit(orbitRadius, mid);
-      orbit.rotation.x = (hashUnit(`${encounter.id}:tilt`) - 0.5) * 0.36;
-      orbit.rotation.y = hashUnit(`${encounter.id}:turn`) * Math.PI;
-      anchor.add(orbit);
 
       // `otherEchoName` is attached by the today API via otherEchoModelName -> EchoDevice.firmwareModelName.
       const label = makeTextSprite(
@@ -523,9 +567,24 @@ export function SonicPresenceLandscape({
         LABEL_TEXT_COLOR,
         { compact: true },
       );
+      const timeLabel = makeTextSprite(
+        formatEncounterWindow(encounter),
+        LABEL_TIME_COLOR,
+        { variant: "time" },
+      );
       if (label) {
-        label.position.y = labelYAboveSphere(size, label.scale.y);
+        const nameY = labelYAboveSphere(size, label.scale.y);
+        label.position.y = nameY;
         anchor.add(label);
+        if (timeLabel) {
+          timeLabel.position.y = timeLabelYBelowName(
+            nameY,
+            label.scale.y,
+            timeLabel.scale.y,
+          );
+          timeLabel.visible = false;
+          anchor.add(timeLabel);
+        }
       }
 
       world.add(anchor);
@@ -535,20 +594,30 @@ export function SonicPresenceLandscape({
         shell,
         core,
         halo,
-        orbit,
+        label,
+        timeLabel: label ? timeLabel : null,
+        haloRestColor,
+        haloPlayColor,
+        haloBaseOpacity,
+        haloBaseScale,
+        shellBaseEmissive,
         base,
         baseScale: size,
         phase: hashUnit(`${encounter.id}:phase`) * Math.PI * 2,
         driftRadius:
           0.35 +
           (1 - durationWeight) * 2.45 +
-          hashUnit(`${encounter.id}:drift`) * (0.35 + (1 - durationWeight) * 1.25),
+          hashUnit(`${encounter.id}:drift`) *
+            (0.35 + (1 - durationWeight) * 1.25),
         driftSpeed:
           0.028 +
           (1 - durationWeight) * 0.08 +
           hashUnit(`${encounter.id}:speed`) * 0.055,
         driftTilt: 0.22 + (1 - durationWeight) * 0.65,
-        bob: 0.22 + (1 - durationWeight) * 0.44 + hashUnit(`${encounter.id}:bob`) * 0.36,
+        bob:
+          0.22 +
+          (1 - durationWeight) * 0.44 +
+          hashUnit(`${encounter.id}:bob`) * 0.36,
         spin: 0.2 + hashUnit(`${encounter.id}:spin`) * 0.5,
       };
     });
@@ -576,18 +645,23 @@ export function SonicPresenceLandscape({
     const stars = new THREE.Points(starGeometry, starMaterial);
     scene.add(stars);
 
-    const focus = new THREE.Vector3(0, -0.65, -3.2);
+    const focus = SCENE_FOCUS.clone();
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let lastPointerDown = { x: 0, y: 0 };
     const viewport = { width: 1, height: 1, isMobile: false };
     let hoverX = 0;
     let hoverY = 0;
-    let yaw = 0;
-    let pitch = 0;
-    let zoom = 1;
+    let yaw = cameraStateRef.current.yaw;
+    let pitch = cameraStateRef.current.pitch;
+    let zoom = cameraStateRef.current.zoom;
     let isDragging = false;
     let lastTouchDistance: number | null = null;
+    const setHoveredBody = (body: PresenceBody | null) => {
+      for (const item of bodies) {
+        if (item.timeLabel) item.timeLabel.visible = item === body;
+      }
+    };
     const pickHover = (event: PointerEvent) => {
       const rect = container.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -599,17 +673,17 @@ export function SonicPresenceLandscape({
       )[0];
       if (!hit) {
         container.style.cursor = isDragging ? "grabbing" : "grab";
-        setHoveredEncounter(null);
+        setHoveredBody(null);
         return;
       }
       if (hit.object === centerShell) {
         container.style.cursor = "pointer";
-        setHoveredEncounter(null);
+        setHoveredBody(null);
         return;
       }
-      const body = bodies.find((item) => item.shell === hit.object);
+      const body = bodies.find((item) => item.shell === hit.object) ?? null;
       container.style.cursor = "pointer";
-      setHoveredEncounter(body?.encounter ?? null);
+      setHoveredBody(body);
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -632,6 +706,7 @@ export function SonicPresenceLandscape({
     };
     const onPointerDown = (event: PointerEvent) => {
       isDragging = true;
+      setHoveredBody(null);
       lastPointerDown = { x: event.clientX, y: event.clientY };
       container.setPointerCapture(event.pointerId);
     };
@@ -668,17 +743,22 @@ export function SonicPresenceLandscape({
         container.releasePointerCapture(event.pointerId);
       }
     };
+    const onPointerLeave = () => setHoveredBody(null);
     container.addEventListener("pointermove", onPointerMove);
     container.addEventListener("pointerdown", onPointerDown);
     container.addEventListener("pointerup", onPointerUp);
     container.addEventListener("pointercancel", onPointerUp);
+    container.addEventListener("pointerleave", onPointerLeave);
 
     const touchDistance = (touches: TouchList) => {
       if (touches.length < 2) return null;
       const first = touches.item(0);
       const second = touches.item(1);
       if (!first || !second) return null;
-      return Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+      return Math.hypot(
+        first.clientX - second.clientX,
+        first.clientY - second.clientY,
+      );
     };
     const onTouchStart = (event: TouchEvent) => {
       lastTouchDistance = touchDistance(event.touches);
@@ -686,7 +766,10 @@ export function SonicPresenceLandscape({
     const onTouchMove = (event: TouchEvent) => {
       const nextDistance = touchDistance(event.touches);
       if (nextDistance !== null && lastTouchDistance !== null) {
-        zoom = Math.max(0.68, Math.min(1.42, zoom - (nextDistance - lastTouchDistance) * 0.003));
+        zoom = Math.max(
+          0.68,
+          Math.min(1.42, zoom - (nextDistance - lastTouchDistance) * 0.003),
+        );
         lastTouchDistance = nextDistance;
         event.preventDefault();
       }
@@ -741,9 +824,13 @@ export function SonicPresenceLandscape({
       centerCore.scale.setScalar(0.46 * centerBreathe);
       centerShell.rotation.y = t * 0.05;
       centerCore.rotation.y = -t * 0.07;
+      const centerWave = 0.5 + 0.5 * Math.sin(t * 5.5);
       centerCoreMaterial.emissiveIntensity = centerPlaying
-        ? 0.62 + Math.sin(t * 5.5) * 0.28
+        ? 0.72 + centerWave * 0.38
         : 0.38 + Math.sin(t * 1.35) * 0.16;
+      centerShellMaterial.emissiveIntensity = centerPlaying
+        ? 0.34 + centerWave * 0.42
+        : 0.22;
       if (centerPlaying) {
         centerGroup.position.y = 0.25 + Math.sin(t * 5.5) * 0.08;
       } else {
@@ -752,8 +839,7 @@ export function SonicPresenceLandscape({
       stars.rotation.y = t * 0.018;
 
       for (const body of bodies) {
-        const isPlaying =
-          playingEncounterIdRef.current === body.encounter.id;
+        const isPlaying = playingEncounterIdRef.current === body.encounter.id;
         const playPulse = isPlaying ? Math.sin(t * 5.5 + body.phase) * 0.14 : 0;
         const drift = t * body.driftSpeed + body.phase;
         body.anchor.position.x =
@@ -763,19 +849,35 @@ export function SonicPresenceLandscape({
           Math.sin(t * body.bob + body.phase) * 0.42 +
           (isPlaying ? Math.sin(t * 5.5 + body.phase) * 0.2 : 0);
         body.anchor.position.z =
-          body.base.z + Math.sin(drift * body.driftTilt) * body.driftRadius * 0.75;
+          body.base.z +
+          Math.sin(drift * body.driftTilt) * body.driftRadius * 0.75;
         body.anchor.rotation.y += 0.004 * body.spin;
-        const peerBreathe = 1 + Math.sin(t * 1.2 + body.phase) * 0.05 + playPulse;
+        const playWave = 0.5 + 0.5 * Math.sin(t * 5.5 + body.phase);
+        const peerBreathe =
+          1 + Math.sin(t * 1.2 + body.phase) * 0.05 + playPulse;
         body.shell.scale.setScalar(body.baseScale * peerBreathe);
         body.core.scale.setScalar(body.baseScale * 0.58 * peerBreathe);
+        const shellMat = body.shell.material as THREE.MeshPhysicalMaterial;
         const coreMat = body.core.material as THREE.MeshStandardMaterial;
-        coreMat.emissiveIntensity = isPlaying
-          ? 0.78 + Math.sin(t * 5.5) * 0.22
-          : 0.5;
+        const haloMat = body.halo.material as THREE.SpriteMaterial;
+        if (isPlaying) {
+          haloMat.color.copy(body.haloPlayColor);
+          haloMat.opacity = body.haloBaseOpacity + 0.48 + playWave * 0.28;
+          const haloSize = body.haloBaseScale * (1.28 + playWave * 0.22);
+          body.halo.scale.set(haloSize, haloSize, 1);
+          shellMat.emissiveIntensity =
+            body.shellBaseEmissive + 0.55 + playWave * 0.28;
+          coreMat.emissiveIntensity = 0.95 + playWave * 0.35;
+        } else {
+          haloMat.color.copy(body.haloRestColor);
+          haloMat.opacity = body.haloBaseOpacity;
+          body.halo.scale.set(body.haloBaseScale, body.haloBaseScale, 1);
+          shellMat.emissiveIntensity = body.shellBaseEmissive;
+          coreMat.emissiveIntensity = 0.5;
+        }
         body.shell.rotation.y += 0.004 * body.spin;
         body.core.rotation.y += 0.006 * body.spin;
         body.halo.material.rotation += 0.002 * body.spin;
-        body.orbit.rotation.z += 0.003 * body.spin;
       }
 
       renderer.render(scene, camera);
@@ -784,12 +886,14 @@ export function SonicPresenceLandscape({
     frame = requestAnimationFrame(animate);
 
     return () => {
+      cameraStateRef.current = { yaw, pitch, zoom };
       cancelAnimationFrame(frame);
       resizeObserver.disconnect();
       container.removeEventListener("pointermove", onPointerMove);
       container.removeEventListener("pointerdown", onPointerDown);
       container.removeEventListener("pointerup", onPointerUp);
       container.removeEventListener("pointercancel", onPointerUp);
+      container.removeEventListener("pointerleave", onPointerLeave);
       container.removeEventListener("touchstart", onTouchStart);
       container.removeEventListener("touchmove", onTouchMove);
       container.removeEventListener("touchend", onTouchEnd);
@@ -808,8 +912,6 @@ export function SonicPresenceLandscape({
     fontReady,
     onSelectEncounter,
     onSelectSelf,
-    playingEncounterId,
-    playingSelf,
   ]);
 
   return (
@@ -820,17 +922,6 @@ export function SonicPresenceLandscape({
         aria-label="A three-dimensional sonic landscape of today's co-presence"
       />
 
-      {hoveredEncounter ? (
-        <div className="glass-panel pointer-events-none absolute left-1/2 top-[max(7.5rem,calc(env(safe-area-inset-top)+6.5rem))] z-30 -translate-x-1/2 rounded-2xl px-4 py-2 text-center">
-          <p className="font-display text-lg tracking-[-0.04em]">
-            {encounterDisplayName(hoveredEncounter)}
-          </p>
-          <p className="mt-1 font-body text-xs text-text-muted">
-            {formatEncounterWindow(hoveredEncounter)}
-          </p>
-        </div>
-      ) : null}
-
       <div className="pointer-events-none absolute inset-x-0 top-[max(4.25rem,calc(env(safe-area-inset-top)+3.75rem))] z-20 flex justify-center px-6 text-center sm:top-[max(4.75rem,calc(env(safe-area-inset-top)+4.25rem))] sm:px-24 lg:top-[max(4rem,calc(env(safe-area-inset-top)+3.5rem))]">
         <h1 className="max-w-[min(86vw,56rem)] font-display text-[clamp(2.35rem,7vw,5.2rem)] leading-[0.9] tracking-[-0.055em]">
           {title}
@@ -839,7 +930,9 @@ export function SonicPresenceLandscape({
 
       <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 items-center justify-center px-4">
         <div className="flex flex-col items-center gap-2">
-          {soundControl ? <div className="rounded-full px-4 py-2">{soundControl}</div> : null}
+          {soundControl ? (
+            <div className="rounded-full px-4 py-2">{soundControl}</div>
+          ) : null}
         </div>
       </div>
     </section>

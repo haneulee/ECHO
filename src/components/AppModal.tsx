@@ -22,6 +22,10 @@ type AppModalProps = {
   size?: AppModalSize;
   /** Scroll long body content; keeps the footer pinned (use with `size="lg"`). */
   scrollBody?: boolean;
+  panelClassName?: string;
+  bodyClassName?: string;
+  /** Fixed layer behind modal body (e.g. About gradient field). */
+  panelBackdrop?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
 };
@@ -36,6 +40,9 @@ export function AppModal({
   closeLabel = "Close",
   size = "md",
   scrollBody = false,
+  panelClassName = "",
+  bodyClassName = "",
+  panelBackdrop,
   children,
   footer,
 }: AppModalProps) {
@@ -45,16 +52,24 @@ export function AppModal({
 
   const dialogClass = [
     "glass-panel relative z-10 w-full overflow-hidden text-left text-text",
-    isFullscreen ? "shadow-none" : "rounded-3xl shadow-2xl",
+    isFullscreen
+      ? "absolute inset-0 max-h-none shadow-none"
+      : "rounded-3xl shadow-2xl",
     scrollBody ? "flex flex-col" : "",
     sizeClasses[size],
+    panelClassName,
   ]
     .filter(Boolean)
     .join(" ");
 
-  const bodyClass = scrollBody
-    ? "min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 pt-12 sm:p-8 sm:pt-14"
-    : "p-6 pt-12";
+  const bodyClass = [
+    scrollBody
+      ? "min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 pt-12 sm:p-8 sm:pt-14"
+      : "p-6 pt-12",
+    bodyClassName,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div
@@ -73,11 +88,12 @@ export function AppModal({
         />
       ) : null}
       <dialog className={dialogClass} open>
+        {panelBackdrop}
         <ModalCloseButton
           className={
             isFullscreen
-              ? "absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 sm:right-6"
-              : "absolute right-4 top-4 z-10 sm:right-5 sm:top-5"
+              ? "absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-20 sm:right-6"
+              : "absolute right-4 top-4 z-20 sm:right-5 sm:top-5"
           }
           label={closeLabel}
           onClose={onClose}

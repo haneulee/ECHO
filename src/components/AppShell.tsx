@@ -35,6 +35,8 @@ type AppShellProps = {
   backHref?: string | null;
   /** Shown on the same row as the logo (overrides large header title). */
   pageTitle?: ReactNode;
+  /** Optional controls beside the inline page title in the fixed header. */
+  headerActions?: ReactNode;
 };
 
 type AuthState = {
@@ -96,6 +98,7 @@ export function AppShell({
   showAccountMenu = true,
   backHref = null,
   pageTitle = null,
+  headerActions = null,
 }: AppShellProps) {
   const inlineTitle = pageTitle ?? title ?? null;
   useEffect(() => {
@@ -150,7 +153,7 @@ export function AppShell({
         mainPad,
       ].join(" ")}
     >
-      <div className="fixed left-4 right-[min(11rem,34vw)] top-[max(1rem,env(safe-area-inset-top))] z-50 w-full flex min-w-0 items-center gap-3 sm:left-6 sm:right-[12rem] sm:gap-3.5 lg:left-8">
+      <div className="shell-header-bar fixed left-4 right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 flex min-w-0 flex-nowrap items-center gap-x-2.5 sm:left-6 sm:right-[12rem] sm:gap-x-3.5 lg:left-8">
         <Link
           aria-label="Echo home"
           className="shell-brand inline-flex shrink-0 items-center gap-2.5"
@@ -164,17 +167,29 @@ export function AppShell({
             src="/brand/gradation.png"
             width={36}
           />
-          <span className="font-display text-[1.35rem] leading-none tracking-[-0.03em]">
+          <span className="shell-brand-name font-display text-[1.35rem] leading-none tracking-[-0.03em]">
             Echo
           </span>
         </Link>
-        {inlineTitle ? (
-          <>
-            <span aria-hidden className="shell-title-sep">
-              /
-            </span>
-            <h1 className="shell-page-title min-w-0">{inlineTitle}</h1>
-          </>
+        {inlineTitle || headerActions ? (
+          <div className="shell-title-row flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden sm:gap-2">
+            {inlineTitle ? (
+              <>
+                <span aria-hidden className="shell-title-sep">
+                  /
+                </span>
+                <h1 className="shell-page-title min-w-0">{inlineTitle}</h1>
+              </>
+            ) : null}
+            {headerActions ? (
+              <>
+                <span aria-hidden className="shell-title-sep">
+                  /
+                </span>
+                {headerActions}
+              </>
+            ) : null}
+          </div>
         ) : null}
       </div>
       {showAccountMenu || backHref ? (
@@ -182,7 +197,7 @@ export function AppShell({
           {backHref ? (
             <Link
               aria-label="Go back"
-              className="glass-panel glass-interactive grid h-10 w-10 place-items-center rounded-full text-text"
+              className="glass-panel glass-interactive hidden h-10 w-10 place-items-center rounded-full text-text sm:grid"
               href={backHref}
             >
               <span aria-hidden className="font-display text-2xl leading-none">

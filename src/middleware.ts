@@ -51,11 +51,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname === "/archive" || pathname.startsWith("/archive/")) {
+    const url = request.nextUrl.clone();
+    url.pathname =
+      pathname === "/archive"
+        ? "/memories"
+        : pathname.replace(/^\/archive/, "/memories");
+    return NextResponse.redirect(url);
+  }
+
   const protectedPrefixes = [
     "/main",
     "/overview",
     "/today",
-    "/archive",
+    "/memories",
     "/profile",
     "/evolution",
     "/onboarding",
@@ -81,7 +90,9 @@ export const config = {
   matcher: [
     "/overview/:path*",
     "/today/:path*",
+    "/archive",
     "/archive/:path*",
+    "/memories/:path*",
     "/main/:path*",
     "/profile/:path*",
     "/evolution/:path*",

@@ -1,78 +1,82 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { shiftIsoDate } from "@/lib/zonedDayRange";
-import type { OverviewSpan } from "@/lib/zonedDayRange";
+import { overviewPeriodLabel } from "@/lib/memoryDate";
+import { shiftOverviewAnchorDate } from "@/lib/calendarPeriod";
+import {
+  isMemoriesBackPath,
+  memoriesPath,
+} from "@/lib/timespanNavigation";
+import { parseOverviewSpan, type OverviewSpan } from "@/lib/zonedDayRange";
 import { overviewLabels } from "@/lib/uiPoetics";
 
 type OverviewRangeControlsProps = {
   date: string;
+  hasNextPeriod: boolean;
+  hasPrevPeriod: boolean;
   span: OverviewSpan;
-  backHref: string;
+  timeZone: string;
 };
 
 export function OverviewRangeControls({
   date,
+  hasNextPeriod,
+  hasPrevPeriod,
   span,
-  backHref,
+  timeZone,
 }: OverviewRangeControlsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  function push(next: { date?: string; span?: OverviewSpan }) {
+  function push(next: { date: string }) {
     const params = new URLSearchParams(searchParams.toString());
-    if (next.date) params.set("date", next.date);
-    if (next.span) params.set("span", next.span);
-    params.set("back", backHref === "/archive" ? "/archive" : "/main");
+    params.set("date", next.date);
+    const span = parseOverviewSpan(params.get("span"));
+    const back = params.get("back");
+    params.set(
+      "back",
+      isMemoriesBackPath(back) ? memoriesPath(span) : "/main",
+    );
     router.push(`/overview?${params.toString()}`);
   }
 
-  const prevDate = shiftIsoDate(date, -1);
-  const nextDate = shiftIsoDate(date, 1);
+  const periodLabel = useMemo(
+    () => overviewPeriodLabel(date, span, timeZone),
+    [date, span, timeZone],
+  );
+
+  const prevDate = shiftOverviewAnchorDate(date, span, -1, timeZone);
+  const nextDate = shiftOverviewAnchorDate(date, span, 1, timeZone);
 
   return (
-    <div className="pointer-events-auto absolute inset-x-4 top-[max(3.5rem,calc(env(safe-area-inset-top)+2.85rem))] z-30 flex flex-wrap items-center justify-center gap-2 sm:inset-x-8">
-      <div className="glass-panel flex rounded-full p-1 font-body text-xs">
-        {(["daily", "weekly", "monthly"] as const).map((value) => (
-          <button
-            className={[
-              "rounded-full px-3 py-1.5 transition",
-              span === value
-                ? "glass-segment-active"
-                : "glass-segment-idle text-text-muted",
-            ].join(" ")}
-            key={value}
-            onClick={() => push({ span: value })}
-            type="button"
-          >
-            {value === "daily"
-              ? overviewLabels.timespanDaily
-              : value === "weekly"
-                ? overviewLabels.timespanWeekly
-                : overviewLabels.timespanMonthly}
-          </button>
-        ))}
-      </div>
+    <div className="overview-range-controls pointer-events-auto absolute inset-x-4 top-[max(3.5rem,calc(env(safe-area-inset-top)+2.85rem))] z-30 flex flex-wrap items-center justify-center gap-2 sm:inset-x-8">
       <div className="flex items-center gap-2">
         <button
-          className="glass-panel glass-interactive rounded-full px-3 py-1.5 font-body text-xs text-text disabled:opacity-40"
-          disabled={!prevDate}
+          aria-label={overviewLabels.prev}
+          className="glass-panel glass-interactive grid h-9 w-9 place-items-center rounded-full text-text disabled:opacity-40"
+          disabled={!hasPrevPeriod || !prevDate}
           onClick={() => prevDate && push({ date: prevDate })}
           type="button"
         >
-          {overviewLabels.prev}
+          <span aria-hidden className="font-display text-2xl leading-none">
+            ‹
+          </span>
         </button>
-        <span className="glass-panel rounded-full px-3 py-1.5 font-body text-xs text-text-muted">
-          {date}
+        <span className="glass-panel overview-period-label rounded-full px-3 py-1.5 font-body text-xs text-text-muted">
+          {periodLabel}
         </span>
         <button
-          className="glass-panel glass-interactive rounded-full px-3 py-1.5 font-body text-xs text-text disabled:opacity-40"
-          disabled={!nextDate}
+          aria-label={overviewLabels.next}
+          className="glass-panel glass-interactive grid h-9 w-9 place-items-center rounded-full text-text disabled:opacity-40"
+          disabled={!hasNextPeriod || !nextDate}
           onClick={() => nextDate && push({ date: nextDate })}
           type="button"
         >
-          {overviewLabels.next}
+          <span aria-hidden className="font-display text-2xl leading-none">
+            ›
+          </span>
         </button>
       </div>
     </div>

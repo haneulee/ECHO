@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 const ALLOWED_PREFIXES = [
   "/overview",
   "/today",
-  "/archive",
+  "/memories",
   "/main",
   "/profile",
   "/evolution",

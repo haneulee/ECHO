@@ -22,7 +22,7 @@ export const profileLabels = {
 export const navItems = [
   { kind: "link" as const, href: "/main", label: "Main" },
   { kind: "link" as const, href: "/overview", label: "Overview" },
-  { kind: "link" as const, href: "/archive", label: "Archive" },
+  { kind: "link" as const, href: "/memories", label: "Memories" },
   {
     kind: "account" as const,
     signedInLabel: "Rest",
@@ -70,13 +70,14 @@ export const mainHome = {
 } as const;
 
 export const overviewPage = {
-  title: "Encounters overview",
+  title: "Overview",
 } as const;
 
 export const overviewLabels = {
   timespanDaily: "Daily",
   timespanWeekly: "Weekly",
   timespanMonthly: "Monthly",
+  timespanSelectLabel: "Encounter overview timespan",
   prev: "Previous",
   next: "Next",
   openFromMemory: "Encounters overview",
@@ -85,10 +86,11 @@ export const overviewLabels = {
 /** Archive carousel — headline under the date */
 export const archiveCarousel = {
   dayHeadline: (encounterCount: number) => {
-    if (encounterCount === 0) return "Not so much today…";
-    if (encounterCount === 1) return "One nearness left a small trace.";
-    if (encounterCount >= 8) return "Wow—that’s a lot of nearness.";
-    return `${encounterCount} moments of nearness stayed behind.`;
+    if (encounterCount === 0) return "Quiet day...";
+    if (encounterCount === 1) return "Only one encounter.";
+    if (encounterCount >= 4) return "Quite a few encounters today.";
+    if (encounterCount >= 8) return "Wow, that’s a lot of encounters today!";
+    return `${encounterCount} encounters.`;
   },
 } as const;
 
@@ -96,6 +98,16 @@ export const aboutPage = {
   title: "About",
   brandName: "Echo",
   tagline: "A sonic companion for co-presence",
+  sections: {
+    about: "",
+    reflection: "",
+  },
+  creditGroups: {
+    team: "Design & Development",
+    institution: "Program",
+    guidance: "Guidance",
+  },
+  footerNote: "HEAD — Genève · Master Media Design",
   paragraphs: [
     "Echo is a small companion device that reacts to the presence of its peers through sound. Released as three different types, each has its own temperament expressed through sonic identity. When alone, it remains quiet. As two or more devices share proximity, they start playing sound in harmony thanks to layered tones and shifting rhythms. Echo somehow reflects the subtle sense of connection that can emerge when real-life encounters happen. It transforms physical proximity into a playful collective experience.",
     "Over time, encounters leave traces within each Echo companions. At the end of the day, users place it on its station, where moments of co-presence recorded during the day are transferred into a digital interface to revisit over time an evolving archive of sound memories displayed as audio-reactive visual landscapes.",

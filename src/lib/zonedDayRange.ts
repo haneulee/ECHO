@@ -1,5 +1,7 @@
 import { DateTime } from "luxon";
 
+import { zonedCalendarSpanRangeUtc } from "@/lib/calendarPeriod";
+
 export function isValidIanaTimeZone(timeZone: string): boolean {
   if (!timeZone.trim()) return false;
   return DateTime.now().setZone(timeZone).isValid;
@@ -25,21 +27,17 @@ export function zonedDayRangeUtc(
 
 export type OverviewSpan = "daily" | "weekly" | "monthly";
 
+export function parseOverviewSpan(value: string | null): OverviewSpan {
+  return value === "weekly" || value === "monthly" ? value : "daily";
+}
+
 export function zonedSpanRangeUtc(
   dateStr: string,
   timeZone: string,
   span: OverviewSpan,
 ): { start: Date; end: Date } | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
-  const endDay = DateTime.fromISO(`${dateStr}T00:00:00`, { zone: timeZone });
-  if (!endDay.isValid) return null;
-  const days =
-    span === "daily" ? 1 : span === "weekly" ? 7 : span === "monthly" ? 30 : 1;
-  const startDay = endDay.minus({ days: days - 1 });
-  return {
-    start: startDay.toUTC().toJSDate(),
-    end: endDay.plus({ days: 1 }).toUTC().toJSDate(),
-  };
+  if (span === "daily") return zonedDayRangeUtc(dateStr, timeZone);
+  return zonedCalendarSpanRangeUtc(dateStr, timeZone, span);
 }
 
 export function shiftIsoDate(dateStr: string, deltaDays: number): string | null {

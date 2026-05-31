@@ -1,17 +1,26 @@
 "use client";
 
-import Link from "next/link";
-
 import { NavigateWithLoader } from "@/components/NavigateWithLoader";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { type ArchiveCarouselItem } from "@/components/ArchiveCarousel";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
+import { MemoriesTimespanSelect } from "@/components/MemoriesTimespanSelect";
 import { PageLoading } from "@/components/PageLoading";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import type { ArchiveApiResponse } from "@/lib/archiveApiTypes";
+import { aggregateArchiveItems } from "@/lib/aggregateArchiveItems";
+import { memoryDate, memoryPeriodLabel } from "@/lib/memoryDate";
+import {
+  memoriesPath,
+  overviewPath,
+  persistTimespan,
+  resolveTimespan,
+} from "@/lib/timespanNavigation";
 import { archiveCarousel, archiveHero, overviewLabels } from "@/lib/uiPoetics";
+import type { OverviewSpan } from "@/lib/zonedDayRange";
 
 type LoadState =
   | { kind: "loading" }
@@ -22,15 +31,6 @@ const MIN_LOADING_MS = 150;
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function memoryDate(date: string, style: "long" | "short") {
-  return new Date(`${date}T12:00:00`).toLocaleDateString("en", {
-    ...(style === "long"
-      ? { weekday: "long" as const, month: "long" as const }
-      : { month: "short" as const }),
-    day: "numeric",
-  });
 }
 
 function encounterWindow(item: ArchiveCarouselItem) {
@@ -50,16 +50,14 @@ function encounterWindow(item: ArchiveCarouselItem) {
   return `${format.format(first)} – ${format.format(last)}`;
 }
 
-export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) {
+export function DesktopArchiveView({
+  items,
+}: {
+  items: ArchiveCarouselItem[];
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeItem = items[activeIndex]!;
   const activeMemory = activeItem.memory;
-
-  function move(delta: number) {
-    setActiveIndex((current) =>
-      Math.min(items.length - 1, Math.max(0, current + delta)),
-    );
-  }
 
   return (
     <section className="hidden min-h-[calc(100dvh-8rem)] grid-rows-[1fr_auto] lg:grid">
@@ -100,15 +98,13 @@ export function DesktopArchiveView({ items }: { items: ArchiveCarouselItem[] }) 
             <p className="font-body text-xs uppercase text-text-muted">
               {memoryDate(activeMemory.date, "long")}
             </p>
-            <p className="mt-6 max-w-xs font-display text-[42px] leading-[44px] tracking-[-0.04em]">
+            <p className="mt-6 max-w-sm font-display text-[42px] leading-[44px] tracking-[-0.04em]">
               {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
             </p>
             <span className="my-8 block h-px w-12 bg-text/15" />
             <div className="space-y-6 font-body text-sm text-text-muted">
               <div>
-                <p className="text-xs uppercase">
-                  The air changed
-                </p>
+                <p className="text-xs uppercase">The air changed</p>
                 <p className="mt-1 text-text">{encounterWindow(activeItem)}</p>
               </div>
             </div>
@@ -186,7 +182,7 @@ function memorySlotTransform(offset: number, isMobile: boolean) {
       case 1:
         return "translate(-50%, 0) translate(47vw, -0.5vh) rotate(10deg)";
       default:
-        return "translate(-50%, 0) translate(0, -30vh) rotate(0deg)";
+        return "translate(-50%, -50%) translate(0, 0) rotate(0deg)";
     }
   }
   switch (offset) {
@@ -213,23 +209,54 @@ function isMemoryDragBlockedTarget(target: EventTarget | null) {
   );
 }
 
-function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
+function MemoriesListView({
+  items,
+  span,
+  timeZone,
+}: {
+  items: ArchiveCarouselItem[];
+  span: OverviewSpan;
+  timeZone: string;
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const pointerStartX = useRef<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const stageConfig = getStageConfig(isMobile);
-  const activeItem = items[activeIndex]!;
-  const activeMemory = activeItem.memory;
-  const visibleItems = items
-    .map((item, index) => ({ item, index, offset: index - activeIndex }))
-    .filter(({ offset }) => Math.abs(offset) <= 1);
+  const safeActiveIndex =
+    items.length === 0 ? 0 : Math.min(activeIndex, items.length - 1);
+  const activeItem = items[safeActiveIndex];
+  const activeMemory = activeItem?.memory;
 
-  const move = useCallback((delta: number) => {
-    setActiveIndex((current) =>
-      Math.min(items.length - 1, Math.max(0, current + delta)),
-    );
-  }, [items.length]);
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [span, items.length]);
+
+  const overviewHref = useMemo(
+    () =>
+      activeMemory
+        ? overviewPath({
+            date: activeMemory.date,
+            span,
+            back: memoriesPath(span),
+          })
+        : "/overview",
+    [activeMemory, span],
+  );
+
+  const canGoPrev = safeActiveIndex > 0;
+  const canGoNext = safeActiveIndex < items.length - 1;
+
+  const move = useCallback(
+    (delta: number) => {
+      if (delta < 0 && !canGoPrev) return;
+      if (delta > 0 && !canGoNext) return;
+      setActiveIndex((current) =>
+        Math.min(items.length - 1, Math.max(0, current + delta)),
+      );
+    },
+    [canGoNext, canGoPrev, items.length],
+  );
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)");
@@ -278,6 +305,20 @@ function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
     [finishPointerDrag],
   );
 
+  if (!activeItem || !activeMemory) {
+    return (
+      <div className="flex flex-1 items-center justify-center px-6 py-10">
+        <p className="max-w-sm text-center font-body text-sm leading-6 text-text-muted">
+          No sound memories match this view yet.
+        </p>
+      </div>
+    );
+  }
+
+  const visibleItems = items
+    .map((item, index) => ({ item, index, offset: index - safeActiveIndex }))
+    .filter(({ offset }) => Math.abs(offset) <= 1);
+
   return (
     <section
       aria-label="Sound memories"
@@ -286,7 +327,8 @@ function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
         isDragging ? "memory-stage--dragging" : "",
       ].join(" ")}
       onPointerDown={(event) => {
-        if (event.button !== 0 || isMemoryDragBlockedTarget(event.target)) return;
+        if (event.button !== 0 || isMemoryDragBlockedTarget(event.target))
+          return;
         beginPointerDrag(event.clientX);
       }}
     >
@@ -302,7 +344,9 @@ function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
                 aria-hidden={!isActive}
                 className={[
                   "memory-stage-card memory-stage-card--orbit",
-                  isActive ? "memory-stage-card--active" : "memory-stage-card--side",
+                  isActive
+                    ? "memory-stage-card--active"
+                    : "memory-stage-card--side",
                 ].join(" ")}
                 key={memory.id}
                 style={{
@@ -315,6 +359,7 @@ function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
                     bleed
                     composition={memory.composition}
                     encounters={item.encounters}
+                    gradientMotion={isActive}
                     gradientOnly
                     size={stageConfig.visualSize}
                     visualId={`memory-stack-${memory.id}`}
@@ -331,17 +376,14 @@ function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
       <div className="memory-stage-bottom">
         <div className="memory-stage-copy">
           <h2 className="font-display text-[clamp(1.65rem,7vw,2.35rem)] leading-[1.05] tracking-[-0.045em]">
-            {memoryDate(activeMemory.date, "long")}
+            {memoryPeriodLabel(activeItem, span, timeZone)}
           </h2>
           <p className="mt-2 font-body text-sm leading-5 text-text-muted">
             {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
           </p>
-          <p className="mt-1.5 font-body text-xs uppercase text-text-muted">
-            {encounterWindow(activeItem)}
-          </p>
           <NavigateWithLoader
             className="glass-btn-primary mt-4 inline-flex w-fit rounded-full px-6 py-2.5 font-body text-sm"
-            href={`/overview?date=${activeMemory.date}&back=%2Farchive`}
+            href={overviewHref}
             loaderLabel="Opening encounters"
           >
             {overviewLabels.openFromMemory}
@@ -350,19 +392,64 @@ function MemoriesListView({ items }: { items: ArchiveCarouselItem[] }) {
 
         <footer className="memory-stage-footer">
           <p className="font-body text-xs tabular-nums text-text-muted">
-            {activeIndex + 1} / {items.length}
+            {safeActiveIndex + 1} / {items.length}
           </p>
           <div aria-hidden className="memory-stage-progress">
             <div
               className="memory-stage-progress-fill"
               style={{
-                width: `${((activeIndex + 1) / items.length) * 100}%`,
+                width: `${((safeActiveIndex + 1) / items.length) * 100}%`,
               }}
             />
           </div>
         </footer>
       </div>
     </section>
+  );
+}
+
+function MemoriesLoadedView({
+  dailyItems,
+}: {
+  dailyItems: ArchiveCarouselItem[];
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const timeZone = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    [],
+  );
+  const span = resolveTimespan(searchParams.get("span"));
+  const items = useMemo(
+    () => aggregateArchiveItems(dailyItems, span, timeZone),
+    [dailyItems, span, timeZone],
+  );
+
+  const setSpan = useCallback(
+    (next: OverviewSpan) => {
+      persistTimespan(next);
+      router.replace(memoriesPath(next), { scroll: false });
+    },
+    [router],
+  );
+
+  return (
+    <AppShell
+      backHref="/main"
+      fullBleed
+      headerActions={
+        <MemoriesTimespanSelect
+          onChange={setSpan}
+          value={span}
+          variant="header"
+        />
+      }
+      hideChrome
+      pageTitle={archiveHero.title}
+      viewportLocked
+    >
+      <MemoriesListView items={items} span={span} timeZone={timeZone} />
+    </AppShell>
   );
 }
 
@@ -420,7 +507,12 @@ function ArchiveBody() {
 
   if (state.kind === "error") {
     return (
-      <AppShell backHref="/main" hideChrome pageTitle={archiveHero.title} viewportLocked>
+      <AppShell
+        backHref="/main"
+        hideChrome
+        pageTitle={archiveHero.title}
+        viewportLocked
+      >
         <div className="space-y-4 px-1 pt-4">
           <p className="font-body text-sm text-red-900/90">{state.message}</p>
           <button
@@ -437,7 +529,12 @@ function ArchiveBody() {
 
   if (state.kind === "ok" && state.items.length === 0) {
     return (
-      <AppShell backHref="/main" hideChrome pageTitle={archiveHero.title} viewportLocked>
+      <AppShell
+        backHref="/main"
+        hideChrome
+        pageTitle={archiveHero.title}
+        viewportLocked
+      >
         <div className="space-y-5 px-1 pt-4">
           <p className="max-w-md font-body text-sm leading-6 text-text/80">
             No sound memories have settled here yet. After Echo rests on its
@@ -449,22 +546,22 @@ function ArchiveBody() {
   }
 
   if (state.kind === "ok" && state.items.length > 0) {
-    return (
-      <AppShell
-        backHref="/main"
-        fullBleed
-        hideChrome
-        pageTitle={archiveHero.title}
-        viewportLocked
-      >
-        <MemoriesListView items={state.items} />
-      </AppShell>
-    );
+    return <MemoriesLoadedView dailyItems={state.items} />;
   }
 
   return null;
 }
 
 export function ArchivePageView() {
-  return <ArchiveBody />;
+  return (
+    <Suspense
+      fallback={
+        <AppShell hideChrome pageTitle={archiveHero.title} viewportLocked>
+          <PageLoading className="min-h-0 flex-1" label="Loading" />
+        </AppShell>
+      }
+    >
+      <ArchiveBody />
+    </Suspense>
+  );
 }

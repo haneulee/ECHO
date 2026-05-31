@@ -1,13 +1,21 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
+import { MemoriesTimespanSelect } from "@/components/MemoriesTimespanSelect";
 import { OverviewRangeControls } from "@/components/OverviewRangeControls";
 import { PageLoading } from "@/components/PageLoading";
 import { SonicPresenceLandscape } from "@/components/SonicPresenceLandscape";
 import type { OverviewSpan } from "@/lib/zonedDayRange";
+import {
+  isMemoriesBackPath,
+  memoriesPath,
+  persistTimespan,
+  resolveMemoriesBackHref,
+  resolveTimespan,
+} from "@/lib/timespanNavigation";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import { encounterDisplayName } from "@/lib/encounterDisplay";
 import { mockEncounters } from "@/lib/mockData";
@@ -135,16 +143,31 @@ function aggregateEncountersForOrbit(encounters: Encounter[]): Encounter[] {
 }
 
 function TodayDataBody() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const backHref = searchParams.get("back") === "/archive" ? "/archive" : "/main";
+  const backParam = searchParams.get("back");
+  const span = resolveTimespan(searchParams.get("span"));
+  const backHref = resolveMemoriesBackHref(backParam, span);
   const deviceId = searchParams.get("deviceId");
   const date = searchParams.get("date") ?? localIsoDate(new Date());
-  const spanParam = searchParams.get("span");
-  const span: OverviewSpan =
-    spanParam === "weekly" || spanParam === "monthly" ? spanParam : "daily";
   const timeZone = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone,
     [],
+  );
+
+  const setSpan = useCallback(
+    (next: OverviewSpan) => {
+      persistTimespan(next);
+      const params = new URLSearchParams(searchParams.toString());
+      if (next === "daily") params.delete("span");
+      else params.set("span", next);
+      params.set(
+        "back",
+        isMemoriesBackPath(backParam) ? memoriesPath(next) : "/main",
+      );
+      router.push(`/overview?${params.toString()}`);
+    },
+    [backParam, router, searchParams],
   );
 
   const [state, setState] = useState<LoadState>({ kind: "loading" });
@@ -258,12 +281,25 @@ function TodayDataBody() {
       echoColorTheme={echoColorTheme}
       echoDevice={state.kind === "ok" ? state.data.device : null}
       fullBleed
+      headerActions={
+        <MemoriesTimespanSelect
+          onChange={setSpan}
+          value={span}
+          variant="header"
+        />
+      }
       hideChrome
       pageTitle={overviewPage.title}
       viewportLocked
     >
       {state.kind === "ok" ? (
-        <OverviewRangeControls backHref={backHref} date={date} span={span} />
+        <OverviewRangeControls
+          date={date}
+          hasNextPeriod={state.data.hasNextPeriod}
+          hasPrevPeriod={state.data.hasPrevPeriod}
+          span={span}
+          timeZone={timeZone}
+        />
       ) : null}
       {state.kind === "error" ? (
         <div className="mx-auto max-w-[920px] space-y-4 px-4 py-8">
