@@ -763,6 +763,8 @@ input {
 
 .shell-brand {
   color: var(--text);
+  line-height: 0;
+  transform: translateY(0.18rem);
 }
 
 .shell-title-sep {
@@ -778,9 +780,11 @@ input {
 .shell-title-row {
   min-width: 0;
   flex: 0 1 auto;
+  align-items: baseline;
 }
 
 .shell-header-bar {
+  align-items: baseline;
   pointer-events: none;
 }
 
@@ -1204,7 +1208,7 @@ input {
 }
 
 .about-eyebrow {
-  margin: 0;
+  margin: 0 0 0.85rem 0;
   font-family: var(--font-averia), serif;
   font-size: 0.6875rem;
   font-weight: 400;

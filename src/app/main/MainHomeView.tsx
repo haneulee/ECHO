@@ -76,8 +76,7 @@ export function MainHomeView({
           </button>
           {!hasTodayEncounters ? (
             <p className="mt-3 max-w-sm font-body text-sm leading-6 text-text-muted">
-              No one has crossed its field yet, so today holds only your
-              Echo&apos;s own color.
+              {mainHome.emptyToday}
             </p>
           ) : null}
           <div className="mt-4 flex flex-wrap justify-center gap-3">

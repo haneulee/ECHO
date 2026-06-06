@@ -65,6 +65,7 @@ export const archiveHero = {
 
 export const mainHome = {
   title: "Your daily encounters",
+  emptyToday: "Quiet day... Echo is still holding its own color.",
   encountersOverviewCta: "Encounters overview",
   memoriesCta: "Memories",
 } as const;

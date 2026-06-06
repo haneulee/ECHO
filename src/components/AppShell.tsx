@@ -162,14 +162,14 @@ export function AppShell({
           <Image
             alt=""
             aria-hidden
-            className="h-9 w-9 shrink-0 object-contain"
-            height={36}
-            src="/brand/gradation.png"
-            width={36}
+            className="h-100 w-100 shrink-0 object-contain"
+            height={100}
+            src="/brand/echo_logo.png"
+            width={100}
           />
-          <span className="shell-brand-name font-display text-[1.35rem] leading-none tracking-[-0.03em]">
+          {/* <span className="shell-brand-name font-display text-[1.35rem] leading-none tracking-[-0.03em]">
             Echo
-          </span>
+          </span> */}
         </Link>
         {inlineTitle || headerActions ? (
           <div className="shell-title-row flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden sm:gap-2">

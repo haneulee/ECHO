@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { AboutCanvasGlow } from "@/components/AboutCanvasGlow";
 import { aboutPage } from "@/lib/uiPoetics";
+import Image from "next/image";
 
 type AboutContentVariant = "page" | "modal";
 
@@ -39,9 +40,17 @@ export function AboutContent({
       <div className="about-layout">
         <div className="about-hero-head">
           <p className="about-eyebrow">{aboutPage.title}</p>
-          <h1 className="about-title font-display tracking-[-0.055em]" id={id}>
+          {/* <h1 className="about-title font-display tracking-[-0.055em]" id={id}>
             {aboutPage.brandName}
-          </h1>
+          </h1> */}
+          <Image
+            alt=""
+            aria-hidden
+            className="h-100 w-full shrink-0 object-contain"
+            height={100}
+            src="/brand/echo_logo.png"
+            width={200}
+          />
           <p className="about-tagline font-body text-text-muted">
             {aboutPage.tagline}
           </p>
@@ -59,7 +68,13 @@ export function AboutContent({
               {sections.about ? (
                 <h2 className="about-section-title">{sections.about}</h2>
               ) : null}
-              <div className={sections.about ? "about-prose" : "about-prose about-prose--leadless"}>
+              <div
+                className={
+                  sections.about
+                    ? "about-prose"
+                    : "about-prose about-prose--leadless"
+                }
+              >
                 {aboutParagraphs.map((paragraph) => (
                   <p key={paragraph.slice(0, 48)}>{paragraph}</p>
                 ))}
@@ -71,7 +86,13 @@ export function AboutContent({
               {sections.reflection ? (
                 <h2 className="about-section-title">{sections.reflection}</h2>
               ) : null}
-              <div className={sections.reflection ? "about-prose" : "about-prose about-prose--leadless"}>
+              <div
+                className={
+                  sections.reflection
+                    ? "about-prose"
+                    : "about-prose about-prose--leadless"
+                }
+              >
                 <p>{reflection}</p>
               </div>
             </section>
