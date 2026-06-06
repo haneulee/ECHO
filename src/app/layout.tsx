@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Averia_Serif_Libre } from "next/font/google";
+import { Averia_Libre } from "next/font/google";
 import "./globals.css";
 
-const averia = Averia_Serif_Libre({
+const averia = Averia_Libre({
   subsets: ["latin"],
   weight: ["300", "400", "700"],
   style: ["normal", "italic"],
