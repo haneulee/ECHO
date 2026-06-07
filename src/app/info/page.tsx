@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
+
 import { AboutContent } from "@/components/AboutContent";
 import { AppShell } from "@/components/AppShell";
 import { aboutPage } from "@/lib/uiPoetics";
+
+export const metadata: Metadata = {
+  title: aboutPage.title,
+};
 
 export default function InfoPage() {
   return (

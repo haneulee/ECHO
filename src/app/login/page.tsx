@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { LoadingPulse } from "@/components/LoadingPulse";
@@ -18,6 +18,10 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    document.title = "Log in / Echo";
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

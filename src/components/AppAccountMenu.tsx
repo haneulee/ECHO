@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { AboutModal } from "@/components/AboutModal";
-import { EchoSettingsDialog } from "@/components/EchoSettingsDialog";
 import { MenuIcon } from "@/components/MenuIcon";
 import type { EchoDevice } from "@/lib/types";
 
@@ -21,13 +20,7 @@ export function AppAccountMenu({ device }: AppAccountMenuProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);
-  const [echoDevice, setEchoDevice] = useState(device ?? null);
-
-  useEffect(() => {
-    setEchoDevice(device ?? null);
-  }, [device]);
 
   const logout = useCallback(async () => {
     setOpen(false);
@@ -61,18 +54,15 @@ export function AppAccountMenu({ device }: AppAccountMenuProps) {
               className="glass-panel absolute right-0 top-[calc(100%+0.5rem)] z-50 min-w-[11rem] rounded-2xl py-2 font-body text-sm shadow-lg"
               role="menu"
             >
-              {echoDevice ? (
-                <button
+              {device && !isCurrentPath(pathname, "/my-echo") ? (
+                <Link
                   className="glass-menu-item block w-full px-4 py-2.5 text-left"
-                  onClick={() => {
-                    setOpen(false);
-                    setSettingsOpen(true);
-                  }}
+                  href="/my-echo"
+                  onClick={() => setOpen(false)}
                   role="menuitem"
-                  type="button"
                 >
-                  Echo settings
-                </button>
+                  My Echo
+                </Link>
               ) : null}
               {!isCurrentPath(pathname, "/main") ? (
                 <Link
@@ -117,17 +107,6 @@ export function AppAccountMenu({ device }: AppAccountMenuProps) {
           </>
         ) : null}
       </div>
-      {echoDevice ? (
-        <EchoSettingsDialog
-          device={echoDevice}
-          onClose={() => setSettingsOpen(false)}
-          onSaved={(next) => {
-            setEchoDevice(next);
-            router.refresh();
-          }}
-          open={settingsOpen}
-        />
-      ) : null}
       <AboutModal onClose={() => setCreditsOpen(false)} open={creditsOpen} />
     </>
   );

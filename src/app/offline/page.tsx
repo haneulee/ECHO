@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Echo — database unreachable",
+  title: "Database unreachable",
 };
 
 export default function OfflinePage() {

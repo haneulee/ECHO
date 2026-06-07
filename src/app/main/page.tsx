@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
@@ -10,6 +11,10 @@ import type { DailyMemory, EchoDevice, Encounter } from "@/lib/types";
 import { profileHero, profileNoDevice } from "@/lib/uiPoetics";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Your daily encounters",
+};
 
 function ownEchoComposition(device: EchoDevice): DailyMemory["composition"] {
   return {

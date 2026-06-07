@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { onboarding } from "@/lib/uiPoetics";
 
@@ -17,6 +17,10 @@ export default function SignupPage() {
   const [echoUnitCode, setEchoUnitCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    document.title = "Sign up / Echo";
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

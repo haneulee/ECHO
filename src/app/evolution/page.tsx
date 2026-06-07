@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { CSSProperties } from "react";
 
@@ -8,6 +9,10 @@ import { getProfileDeviceContext } from "@/lib/profileDeviceService";
 import type { EchoEvolution } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Resonance changes your Echo",
+};
 
 function evolutionChangeLabel(mutationType: string): string {
   return mutationType

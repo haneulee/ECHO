@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
+
 import { AppShell } from "@/components/AppShell";
 import { SoundTestVoice } from "@/components/SoundTestVoice";
 import { getSoundLabPayload } from "@/lib/soundLabService";
 import { soundTestHero, soundTestProfileIntro } from "@/lib/uiPoetics";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: soundTestHero.title,
+};
 
 export default async function SoundTestPage() {
   const lab = await getSoundLabPayload();

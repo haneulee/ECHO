@@ -1,10 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { resolveSessionUser } from "@/lib/auth/resolveSessionUser";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Home",
+};
 
 export default async function HomePage() {
   if (isLocalMockMode()) {

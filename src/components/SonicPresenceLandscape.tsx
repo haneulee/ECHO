@@ -18,12 +18,13 @@ const SCENE_FOCUS = new THREE.Vector3(0, -1.12, -3.2);
 type SonicPresenceLandscapeProps = {
   device: EchoDevice | null;
   encounters: Encounter[];
-  title: ReactNode;
+  title?: ReactNode;
   soundControl?: ReactNode;
   onSelectEncounter?: (encounter: Encounter) => void;
   onSelectSelf?: () => void;
   playingEncounterId?: string | null;
   playingSelf?: boolean;
+  variant?: "full" | "echoOnly";
 };
 
 type PresenceBody = {
@@ -379,6 +380,7 @@ export function SonicPresenceLandscape({
   onSelectSelf,
   playingEncounterId = null,
   playingSelf = false,
+  variant = "full",
 }: SonicPresenceLandscapeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [fontReady, setFontReady] = useState(false);
@@ -410,13 +412,17 @@ export function SonicPresenceLandscape({
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !fontReady) return;
+    const echoOnly = variant === "echoOnly";
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(SCENE_FOG, 0.028);
+    if (!echoOnly) {
+      scene.fog = new THREE.FogExp2(SCENE_FOG, 0.028);
+    }
 
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
-    camera.position.set(0, 5.4, 15.5);
-    camera.lookAt(SCENE_FOCUS);
+    const echoOnlyFocus = new THREE.Vector3(0, 0.64, 0.1);
+    camera.position.set(0, echoOnly ? 2.35 : 5.4, echoOnly ? 6.7 : 15.5);
+    camera.lookAt(echoOnly ? echoOnlyFocus : SCENE_FOCUS);
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
@@ -440,15 +446,15 @@ export function SonicPresenceLandscape({
     scene.add(horizon);
 
     const world = new THREE.Group();
-    world.position.y = SCENE_LAYOUT_Y;
-    world.rotation.x = -0.12;
+    world.position.y = echoOnly ? 0 : SCENE_LAYOUT_Y;
+    world.rotation.x = echoOnly ? -0.04 : -0.12;
     scene.add(world);
 
-    const ground = makeAbstractGround();
-    world.add(ground);
+    const ground = echoOnly ? null : makeAbstractGround();
+    if (ground) world.add(ground);
     const echoAccent = device?.echoColor ?? DEFAULT_ECHO_ACCENT;
-    const motes = makeAmbientMotes(echoAccent);
-    world.add(motes);
+    const motes = echoOnly ? null : makeAmbientMotes(echoAccent);
+    if (motes) world.add(motes);
     const centerTexture = makeEchoTexture([echoAccent, "#ffffff", echoAccent]);
     const centerGroup = new THREE.Group();
     const centerShell = new THREE.Mesh(
@@ -479,11 +485,11 @@ export function SonicPresenceLandscape({
       centerCore.material as THREE.MeshStandardMaterial;
     const centerShellMaterial =
       centerShell.material as THREE.MeshPhysicalMaterial;
-    const centerLabel = makeTextSprite(
-      device?.echoName ?? "my Echo",
-      LABEL_TEXT_COLOR,
-      { compact: true },
-    );
+    const centerLabel = echoOnly
+      ? null
+      : makeTextSprite(device?.echoName ?? "my Echo", LABEL_TEXT_COLOR, {
+          compact: true,
+        });
     if (centerLabel) {
       centerLabel.position.y = labelYAboveSphere(
         centerShellRadius,
@@ -491,7 +497,8 @@ export function SonicPresenceLandscape({
       );
       centerGroup.add(centerLabel);
     }
-    centerGroup.position.set(0, 0.25, 0.2);
+    centerGroup.position.set(0, echoOnly ? 0.64 : 0.25, echoOnly ? 0.1 : 0.2);
+    if (echoOnly) centerGroup.scale.setScalar(1.56);
     world.add(centerGroup);
 
     const bodies: PresenceBody[] = encounters.map((encounter, index) => {
@@ -622,13 +629,15 @@ export function SonicPresenceLandscape({
       };
     });
 
-    const starMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.42,
-      size: 0.035,
-      depthWrite: false,
-    });
+    const starMaterial = echoOnly
+      ? null
+      : new THREE.PointsMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.42,
+          size: 0.035,
+          depthWrite: false,
+        });
     const starPositions: number[] = [];
     for (let i = 0; i < 180; i += 1) {
       starPositions.push(
@@ -642,10 +651,10 @@ export function SonicPresenceLandscape({
       "position",
       new THREE.Float32BufferAttribute(starPositions, 3),
     );
-    const stars = new THREE.Points(starGeometry, starMaterial);
-    scene.add(stars);
+    const stars = starMaterial ? new THREE.Points(starGeometry, starMaterial) : null;
+    if (stars) scene.add(stars);
 
-    const focus = SCENE_FOCUS.clone();
+    const focus = echoOnly ? echoOnlyFocus.clone() : SCENE_FOCUS.clone();
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let lastPointerDown = { x: 0, y: 0 };
@@ -677,7 +686,7 @@ export function SonicPresenceLandscape({
         return;
       }
       if (hit.object === centerShell) {
-        container.style.cursor = "pointer";
+        container.style.cursor = onSelectSelf ? "pointer" : "grab";
         setHoveredBody(null);
         return;
       }
@@ -803,9 +812,11 @@ export function SonicPresenceLandscape({
       const t = (now - startedAt) / 1000;
       const cameraYaw = yaw + (viewport.isMobile ? 0 : hoverX * 0.16);
       const cameraPitch = pitch + (viewport.isMobile ? 0 : hoverY * 0.08);
-      const radius = (viewport.isMobile ? 21 : 17) * zoom;
-      const baseHeight = viewport.isMobile ? 7.4 : 5.2;
-      const heightRange = viewport.isMobile ? 7.2 : 5.2;
+      const radius = echoOnly
+        ? (viewport.isMobile ? 7.6 : 6.7) * zoom
+        : (viewport.isMobile ? 21 : 17) * zoom;
+      const baseHeight = echoOnly ? 2.35 : viewport.isMobile ? 7.4 : 5.2;
+      const heightRange = echoOnly ? 1.2 : viewport.isMobile ? 7.2 : 5.2;
       camera.position.set(
         Math.sin(cameraYaw) * radius,
         baseHeight + Math.sin(cameraPitch) * heightRange,
@@ -814,9 +825,13 @@ export function SonicPresenceLandscape({
       camera.lookAt(focus);
       world.rotation.y = Math.sin(t * 0.13) * 0.08;
       world.rotation.x = -0.03;
-      ground.position.z = Math.sin(t * 0.12) * 0.24;
-      ground.rotation.y = Math.sin(t * 0.06) * 0.025;
-      motes.rotation.y = Math.sin(t * 0.06) * 0.03;
+      if (ground) {
+        ground.position.z = Math.sin(t * 0.12) * 0.24;
+        ground.rotation.y = Math.sin(t * 0.06) * 0.025;
+      }
+      if (motes) {
+        motes.rotation.y = Math.sin(t * 0.06) * 0.03;
+      }
       const centerPlaying = playingSelfRef.current;
       const centerPulse = centerPlaying ? Math.sin(t * 5.5) * 0.12 : 0;
       const centerBreathe = 1 + Math.sin(t * 1.1) * 0.06 + centerPulse;
@@ -836,7 +851,7 @@ export function SonicPresenceLandscape({
       } else {
         centerGroup.position.y = 0.25;
       }
-      stars.rotation.y = t * 0.018;
+      if (stars) stars.rotation.y = t * 0.018;
 
       for (const body of bodies) {
         const isPlaying = playingEncounterIdRef.current === body.encounter.id;
@@ -902,7 +917,7 @@ export function SonicPresenceLandscape({
       centerTexture?.dispose();
       disposeObject(world);
       starGeometry.dispose();
-      starMaterial.dispose();
+      starMaterial?.dispose();
       renderer.dispose();
     };
   }, [
@@ -912,6 +927,7 @@ export function SonicPresenceLandscape({
     fontReady,
     onSelectEncounter,
     onSelectSelf,
+    variant,
   ]);
 
   return (
@@ -922,11 +938,13 @@ export function SonicPresenceLandscape({
         aria-label="A three-dimensional sonic landscape of today's co-presence"
       />
 
-      <div className="pointer-events-none absolute inset-x-0 top-[max(4.25rem,calc(env(safe-area-inset-top)+3.75rem))] z-20 flex justify-center px-6 text-center sm:top-[max(4.75rem,calc(env(safe-area-inset-top)+4.25rem))] sm:px-24 lg:top-[max(4rem,calc(env(safe-area-inset-top)+3.5rem))]">
-        <h1 className="max-w-[min(86vw,56rem)] font-display text-[clamp(2.35rem,7vw,5.2rem)] leading-[0.9] tracking-[-0.055em]">
-          {title}
-        </h1>
-      </div>
+      {title ? (
+        <div className="pointer-events-none absolute inset-x-0 top-[max(4.25rem,calc(env(safe-area-inset-top)+3.75rem))] z-20 flex justify-center px-6 text-center sm:top-[max(4.75rem,calc(env(safe-area-inset-top)+4.25rem))] sm:px-24 lg:top-[max(4rem,calc(env(safe-area-inset-top)+3.5rem))]">
+          <h1 className="max-w-[min(86vw,56rem)] font-display text-[clamp(2.35rem,7vw,5.2rem)] leading-[0.9] tracking-[-0.055em]">
+            {title}
+          </h1>
+        </div>
+      ) : null}
 
       <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 items-center justify-center px-4">
         <div className="flex flex-col items-center gap-2">
