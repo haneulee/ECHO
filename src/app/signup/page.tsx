@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -52,15 +53,16 @@ export default function SignupPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16 text-text">
-      <p className="font-body text-xs uppercase text-text-muted">
-        Echo
-      </p>
+      <Image
+        alt="Echo"
+        className="fixed left-1/2 top-[max(1.5rem,env(safe-area-inset-top))] z-10 h-auto w-24 -translate-x-1/2"
+        height={100}
+        priority
+        src="/brand/echo_logo.png"
+        width={200}
+      />
       <h1 className="mt-3 font-display text-3xl tracking-[-0.03em]">Sign up</h1>
-      <p className="mt-2 font-body text-sm text-text-muted">
-        Lowercase id, letters, digits, underscore · password at least 8
-        characters · Echo unit code from your device (letters, digits, hyphen,
-        underscore).
-      </p>
+
       <form className="mt-8 space-y-4" onSubmit={onSubmit}>
         <label className="block font-body text-xs text-text-muted">
           User id
@@ -124,12 +126,18 @@ export default function SignupPage() {
       </form>
       <p className="mt-8 text-center font-body text-sm text-text-muted">
         Already have an account?{" "}
-        <Link className="text-text underline-offset-2 hover:underline" href="/login">
+        <Link
+          className="text-text underline-offset-2 hover:underline"
+          href="/login"
+        >
           Log in
         </Link>
       </p>
       <p className="mt-4 text-center">
-        <Link className="font-body text-sm text-text-muted hover:text-text" href="/">
+        <Link
+          className="font-body text-sm text-text-muted hover:text-text"
+          href="/"
+        >
           ← Back
         </Link>
       </p>

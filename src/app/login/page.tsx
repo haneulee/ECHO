@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { LoadingPulse } from "@/components/LoadingPulse";
 import { PageLoading } from "@/components/PageLoading";
@@ -48,9 +49,14 @@ function LoginForm() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16 text-text">
-      <p className="font-body text-xs uppercase text-text-muted">
-        Echo
-      </p>
+      <Image
+        alt="Echo"
+        className="fixed left-1/2 top-[max(1.5rem,env(safe-area-inset-top))] z-10 h-auto w-24 -translate-x-1/2"
+        height={100}
+        priority
+        src="/brand/echo_logo.png"
+        width={200}
+      />
       <h1 className="mt-3 font-display text-3xl tracking-[-0.03em]">Log in</h1>
       <form className="mt-8 space-y-4" onSubmit={onSubmit}>
         <label className="block font-body text-xs text-text-muted">

@@ -33,10 +33,11 @@ type PresenceBody = {
   shell: THREE.Sprite;
   core: THREE.Sprite;
   halo: THREE.Sprite;
+  playCenter: THREE.Sprite;
+  playIcon: THREE.Sprite | null;
   label: THREE.Sprite | null;
   timeLabel: THREE.Sprite | null;
   haloRestColor: THREE.Color;
-  haloPlayColor: THREE.Color;
   haloBaseOpacity: number;
   haloBaseScale: number;
   ringBaseOpacity: number;
@@ -52,17 +53,6 @@ type PresenceBody = {
 
 const LABEL_TEXT_COLOR = "#1a1a1a";
 const LABEL_TIME_COLOR = "#5c5c5c";
-
-function playGlowColor(hex: string) {
-  const color = new THREE.Color(hex);
-  const hsl = { h: 0, s: 0, l: 0 };
-  color.getHSL(hsl);
-  return new THREE.Color().setHSL(
-    hsl.h,
-    Math.min(1, hsl.s * 1.62 + 0.14),
-    Math.min(0.58, hsl.l * 1.1 + 0.04),
-  );
-}
 
 function hashUnit(value: string) {
   let hash = 2166136261;
@@ -142,6 +132,69 @@ function makeDotTexture() {
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
+}
+
+function makePlayCenterTexture(color: string) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const glow = ctx.createRadialGradient(64, 64, 0, 64, 64, 62);
+  glow.addColorStop(0, `${color}f2`);
+  glow.addColorStop(0.48, `${color}b8`);
+  glow.addColorStop(0.76, "rgba(255,255,255,0.76)");
+  glow.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 128, 128);
+
+  ctx.beginPath();
+  ctx.arc(64, 64, 24, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function makePlayingIconSprite() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 96;
+  canvas.height = 96;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.beginPath();
+  ctx.arc(48, 48, 30, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(26,26,26,0.3)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(40, 32);
+  ctx.lineTo(40, 64);
+  ctx.lineTo(66, 48);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(26,26,26,0.82)";
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    opacity: 0,
+    depthTest: false,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(0.34, 0.34, 1);
+  sprite.visible = false;
+  return sprite;
 }
 
 function groundYAt(x: number, z: number) {
@@ -548,9 +601,20 @@ export function SonicPresenceLandscape({
       core.scale.set(size * 2.2, size * 2.2, 1);
       anchor.add(core);
 
+      const playCenter = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: makePlayCenterTexture(accent),
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+        }),
+      );
+      playCenter.scale.set(size * 0.82, size * 0.82, 1);
+      playCenter.visible = false;
+      anchor.add(playCenter);
+
       const haloTexture = makeGlowTexture(start);
       const haloRestColor = new THREE.Color(end);
-      const haloPlayColor = playGlowColor(mid ?? start);
       const haloBaseOpacity =
         (0.42 + durationWeight * 0.18) * (0.82 + densityScale * 0.18);
       const haloBaseScale = size * (3.25 + densityScale * 1.75);
@@ -578,10 +642,15 @@ export function SonicPresenceLandscape({
         LABEL_TIME_COLOR,
         { variant: "time" },
       );
+      const playIcon = makePlayingIconSprite();
       if (label) {
         const nameY = labelYAboveSphere(size, label.scale.y);
         label.position.y = nameY;
         anchor.add(label);
+        if (playIcon) {
+          playIcon.position.y = nameY + 0.34;
+          anchor.add(playIcon);
+        }
         if (timeLabel) {
           timeLabel.position.y = timeLabelYBelowName(
             nameY,
@@ -600,10 +669,11 @@ export function SonicPresenceLandscape({
         shell,
         core,
         halo,
+        playCenter,
+        playIcon: label ? playIcon : null,
         label,
         timeLabel: label ? timeLabel : null,
         haloRestColor,
-        haloPlayColor,
         haloBaseOpacity,
         haloBaseScale,
         ringBaseOpacity,
@@ -858,14 +928,14 @@ export function SonicPresenceLandscape({
       for (const body of bodies) {
         const isPlaying = playingEncounterIdRef.current === body.encounter.id;
         const playingT = t * 2.2 + body.phase;
-        const playPulse = isPlaying ? Math.sin(playingT) * 0.045 : 0;
+        const playPulse = isPlaying ? Math.sin(playingT) * 0.035 : 0;
         const drift = t * body.driftSpeed + body.phase;
         body.anchor.position.x =
           body.base.x + Math.cos(drift) * body.driftRadius;
         body.anchor.position.y =
           body.base.y +
           Math.sin(t * body.bob + body.phase) * 0.42 +
-          (isPlaying ? Math.sin(playingT) * 0.055 : 0);
+          (isPlaying ? Math.sin(playingT) * 0.035 : 0);
         body.anchor.position.z =
           body.base.z +
           Math.sin(drift * body.driftTilt) * body.driftRadius * 0.75;
@@ -879,17 +949,33 @@ export function SonicPresenceLandscape({
         body.core.scale.set(hitSize, hitSize, 1);
         const ringMat = body.shell.material as THREE.SpriteMaterial;
         const haloMat = body.halo.material as THREE.SpriteMaterial;
+        const playCenterMat = body.playCenter.material as THREE.SpriteMaterial;
         if (isPlaying) {
-          haloMat.color.copy(body.haloPlayColor);
-          haloMat.opacity = body.haloBaseOpacity + 0.12 + playWave * 0.06;
-          const haloSize = body.haloBaseScale * (1.14 + playWave * 0.1);
-          body.halo.scale.set(haloSize, haloSize, 1);
-          ringMat.opacity = Math.min(1, body.ringBaseOpacity + 0.12);
+          haloMat.color.copy(body.haloRestColor);
+          haloMat.opacity = Math.min(0.84, body.haloBaseOpacity + 0.1);
+          body.halo.scale.set(body.haloBaseScale, body.haloBaseScale, 1);
+          ringMat.opacity = 1;
+          body.playCenter.visible = true;
+          playCenterMat.opacity = 0.72 + playWave * 0.2;
+          const centerSize = body.baseScale * (0.76 + playWave * 0.1);
+          body.playCenter.scale.set(centerSize, centerSize, 1);
+          if (body.playIcon) {
+            body.playIcon.visible = true;
+            body.playIcon.material.opacity = 0.88 + playWave * 0.12;
+          }
+          if (body.label) body.label.material.opacity = 1;
         } else {
           haloMat.color.copy(body.haloRestColor);
           haloMat.opacity = body.haloBaseOpacity;
           body.halo.scale.set(body.haloBaseScale, body.haloBaseScale, 1);
           ringMat.opacity = body.ringBaseOpacity;
+          body.playCenter.visible = false;
+          playCenterMat.opacity = 0;
+          if (body.playIcon) {
+            body.playIcon.visible = false;
+            body.playIcon.material.opacity = 0;
+          }
+          if (body.label) body.label.material.opacity = 0.82;
         }
         body.shell.material.rotation += 0.0012 * body.spin;
         body.halo.material.rotation += 0.002 * body.spin;
