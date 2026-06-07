@@ -478,7 +478,20 @@ export function SonicPresenceLandscape({
         opacity: 0.94,
       }),
     );
+    const centerHaloTexture = makeGlowTexture(echoAccent);
+    const centerHalo = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: centerHaloTexture,
+        color: new THREE.Color(echoAccent),
+        transparent: true,
+        opacity: 0.46,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
+    );
+    centerHalo.scale.set(4.1, 4.1, 1);
     const centerShellRadius = 0.92;
+    centerGroup.add(centerHalo);
     centerGroup.add(centerShell);
     centerGroup.add(centerCore);
     const centerCoreMaterial =
@@ -501,6 +514,13 @@ export function SonicPresenceLandscape({
     if (echoOnly) centerGroup.scale.setScalar(1.56);
     world.add(centerGroup);
 
+    const densityScale = echoOnly
+      ? 1
+      : Math.max(
+          0.46,
+          Math.min(1, 1 - Math.max(0, encounters.length - 10) * 0.035),
+        );
+
     const bodies: PresenceBody[] = encounters.map((encounter, index) => {
       const palette = encounterDisplayPalette(encounter);
       const [start, mid, end] = palette;
@@ -517,7 +537,7 @@ export function SonicPresenceLandscape({
         -9.5 +
         durationWeight * 9.8 +
         (hashUnit(`${encounter.id}:z`) - 0.5) * 2.2;
-      const size = 0.14 + durationWeight * 1.08;
+      const size = (0.14 + durationWeight * 1.08) * densityScale;
       const anchor = new THREE.Group();
       const base = new THREE.Vector3(
         Math.cos(angle) * radius,
@@ -552,8 +572,9 @@ export function SonicPresenceLandscape({
       const haloTexture = makeGlowTexture(start);
       const haloRestColor = new THREE.Color(end);
       const haloPlayColor = playGlowColor(mid ?? start);
-      const haloBaseOpacity = 0.38 + durationWeight * 0.28;
-      const haloBaseScale = size * 4.4;
+      const haloBaseOpacity =
+        (0.38 + durationWeight * 0.28) * (0.82 + densityScale * 0.18);
+      const haloBaseScale = size * (2.8 + densityScale * 1.6);
       const shellBaseEmissive = 0.28 + durationWeight * 0.22;
       const halo = new THREE.Sprite(
         new THREE.SpriteMaterial({
@@ -612,10 +633,11 @@ export function SonicPresenceLandscape({
         baseScale: size,
         phase: hashUnit(`${encounter.id}:phase`) * Math.PI * 2,
         driftRadius:
-          0.35 +
-          (1 - durationWeight) * 2.45 +
-          hashUnit(`${encounter.id}:drift`) *
-            (0.35 + (1 - durationWeight) * 1.25),
+          (0.35 +
+            (1 - durationWeight) * 2.45 +
+            hashUnit(`${encounter.id}:drift`) *
+              (0.35 + (1 - durationWeight) * 1.25)) *
+          (0.72 + densityScale * 0.28),
         driftSpeed:
           0.028 +
           (1 - durationWeight) * 0.08 +
@@ -848,26 +870,33 @@ export function SonicPresenceLandscape({
         : 0.22;
       if (centerPlaying) {
         centerGroup.position.y = 0.25 + Math.sin(t * 5.5) * 0.08;
+        centerHalo.material.opacity = 0.58 + centerWave * 0.18;
+        const centerHaloSize = 4.35 + centerWave * 0.42;
+        centerHalo.scale.set(centerHaloSize, centerHaloSize, 1);
       } else {
         centerGroup.position.y = 0.25;
+        centerHalo.material.opacity = 0.42 + Math.sin(t * 1.2) * 0.05;
+        const centerHaloSize = 4.05 + Math.sin(t * 1.1) * 0.12;
+        centerHalo.scale.set(centerHaloSize, centerHaloSize, 1);
       }
       if (stars) stars.rotation.y = t * 0.018;
 
       for (const body of bodies) {
         const isPlaying = playingEncounterIdRef.current === body.encounter.id;
-        const playPulse = isPlaying ? Math.sin(t * 5.5 + body.phase) * 0.14 : 0;
+        const playingT = t * 2.2 + body.phase;
+        const playPulse = isPlaying ? Math.sin(playingT) * 0.045 : 0;
         const drift = t * body.driftSpeed + body.phase;
         body.anchor.position.x =
           body.base.x + Math.cos(drift) * body.driftRadius;
         body.anchor.position.y =
           body.base.y +
           Math.sin(t * body.bob + body.phase) * 0.42 +
-          (isPlaying ? Math.sin(t * 5.5 + body.phase) * 0.2 : 0);
+          (isPlaying ? Math.sin(playingT) * 0.055 : 0);
         body.anchor.position.z =
           body.base.z +
           Math.sin(drift * body.driftTilt) * body.driftRadius * 0.75;
         body.anchor.rotation.y += 0.004 * body.spin;
-        const playWave = 0.5 + 0.5 * Math.sin(t * 5.5 + body.phase);
+        const playWave = 0.5 + 0.5 * Math.sin(playingT);
         const peerBreathe =
           1 + Math.sin(t * 1.2 + body.phase) * 0.05 + playPulse;
         body.shell.scale.setScalar(body.baseScale * peerBreathe);
@@ -877,12 +906,12 @@ export function SonicPresenceLandscape({
         const haloMat = body.halo.material as THREE.SpriteMaterial;
         if (isPlaying) {
           haloMat.color.copy(body.haloPlayColor);
-          haloMat.opacity = body.haloBaseOpacity + 0.48 + playWave * 0.28;
-          const haloSize = body.haloBaseScale * (1.28 + playWave * 0.22);
+          haloMat.opacity = body.haloBaseOpacity + 0.34 + playWave * 0.14;
+          const haloSize = body.haloBaseScale * (1.14 + playWave * 0.1);
           body.halo.scale.set(haloSize, haloSize, 1);
           shellMat.emissiveIntensity =
-            body.shellBaseEmissive + 0.55 + playWave * 0.28;
-          coreMat.emissiveIntensity = 0.95 + playWave * 0.35;
+            body.shellBaseEmissive + 0.42 + playWave * 0.14;
+          coreMat.emissiveIntensity = 0.82 + playWave * 0.16;
         } else {
           haloMat.color.copy(body.haloRestColor);
           haloMat.opacity = body.haloBaseOpacity;
@@ -915,6 +944,7 @@ export function SonicPresenceLandscape({
       container.removeEventListener("touchcancel", onTouchEnd);
       container.removeChild(renderer.domElement);
       centerTexture?.dispose();
+      centerHaloTexture?.dispose();
       disposeObject(world);
       starGeometry.dispose();
       starMaterial?.dispose();

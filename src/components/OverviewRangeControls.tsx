@@ -51,33 +51,25 @@ export function OverviewRangeControls({
   const nextDate = shiftOverviewAnchorDate(date, span, 1, timeZone);
 
   return (
-    <div className="overview-range-controls pointer-events-auto absolute inset-x-4 top-[max(3.5rem,calc(env(safe-area-inset-top)+2.85rem))] z-30 flex flex-wrap items-center justify-center gap-2 sm:inset-x-8">
-      <div className="flex items-center gap-2">
+    <div className="overview-range-controls pointer-events-auto absolute inset-x-4 bottom-[max(3.25rem,calc(env(safe-area-inset-bottom)+3rem))] z-30 flex flex-wrap items-center justify-center gap-2 sm:inset-x-8">
+      <div className="flex items-center gap-3">
         <button
           aria-label={overviewLabels.prev}
-          className="glass-panel glass-interactive grid h-9 w-9 place-items-center rounded-full text-text disabled:opacity-40"
+          className="memory-stage-arrow memory-stage-arrow--prev"
           disabled={!hasPrevPeriod || !prevDate}
           onClick={() => prevDate && push({ date: prevDate })}
           type="button"
-        >
-          <span aria-hidden className="font-display text-2xl leading-none">
-            ‹
-          </span>
-        </button>
+        />
         <span className="glass-panel overview-period-label rounded-full px-3 py-1.5 font-body text-xs text-text-muted">
           {periodLabel}
         </span>
         <button
           aria-label={overviewLabels.next}
-          className="glass-panel glass-interactive grid h-9 w-9 place-items-center rounded-full text-text disabled:opacity-40"
+          className="memory-stage-arrow memory-stage-arrow--next"
           disabled={!hasNextPeriod || !nextDate}
           onClick={() => nextDate && push({ date: nextDate })}
           type="button"
-        >
-          <span aria-hidden className="font-display text-2xl leading-none">
-            ›
-          </span>
-        </button>
+        />
       </div>
     </div>
   );

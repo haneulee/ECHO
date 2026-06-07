@@ -54,16 +54,6 @@ export function AppAccountMenu({ device }: AppAccountMenuProps) {
               className="glass-panel absolute right-0 top-[calc(100%+0.5rem)] z-50 min-w-[11rem] rounded-2xl py-2 font-body text-sm shadow-lg"
               role="menu"
             >
-              {device && !isCurrentPath(pathname, "/my-echo") ? (
-                <Link
-                  className="glass-menu-item block w-full px-4 py-2.5 text-left"
-                  href="/my-echo"
-                  onClick={() => setOpen(false)}
-                  role="menuitem"
-                >
-                  My Echo
-                </Link>
-              ) : null}
               {!isCurrentPath(pathname, "/main") ? (
                 <Link
                   className="glass-menu-item block w-full px-4 py-2.5 text-left"
@@ -72,6 +62,16 @@ export function AppAccountMenu({ device }: AppAccountMenuProps) {
                   role="menuitem"
                 >
                   Home
+                </Link>
+              ) : null}
+              {device && !isCurrentPath(pathname, "/my-echo") ? (
+                <Link
+                  className="glass-menu-item block w-full px-4 py-2.5 text-left"
+                  href="/my-echo"
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
+                >
+                  My Echo
                 </Link>
               ) : null}
               {!isCurrentPath(pathname, "/memories") ? (

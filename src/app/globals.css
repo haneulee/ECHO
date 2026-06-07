@@ -658,9 +658,48 @@ input {
 }
 
 .overview-period-label {
-  max-width: min(100%, 15rem);
+  max-width: min(100%, 18rem);
+  font-size: clamp(0.95rem, 2.6vw, 1.22rem);
+  line-height: 1.1;
   text-align: center;
   white-space: nowrap;
+}
+
+.overview-play-all-button {
+  border: 0;
+  background: transparent;
+  color: rgb(var(--color-text) / 0.66);
+  cursor: pointer;
+  font-family: var(--font-averia), serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  padding: 0.35rem 0.12rem;
+  white-space: nowrap;
+  transition:
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.overview-play-all-button:not(:disabled):hover {
+  color: rgb(var(--color-text) / 0.95);
+  transform: translateY(-0.04rem);
+}
+
+.overview-play-all-button:disabled {
+  cursor: default;
+}
+
+.overview-header-actions {
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .overview-play-all-button {
+    font-size: 0.875rem;
+  }
 }
 
 .overview-range-controls {
@@ -672,15 +711,96 @@ input {
   pointer-events: auto;
 }
 
+.overview-range-controls .memory-stage-arrow {
+  color: rgb(var(--color-text) / 0.72);
+  opacity: 0.96;
+}
+
+.overview-range-controls .memory-stage-arrow:not(:disabled):hover {
+  color: rgb(var(--color-text) / 0.95);
+}
+
+.overview-range-controls .memory-stage-arrow:disabled {
+  opacity: 0.28;
+}
+
+.overview-type-filter {
+  pointer-events: auto;
+  position: absolute;
+  left: 50%;
+  bottom: max(7.1rem, calc(env(safe-area-inset-bottom) + 6.85rem));
+  z-index: 30;
+  display: flex;
+  max-width: calc(100vw - 2rem);
+  transform: translateX(-50%);
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.25rem;
+  background: rgb(252 250 246 / 0.34);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.35),
+    0 12px 32px rgb(64 54 44 / 0.08);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.overview-type-filter__button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgb(var(--color-text-muted) / 0.72);
+  cursor: pointer;
+  font-family: var(--font-averia), serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.2;
+  padding: 0.4rem 0.7rem;
+  white-space: nowrap;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.overview-type-filter__button[aria-pressed="true"] {
+  background: rgb(255 255 255 / 0.58);
+  color: rgb(var(--color-text) / 0.92);
+  box-shadow: 0 6px 18px rgb(64 54 44 / 0.08);
+}
+
+.overview-type-filter__button:not(:disabled):hover {
+  color: rgb(var(--color-text) / 0.95);
+  transform: translateY(-0.04rem);
+}
+
+.overview-type-filter__button:disabled {
+  cursor: default;
+  opacity: 0.32;
+}
+
 @media (max-width: 639px) {
   .overview-range-controls {
-    top: max(5.75rem, calc(env(safe-area-inset-top) + 4.75rem));
+    bottom: max(3.25rem, calc(env(safe-area-inset-bottom) + 3rem));
   }
 
   .overview-period-label {
-    max-width: min(62vw, 12rem);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    max-width: min(58vw, 16rem);
+  }
+
+  .overview-header-actions {
+    gap: 0.45rem;
+  }
+
+  .overview-type-filter {
+    bottom: max(6.8rem, calc(env(safe-area-inset-bottom) + 6.5rem));
+  }
+
+  .overview-type-filter__button {
+    font-size: 0.75rem;
+    padding: 0.36rem 0.55rem;
   }
 }
 
@@ -689,6 +809,7 @@ input {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
+  transition: transform 180ms ease;
 }
 
 .shell-timespan-select__control {
@@ -713,7 +834,12 @@ input {
 
 .shell-timespan-select:hover .shell-timespan-select__control,
 .shell-timespan-select:focus-within .shell-timespan-select__control {
-  color: rgb(var(--color-text) / 0.82);
+  color: rgb(var(--color-text) / 0.95);
+}
+
+.shell-timespan-select:hover,
+.shell-timespan-select:focus-within {
+  transform: translateY(-0.04rem);
 }
 
 .shell-timespan-select__control:focus-visible {
@@ -927,7 +1053,7 @@ input {
 
 @media (max-width: 639px) {
   .shell-header-bar {
-    padding-right: 5.5rem;
+    padding-right: 3.25rem;
   }
 
   .shell-title-row {
@@ -940,7 +1066,10 @@ input {
   }
 
   .shell-page-title {
-    max-width: min(100%, 11rem);
+    flex-shrink: 0;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
   }
 }
 
@@ -962,6 +1091,19 @@ input {
   .shell-page-title {
     max-width: min(100%, 16rem);
     font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .shell-title-row {
+    overflow: visible;
+  }
+
+  .shell-page-title {
+    flex-shrink: 0;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
   }
 }
 

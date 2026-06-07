@@ -13,14 +13,14 @@ import {
   isMemoriesBackPath,
   memoriesPath,
   persistTimespan,
-  resolveMemoriesBackHref,
   resolveTimespan,
 } from "@/lib/timespanNavigation";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import { encounterDisplayName } from "@/lib/encounterDisplay";
+import { echoTypeLabels } from "@/lib/echoTypeMeta";
 import { mockEncounters } from "@/lib/mockData";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
-import type { Encounter } from "@/lib/types";
+import type { EchoType, Encounter } from "@/lib/types";
 import { overviewPage, todaySoundTitle } from "@/lib/uiPoetics";
 
 function localIsoDate(d: Date): string {
@@ -39,7 +39,18 @@ type SoundTarget =
   | { kind: "global"; token: string }
   | { kind: "encounter"; encounter: Encounter; token: string };
 
+type PlayAllState = {
+  running: boolean;
+  index: number;
+  token: string;
+};
+
+type EchoTypeFilter = "all" | EchoType;
+
 const MIN_LOADING_MS = 150;
+const PLAY_ALL_STEP_MS = 2300;
+const PLAY_ALL_CLIP_SEC = 1.85;
+const ECHO_TYPE_FILTERS: EchoType[] = ["shy", "messy", "bounce"];
 const USE_TEMP_TODAY_PREVIEW_DATA = true;
 const PROXIMITY_RANK: Record<Encounter["proximityZone"], number> = {
   far: 0,
@@ -147,7 +158,6 @@ function TodayDataBody() {
   const searchParams = useSearchParams();
   const backParam = searchParams.get("back");
   const span = resolveTimespan(searchParams.get("span"));
-  const backHref = resolveMemoriesBackHref(backParam, span);
   const deviceId = searchParams.get("deviceId");
   const date = searchParams.get("date") ?? localIsoDate(new Date());
   const timeZone = useMemo(
@@ -172,8 +182,13 @@ function TodayDataBody() {
 
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [soundTarget, setSoundTarget] = useState<SoundTarget | null>(null);
+  const [playAll, setPlayAll] = useState<PlayAllState>({
+    running: false,
+    index: 0,
+    token: "idle",
+  });
+  const [echoTypeFilter, setEchoTypeFilter] = useState<EchoTypeFilter>("all");
   const [stopKey, setStopKey] = useState<string | null>(null);
-  const [globalStopKey, setGlobalStopKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const startedAt = performance.now();
@@ -213,13 +228,13 @@ function TodayDataBody() {
   }, [load]);
 
   const selectEncounter = useCallback((encounter: Encounter) => {
+    setPlayAll({ running: false, index: 0, token: `manual:${Date.now()}` });
     setSoundTarget((current) => {
       if (current?.kind === "encounter" && current.encounter.id === encounter.id) {
         setStopKey(`stop:${encounter.id}:${Date.now()}`);
         return null;
       }
       setStopKey(null);
-      setGlobalStopKey(`stop:global-for-${encounter.id}:${Date.now()}`);
       return {
         kind: "encounter",
         encounter,
@@ -229,40 +244,98 @@ function TodayDataBody() {
   }, []);
 
   const selectSelf = useCallback(() => {
+    setPlayAll({ running: false, index: 0, token: `self:${Date.now()}` });
     setSoundTarget((current) => {
       if (current?.kind === "global") {
         setStopKey(`stop:global:${Date.now()}`);
         return null;
       }
       setStopKey(null);
-      setGlobalStopKey(null);
       return { kind: "global", token: `global:${Date.now()}` };
     });
-  }, []);
-
-  const stopOrbitSoundForGlobalPlayback = useCallback(() => {
-    setStopKey(`stop:orbit-for-global:${Date.now()}`);
-    setSoundTarget(null);
   }, []);
 
   const previewEncounters = useMemo(
     () => (state.kind === "ok" ? previewEncountersFor(date, state.data) : []),
     [date, state],
   );
-  const orbitEncounters = useMemo(
-    () => aggregateEncountersForOrbit(previewEncounters),
-    [previewEncounters],
+  const echoTypeCounts = useMemo(() => {
+    const counts: Record<EchoType, number> = { shy: 0, messy: 0, bounce: 0 };
+    for (const encounter of previewEncounters) counts[encounter.otherEchoType] += 1;
+    return counts;
+  }, [previewEncounters]);
+  const filteredPreviewEncounters = useMemo(
+    () =>
+      echoTypeFilter === "all"
+        ? previewEncounters
+        : previewEncounters.filter(
+            (encounter) => encounter.otherEchoType === echoTypeFilter,
+          ),
+    [echoTypeFilter, previewEncounters],
   );
-  const hasEncounters = previewEncounters.length > 0;
+  const orbitEncounters = useMemo(
+    () => aggregateEncountersForOrbit(filteredPreviewEncounters),
+    [filteredPreviewEncounters],
+  );
+  const hasEncounters = filteredPreviewEncounters.length > 0;
+  const playAllEncounters = orbitEncounters;
   const title = null;
   const activeEncounters =
     soundTarget?.kind === "encounter"
       ? [soundTarget.encounter]
-      : previewEncounters;
+      : filteredPreviewEncounters;
   const activeTitle =
     soundTarget?.kind === "encounter"
       ? encounterDisplayName(soundTarget.encounter)
       : todaySoundTitle;
+
+  const togglePlayAll = useCallback(() => {
+    if (playAll.running) {
+      setPlayAll({ running: false, index: 0, token: `stop:${Date.now()}` });
+      setStopKey(`stop:play-all:${Date.now()}`);
+      setSoundTarget(null);
+      return;
+    }
+
+    if (playAllEncounters.length === 0) return;
+    setStopKey(null);
+    setPlayAll({ running: true, index: 0, token: `play-all:${Date.now()}` });
+  }, [playAll.running, playAllEncounters.length]);
+
+  const selectEchoTypeFilter = useCallback((nextFilter: EchoTypeFilter) => {
+    setEchoTypeFilter(nextFilter);
+    setPlayAll({ running: false, index: 0, token: `filter:${Date.now()}` });
+    setStopKey(`stop:filter:${Date.now()}`);
+    setSoundTarget(null);
+  }, []);
+
+  useEffect(() => {
+    if (!playAll.running) return;
+    const encounter = playAllEncounters[playAll.index];
+    if (!encounter) {
+      setPlayAll({ running: false, index: 0, token: `done:${Date.now()}` });
+      setSoundTarget(null);
+      return;
+    }
+
+    setSoundTarget({
+      kind: "encounter",
+      encounter,
+      token: `${playAll.token}:${playAll.index}:${encounter.id}`,
+    });
+
+    const timer = window.setTimeout(() => {
+      const nextIndex = playAll.index + 1;
+      if (nextIndex >= playAllEncounters.length) {
+        setSoundTarget(null);
+        setPlayAll({ running: false, index: 0, token: `done:${Date.now()}` });
+        return;
+      }
+      setPlayAll({ ...playAll, index: nextIndex });
+    }, PLAY_ALL_STEP_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [playAll, playAllEncounters]);
 
   if (state.kind === "loading") {
     return (
@@ -277,21 +350,61 @@ function TodayDataBody() {
 
   return (
     <AppShell
-      backHref={backHref}
       echoColorTheme={echoColorTheme}
       echoDevice={state.kind === "ok" ? state.data.device : null}
       fullBleed
       headerActions={
-        <MemoriesTimespanSelect
-          onChange={setSpan}
-          value={span}
-          variant="header"
-        />
+        <div className="overview-header-actions flex items-center gap-2">
+          <MemoriesTimespanSelect
+            onChange={setSpan}
+            value={span}
+            variant="header"
+          />
+          <button
+            aria-label={
+              playAll.running ? "Stop all encounters" : "Play all encounters"
+            }
+            className="overview-play-all-button disabled:opacity-40"
+            disabled={!hasEncounters}
+            onClick={togglePlayAll}
+            type="button"
+          >
+            {playAll.running ? "Stop" : "Play all"}
+          </button>
+        </div>
       }
       hideChrome
       pageTitle={overviewPage.title}
       viewportLocked
     >
+      {state.kind === "ok" ? (
+        <div
+          aria-label="Filter echoes by type"
+          className="overview-type-filter"
+          role="group"
+        >
+          <button
+            aria-pressed={echoTypeFilter === "all"}
+            className="overview-type-filter__button"
+            onClick={() => selectEchoTypeFilter("all")}
+            type="button"
+          >
+            All
+          </button>
+          {ECHO_TYPE_FILTERS.map((type) => (
+            <button
+              aria-pressed={echoTypeFilter === type}
+              className="overview-type-filter__button"
+              disabled={echoTypeCounts[type] === 0}
+              key={type}
+              onClick={() => selectEchoTypeFilter(type)}
+              type="button"
+            >
+              {echoTypeLabels[type]}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {state.kind === "ok" ? (
         <OverviewRangeControls
           date={date}
@@ -327,31 +440,18 @@ function TodayDataBody() {
           }
           playingSelf={soundTarget?.kind === "global"}
           soundControl={
-            hasEncounters ? (
-              <>
-                <TodayEncounterSoundPlayer
-                  date={date}
-                  device={state.data.device}
-                  encounters={previewEncounters}
-                  memory={state.data.dailyMemory}
-                  onPlayStart={stopOrbitSoundForGlobalPlayback}
-                  showVolume={false}
-                  stopKey={globalStopKey}
-                  title={todaySoundTitle}
-                />
-                {soundTarget ? (
-                  <TodayEncounterSoundPlayer
-                    autoPlayKey={soundTarget.token}
-                    controlsVisible={false}
-                    date={date}
-                    device={state.data.device}
-                    encounters={activeEncounters}
-                    memory={state.data.dailyMemory}
-                    stopKey={stopKey}
-                    title={activeTitle}
-                  />
-                ) : null}
-              </>
+            soundTarget ? (
+              <TodayEncounterSoundPlayer
+                autoPlayKey={soundTarget.token}
+                controlsVisible={false}
+                date={date}
+                device={state.data.device}
+                encounters={activeEncounters}
+                memory={state.data.dailyMemory}
+                playbackLimitSec={playAll.running ? PLAY_ALL_CLIP_SEC : undefined}
+                stopKey={stopKey}
+                title={activeTitle}
+              />
             ) : undefined
           }
           title={title}

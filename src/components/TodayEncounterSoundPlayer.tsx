@@ -18,6 +18,7 @@ type TodayEncounterSoundPlayerProps = {
   autoPlayKey?: string | null;
   controlsVisible?: boolean;
   onPlayStart?: () => void;
+  playbackLimitSec?: number;
   showVolume?: boolean;
   stopKey?: string | null;
 };
@@ -31,6 +32,7 @@ export function TodayEncounterSoundPlayer({
   autoPlayKey = null,
   controlsVisible = true,
   onPlayStart,
+  playbackLimitSec,
   showVolume = true,
   stopKey = null,
 }: TodayEncounterSoundPlayerProps) {
@@ -110,6 +112,9 @@ export function TodayEncounterSoundPlayer({
     sourceRef.current = source;
     gainRef.current = gain;
     source.start();
+    if (playbackLimitSec !== undefined) {
+      source.stop(context.currentTime + Math.max(0.1, playbackLimitSec));
+    }
     setIsPlaying(true);
     onPlayStart?.();
   }
