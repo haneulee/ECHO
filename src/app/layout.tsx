@@ -11,7 +11,7 @@ const averia = Averia_Libre({
 });
 
 export const metadata: Metadata = {
-  title: "Echo, a sonic companion for co-presence",
+  title: "Echo, A sonic companion for co-presence",
   description:
     "Echo is a companion device that reacts to the presence of its peers through sound. Released as three different types, each has its own temperament expressed through sonic identity. When alone, it remains quiet. As two or more devices share proximity, they start playing sound in harmony thanks to layered tones and shifting rhythms. Echo somehow reflects the subtle sense of connection that can emerge when real-life encounters happen. It transforms physical proximity into a playful collective experience. Over time, encounters leave traces within each Echo companions. At the end of the day, users place it on its station, where moments of co-presence recorded during the day are transferred into a digital interface to revisit over time an evolving archive of sound memories displayed as audio-reactive visual landscapes. Echo invites us to explore how subtle moments of co-presence can gradually become a sense of connection.",
   icons: {

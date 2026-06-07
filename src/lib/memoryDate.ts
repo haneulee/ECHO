@@ -17,6 +17,14 @@ export function memoryDate(date: string, style: "long" | "short") {
   });
 }
 
+function plainMemoryDate(date: string) {
+  return new Date(`${date}T12:00:00`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 /** Anchor date is the last day of the overview window. */
 export function overviewPeriodLabel(
   anchorDate: string,
@@ -41,7 +49,7 @@ export function memoryPeriodLabel(
   span: OverviewSpan,
   timeZone: string,
 ) {
-  if (span === "daily") return memoryDate(item.memory.date, "long");
+  if (span === "daily") return plainMemoryDate(item.memory.date);
 
   const periodEnd = item.periodEnd ?? item.memory.date;
   const periodStart = item.periodStart ?? item.memory.date;

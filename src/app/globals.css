@@ -197,20 +197,25 @@ input {
 }
 
 /* Active memory on /memories — only the center card (see selectors below) */
+.memory-stage-orbit .memory-stage-card--active .memory-breathe {
+  animation-duration: 26s;
+}
+
 .memory-stage-orbit .memory-stage-card--active .memory-active-breathe {
-  animation: memory-active-breathe 5s ease-in-out infinite;
+  animation: memory-active-breathe 26s ease-in-out infinite;
   transform-origin: center center;
   will-change: transform;
 }
 
 .memory-stage-orbit .memory-stage-card--active .memory-active-drift {
-  animation: memory-active-drift 9.5s ease-in-out infinite alternate;
+  animation: memory-active-drift 48s ease-in-out infinite alternate;
+  animation-duration: 48s !important;
   will-change: transform;
 }
 
 .memory-stage-orbit .memory-stage-card--active .memory-active-blob-drift {
   animation-name: memory-active-blob-drift-a;
-  animation-duration: 10s !important;
+  animation-duration: 52s !important;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
   animation-direction: alternate;
@@ -219,12 +224,12 @@ input {
 
 .memory-stage-orbit .memory-stage-card--active .memory-active-blob-drift--b {
   animation-name: memory-active-blob-drift-b;
-  animation-duration: 11s !important;
+  animation-duration: 60s !important;
 }
 
 .memory-stage-orbit .memory-stage-card--active .memory-active-blob-drift--c {
   animation-name: memory-active-blob-drift-c;
-  animation-duration: 12s !important;
+  animation-duration: 68s !important;
 }
 
 .memory-stage-orbit .memory-stage-card--side .memory-active-breathe,
@@ -382,6 +387,84 @@ input {
   pointer-events: none;
 }
 
+.memory-stage-arrows {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 0.95rem;
+  z-index: 2;
+  display: flex;
+  width: min(92vw, 31rem);
+  max-width: calc(100vw - 1.5rem);
+  transform: translateX(-50%);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.memory-stage-arrow {
+  pointer-events: auto;
+  position: relative;
+  display: grid;
+  height: 2.75rem;
+  width: 4.25rem;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: rgb(var(--color-text) / 0.46);
+  cursor: pointer;
+  opacity: 0.78;
+  transition:
+    color 240ms ease,
+    opacity 240ms ease,
+    transform 240ms ease;
+}
+
+.memory-stage-arrow::before {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 1px;
+  background: currentColor;
+}
+
+.memory-stage-arrow::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 0.58rem;
+  height: 0.58rem;
+  border-top: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+}
+
+.memory-stage-arrow--prev::after {
+  left: 0.64rem;
+  transform: translateY(-50%) rotate(-135deg);
+}
+
+.memory-stage-arrow--next::after {
+  right: 0.64rem;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.memory-stage-arrow:not(:disabled):hover {
+  color: rgb(var(--color-text) / 0.72);
+  opacity: 1;
+}
+
+.memory-stage-arrow--prev:not(:disabled):hover {
+  transform: translateX(-0.18rem);
+}
+
+.memory-stage-arrow--next:not(:disabled):hover {
+  transform: translateX(0.18rem);
+}
+
+.memory-stage-arrow:disabled {
+  cursor: default;
+  opacity: 0.18;
+}
+
 .memory-stage-orbit .memory-stage-card--orbit {
   position: absolute;
   inset: auto;
@@ -410,6 +493,11 @@ input {
   /* filter: saturate(0.62) brightness(1.06); */
 }
 
+.memory-stage-orbit .memory-stage-card--departing {
+  opacity: 0.35;
+  filter: none;
+}
+
 @media (min-width: 640px) {
   .memory-stage-orbit .memory-stage-visual {
     width: min(38vw, 28rem);
@@ -418,9 +506,9 @@ input {
 
 .memory-stage-card {
   transition:
-    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.55s ease,
-    filter 0.55s ease;
+    transform 1.8s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 1.8s ease,
+    filter 1.8s ease;
   will-change: transform;
 }
 
@@ -435,9 +523,39 @@ input {
 .memory-stage-visual {
   display: grid;
   place-items: center;
+  will-change: opacity, filter;
+}
+
+.memory-stage-visual--visible {
+  opacity: 1;
+  filter: blur(0) saturate(1);
+  transition:
+    opacity 2.4s ease,
+    filter 2.8s ease;
+}
+
+.memory-stage-visual--hidden {
+  opacity: 0.35;
+  filter: blur(20px) saturate(1.35);
+  transition:
+    opacity 220ms ease,
+    filter 320ms ease;
 }
 
 @media (max-width: 639px) {
+  .memory-stage-arrows {
+    top: 0.9rem;
+    width: min(94vw, 25rem);
+  }
+
+  .memory-stage-arrow {
+    width: 3.4rem;
+  }
+
+  .memory-stage-arrow::before {
+    width: 2.2rem;
+  }
+
   .memory-stage-orbit .memory-stage-card--active.memory-stage-card--orbit {
     top: 44%;
     bottom: auto;
@@ -451,15 +569,15 @@ input {
   }
 
   .memory-stage-orbit .memory-stage-card--active .memory-active-breathe {
-    animation-duration: 5.25s;
+    animation-duration: 26s;
   }
 
   .memory-stage-orbit .memory-stage-card--active .memory-active-drift {
-    animation-duration: 10s;
+    animation-duration: 48s !important;
   }
 
   .memory-stage-orbit .memory-stage-card--active .memory-active-blob-drift {
-    animation-duration: 9s !important;
+    animation-duration: 52s !important;
   }
 
   .memory-stage-orbit .memory-stage-card--active .memory-stage-visual {
@@ -510,10 +628,31 @@ input {
 }
 
 .memory-stage-copy {
+  position: relative;
   margin: 0 auto;
   width: 100%;
   max-width: 22rem;
   text-align: center;
+}
+
+.memory-stage-copy-text {
+  will-change: opacity, filter;
+}
+
+.memory-stage-copy-text--visible {
+  opacity: 1;
+  filter: blur(0) saturate(1);
+  transition:
+    opacity 2.1s ease,
+    filter 2.5s ease;
+}
+
+.memory-stage-copy-text--hidden {
+  opacity: 0;
+  filter: blur(14px) saturate(1.4);
+  transition:
+    opacity 180ms ease,
+    filter 260ms ease;
 }
 
 .overview-period-label {

@@ -1,7 +1,14 @@
 "use client";
 
 import { NavigateWithLoader } from "@/components/NavigateWithLoader";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { type ArchiveCarouselItem } from "@/components/ArchiveCarousel";
@@ -219,30 +226,73 @@ function MemoriesListView({
   timeZone: string;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [copyIndex, setCopyIndex] = useState(0);
+  const [copyVisible, setCopyVisible] = useState(true);
+  const [visualVisible, setVisualVisible] = useState(true);
+  const [departingIndex, setDepartingIndex] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const hasAnimatedVisual = useRef(false);
   const pointerStartX = useRef<number | null>(null);
+  const departingResetTimer = useRef<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const stageConfig = getStageConfig(isMobile);
   const safeActiveIndex =
     items.length === 0 ? 0 : Math.min(activeIndex, items.length - 1);
+  const safeCopyIndex =
+    items.length === 0 ? 0 : Math.min(copyIndex, items.length - 1);
   const activeItem = items[safeActiveIndex];
   const activeMemory = activeItem?.memory;
+  const copyItem = items[safeCopyIndex] ?? activeItem;
+  const copyMemory = copyItem?.memory ?? activeMemory;
 
   useEffect(() => {
     setActiveIndex(0);
+    setCopyIndex(0);
+    setCopyVisible(true);
+    setVisualVisible(true);
+    setDepartingIndex(null);
   }, [span, items.length]);
 
   const overviewHref = useMemo(
     () =>
-      activeMemory
+      copyMemory
         ? overviewPath({
-            date: activeMemory.date,
+            date: copyMemory.date,
             span,
             back: memoriesPath(span),
           })
         : "/overview",
-    [activeMemory, span],
+    [copyMemory, span],
   );
+
+  useEffect(() => {
+    if (safeActiveIndex === safeCopyIndex) {
+      setCopyVisible(true);
+      return;
+    }
+
+    setCopyVisible(false);
+    const swapCopy = window.setTimeout(() => {
+      setCopyIndex(safeActiveIndex);
+      setCopyVisible(true);
+    }, 420);
+
+    return () => window.clearTimeout(swapCopy);
+  }, [safeActiveIndex, safeCopyIndex]);
+
+  useEffect(() => {
+    if (!hasAnimatedVisual.current) {
+      hasAnimatedVisual.current = true;
+      setVisualVisible(true);
+      return;
+    }
+
+    const revealVisual = window.setTimeout(() => {
+      setVisualVisible(true);
+    }, 260);
+
+    return () => window.clearTimeout(revealVisual);
+  }, [safeActiveIndex]);
 
   const canGoPrev = safeActiveIndex > 0;
   const canGoNext = safeActiveIndex < items.length - 1;
@@ -251,11 +301,30 @@ function MemoriesListView({
     (delta: number) => {
       if (delta < 0 && !canGoPrev) return;
       if (delta > 0 && !canGoNext) return;
+      if (departingResetTimer.current != null) {
+        window.clearTimeout(departingResetTimer.current);
+      }
+      setCopyVisible(false);
+      setVisualVisible(false);
+      setDepartingIndex(safeActiveIndex);
+      departingResetTimer.current = window.setTimeout(() => {
+        setDepartingIndex(null);
+        departingResetTimer.current = null;
+      }, 1900);
       setActiveIndex((current) =>
         Math.min(items.length - 1, Math.max(0, current + delta)),
       );
     },
-    [canGoNext, canGoPrev, items.length],
+    [canGoNext, canGoPrev, items.length, safeActiveIndex],
+  );
+
+  useEffect(
+    () => () => {
+      if (departingResetTimer.current != null) {
+        window.clearTimeout(departingResetTimer.current);
+      }
+    },
+    [],
   );
 
   useEffect(() => {
@@ -336,8 +405,9 @@ function MemoriesListView({
         {visibleItems
           .slice()
           .reverse()
-          .map(({ item, offset }) => {
+          .map(({ item, index, offset }) => {
             const isActive = offset === 0;
+            const isDeparting = !isActive && index === departingIndex;
             const memory = item.memory;
             return (
               <article
@@ -347,6 +417,7 @@ function MemoriesListView({
                   isActive
                     ? "memory-stage-card--active"
                     : "memory-stage-card--side",
+                  isDeparting ? "memory-stage-card--departing" : "",
                 ].join(" ")}
                 key={memory.id}
                 style={{
@@ -354,7 +425,16 @@ function MemoriesListView({
                   zIndex: isActive ? 15 : 8 - Math.abs(offset),
                 }}
               >
-                <div className="memory-stage-visual">
+                <div
+                  className={[
+                    "memory-stage-visual",
+                    isActive
+                      ? visualVisible
+                        ? "memory-stage-visual--visible"
+                        : "memory-stage-visual--hidden"
+                      : "",
+                  ].join(" ")}
+                >
                   <AbstractMemoryVisual
                     bleed
                     composition={memory.composition}
@@ -375,12 +455,41 @@ function MemoriesListView({
 
       <div className="memory-stage-bottom">
         <div className="memory-stage-copy">
-          <h2 className="font-display text-[clamp(1.65rem,7vw,2.35rem)] leading-[1.05] tracking-[-0.045em]">
-            {memoryPeriodLabel(activeItem, span, timeZone)}
-          </h2>
-          <p className="mt-2 font-body text-sm leading-5 text-text-muted">
-            {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
-          </p>
+          <div aria-label="Memory navigation" className="memory-stage-arrows">
+            <button
+              aria-label="Previous memory"
+              className="memory-stage-arrow memory-stage-arrow--prev"
+              data-memory-no-drag
+              disabled={!canGoPrev}
+              onClick={() => move(-1)}
+              type="button"
+            />
+            <button
+              aria-label="Next memory"
+              className="memory-stage-arrow memory-stage-arrow--next"
+              data-memory-no-drag
+              disabled={!canGoNext}
+              onClick={() => move(1)}
+              type="button"
+            />
+          </div>
+          <div
+            className={[
+              "memory-stage-copy-text",
+              copyVisible
+                ? "memory-stage-copy-text--visible"
+                : "memory-stage-copy-text--hidden",
+            ].join(" ")}
+          >
+            <h2 className="truncate whitespace-nowrap font-display text-[clamp(1.65rem,7vw,2.35rem)] leading-[1.05] tracking-[-0.045em]">
+              {copyItem ? memoryPeriodLabel(copyItem, span, timeZone) : null}
+            </h2>
+            <p className="mt-2 font-body text-sm leading-5 text-text-muted">
+              {copyMemory
+                ? archiveCarousel.dayHeadline(copyMemory.totalEncounters)
+                : null}
+            </p>
+          </div>
           <NavigateWithLoader
             className="glass-btn-primary mt-4 inline-flex w-fit rounded-full px-6 py-2.5 font-body text-sm"
             href={overviewHref}
