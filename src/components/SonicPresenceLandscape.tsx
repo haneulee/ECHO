@@ -30,8 +30,8 @@ type SonicPresenceLandscapeProps = {
 type PresenceBody = {
   encounter: Encounter;
   anchor: THREE.Group;
-  shell: THREE.Mesh;
-  core: THREE.Mesh;
+  shell: THREE.Sprite;
+  core: THREE.Sprite;
   halo: THREE.Sprite;
   label: THREE.Sprite | null;
   timeLabel: THREE.Sprite | null;
@@ -39,7 +39,7 @@ type PresenceBody = {
   haloPlayColor: THREE.Color;
   haloBaseOpacity: number;
   haloBaseScale: number;
-  shellBaseEmissive: number;
+  ringBaseOpacity: number;
   base: THREE.Vector3;
   baseScale: number;
   phase: number;
@@ -52,31 +52,6 @@ type PresenceBody = {
 
 const LABEL_TEXT_COLOR = "#1a1a1a";
 const LABEL_TIME_COLOR = "#5c5c5c";
-
-function makeGlassMaterial(
-  accentHex: string,
-  options?: {
-    emissiveIntensity?: number;
-    opacity?: number;
-    transmission?: number;
-  },
-) {
-  const accent = new THREE.Color(accentHex);
-  return new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#ffffff"),
-    emissive: accent,
-    emissiveIntensity: options?.emissiveIntensity ?? 0.48,
-    transparent: true,
-    opacity: options?.opacity ?? 0.9,
-    roughness: 0.06,
-    metalness: 0,
-    transmission: options?.transmission ?? 0.68,
-    thickness: 0.65,
-    ior: 1.45,
-    clearcoat: 1,
-    clearcoatRoughness: 0.1,
-  });
-}
 
 function playGlowColor(hex: string) {
   const color = new THREE.Color(hex);
@@ -106,11 +81,43 @@ function makeGlowTexture(color: string) {
   if (!ctx) return null;
 
   const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-  gradient.addColorStop(0, color);
-  gradient.addColorStop(0.34, `${color}cc`);
-  gradient.addColorStop(0.68, `${color}55`);
+  gradient.addColorStop(0, `${color}8f`);
+  gradient.addColorStop(0.34, `${color}82`);
+  gradient.addColorStop(0.72, `${color}46`);
   gradient.addColorStop(1, `${color}00`);
   ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 256, 256);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function makeOrbitRingTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const ring = ctx.createRadialGradient(128, 128, 0, 128, 128, 122);
+  ring.addColorStop(0, "rgba(255,255,255,0.96)");
+  ring.addColorStop(0.42, "rgba(255,255,255,0.98)");
+  ring.addColorStop(0.68, "rgba(255,255,255,1)");
+  ring.addColorStop(0.88, "rgba(255,255,255,0.96)");
+  ring.addColorStop(0.96, "rgba(255,255,255,0.64)");
+  ring.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = ring;
+  ctx.fillRect(0, 0, 256, 256);
+
+  const edge = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  edge.addColorStop(0, "rgba(255,255,255,0.18)");
+  edge.addColorStop(0.62, "rgba(255,255,255,0.2)");
+  edge.addColorStop(0.82, "rgba(255,255,255,0.72)");
+  edge.addColorStop(0.92, "rgba(255,255,255,1)");
+  edge.addColorStop(0.98, "rgba(255,255,255,0.76)");
+  edge.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = edge;
   ctx.fillRect(0, 0, 256, 256);
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -131,34 +138,6 @@ function makeDotTexture() {
   gradient.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 64, 64);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-function makeEchoTexture(colors: string[]) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-
-  const [start, mid, end] = colors;
-  const gradient = ctx.createRadialGradient(142, 122, 8, 268, 270, 312);
-  gradient.addColorStop(0, start ?? "#ffffff");
-  gradient.addColorStop(0.34, mid ?? start ?? "#ffffff");
-  gradient.addColorStop(0.72, end ?? mid ?? "#ffffff");
-  gradient.addColorStop(1, start ?? end ?? "#ffffff");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 512, 512);
-
-  const highlight = ctx.createRadialGradient(154, 126, 0, 154, 126, 144);
-  highlight.addColorStop(0, "rgba(255,255,255,0.78)");
-  highlight.addColorStop(0.42, "rgba(255,255,255,0.18)");
-  highlight.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = highlight;
-  ctx.fillRect(0, 0, 512, 512);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -455,29 +434,28 @@ export function SonicPresenceLandscape({
     const echoAccent = device?.echoColor ?? DEFAULT_ECHO_ACCENT;
     const motes = echoOnly ? null : makeAmbientMotes(echoAccent);
     if (motes) world.add(motes);
-    const centerTexture = makeEchoTexture([echoAccent, "#ffffff", echoAccent]);
     const centerGroup = new THREE.Group();
-    const centerShell = new THREE.Mesh(
-      new THREE.SphereGeometry(0.92, 48, 48),
-      makeGlassMaterial(echoAccent, {
-        emissiveIntensity: 0.22,
-        opacity: 0.55,
-        transmission: 0.78,
-      }),
-    );
-    const centerCore = new THREE.Mesh(
-      new THREE.SphereGeometry(0.42, 48, 48),
-      new THREE.MeshStandardMaterial({
+    const centerShell = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: makeOrbitRingTexture(),
         color: new THREE.Color("#ffffff"),
-        emissive: new THREE.Color(echoAccent),
-        emissiveIntensity: 0.52,
-        map: centerTexture,
-        roughness: 0.12,
-        metalness: 0,
         transparent: true,
-        opacity: 0.94,
+        opacity: 1,
+        blending: THREE.NormalBlending,
+        depthWrite: false,
       }),
     );
+    centerShell.scale.set(2.65, 2.65, 1);
+    const centerCore = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: makeGlowTexture(echoAccent),
+        color: new THREE.Color(echoAccent),
+        transparent: true,
+        opacity: 0.001,
+        depthWrite: false,
+      }),
+    );
+    centerCore.scale.set(2.3, 2.3, 1);
     const centerHaloTexture = makeGlowTexture(echoAccent);
     const centerHalo = new THREE.Sprite(
       new THREE.SpriteMaterial({
@@ -485,19 +463,16 @@ export function SonicPresenceLandscape({
         color: new THREE.Color(echoAccent),
         transparent: true,
         opacity: 0.46,
-        blending: THREE.AdditiveBlending,
+        blending: THREE.NormalBlending,
         depthWrite: false,
       }),
     );
-    centerHalo.scale.set(4.1, 4.1, 1);
-    const centerShellRadius = 0.92;
+    centerHalo.scale.set(4.15, 4.15, 1);
+    const centerShellRadius = 1.32;
     centerGroup.add(centerHalo);
     centerGroup.add(centerShell);
     centerGroup.add(centerCore);
-    const centerCoreMaterial =
-      centerCore.material as THREE.MeshStandardMaterial;
-    const centerShellMaterial =
-      centerShell.material as THREE.MeshPhysicalMaterial;
+    const centerShellMaterial = centerShell.material as THREE.SpriteMaterial;
     const centerLabel = echoOnly
       ? null
       : makeTextSprite(device?.echoName ?? "my Echo", LABEL_TEXT_COLOR, {
@@ -547,42 +522,45 @@ export function SonicPresenceLandscape({
       anchor.position.copy(base);
 
       const accent = mid ?? start ?? DEFAULT_ECHO_ACCENT;
-      const shell = new THREE.Mesh(
-        new THREE.SphereGeometry(size, 28, 28),
-        makeGlassMaterial(accent, {
-          emissiveIntensity: 0.28 + durationWeight * 0.22,
-          opacity: 0.42 + durationWeight * 0.28,
-          transmission: 0.72,
-        }),
-      );
-      anchor.add(shell);
-      const core = new THREE.Mesh(
-        new THREE.SphereGeometry(size * 0.58, 28, 28),
-        new THREE.MeshStandardMaterial({
+      const ringBaseOpacity = 0.94 + durationWeight * 0.06;
+      const shell = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: makeOrbitRingTexture(),
           color: new THREE.Color("#ffffff"),
-          emissive: new THREE.Color(start),
-          emissiveIntensity: 0.5 + durationWeight * 0.38,
           transparent: true,
-          opacity: 0.88,
-          roughness: 0.1,
+          opacity: ringBaseOpacity,
+          blending: THREE.NormalBlending,
+          depthWrite: false,
         }),
       );
+      shell.scale.set(size * 2.45, size * 2.45, 1);
+      anchor.add(shell);
+
+      const core = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: makeGlowTexture(accent),
+          color: new THREE.Color(accent),
+          transparent: true,
+          opacity: 0.001,
+          depthWrite: false,
+        }),
+      );
+      core.scale.set(size * 2.2, size * 2.2, 1);
       anchor.add(core);
 
       const haloTexture = makeGlowTexture(start);
       const haloRestColor = new THREE.Color(end);
       const haloPlayColor = playGlowColor(mid ?? start);
       const haloBaseOpacity =
-        (0.38 + durationWeight * 0.28) * (0.82 + densityScale * 0.18);
-      const haloBaseScale = size * (2.8 + densityScale * 1.6);
-      const shellBaseEmissive = 0.28 + durationWeight * 0.22;
+        (0.42 + durationWeight * 0.18) * (0.82 + densityScale * 0.18);
+      const haloBaseScale = size * (3.25 + densityScale * 1.75);
       const halo = new THREE.Sprite(
         new THREE.SpriteMaterial({
           map: haloTexture,
           color: haloRestColor.clone(),
           transparent: true,
           opacity: haloBaseOpacity,
-          blending: THREE.AdditiveBlending,
+          blending: THREE.NormalBlending,
           depthWrite: false,
         }),
       );
@@ -628,7 +606,7 @@ export function SonicPresenceLandscape({
         haloPlayColor,
         haloBaseOpacity,
         haloBaseScale,
-        shellBaseEmissive,
+        ringBaseOpacity,
         base,
         baseScale: size,
         phase: hashUnit(`${encounter.id}:phase`) * Math.PI * 2,
@@ -857,26 +835,22 @@ export function SonicPresenceLandscape({
       const centerPlaying = playingSelfRef.current;
       const centerPulse = centerPlaying ? Math.sin(t * 5.5) * 0.12 : 0;
       const centerBreathe = 1 + Math.sin(t * 1.1) * 0.06 + centerPulse;
-      centerShell.scale.setScalar(centerBreathe);
-      centerCore.scale.setScalar(0.46 * centerBreathe);
-      centerShell.rotation.y = t * 0.05;
-      centerCore.rotation.y = -t * 0.07;
+      const centerRingSize = 2.65 * centerBreathe;
+      centerShell.scale.set(centerRingSize, centerRingSize, 1);
+      const centerHitSize = 2.3 * centerBreathe;
+      centerCore.scale.set(centerHitSize, centerHitSize, 1);
       const centerWave = 0.5 + 0.5 * Math.sin(t * 5.5);
-      centerCoreMaterial.emissiveIntensity = centerPlaying
-        ? 0.72 + centerWave * 0.38
-        : 0.38 + Math.sin(t * 1.35) * 0.16;
-      centerShellMaterial.emissiveIntensity = centerPlaying
-        ? 0.34 + centerWave * 0.42
-        : 0.22;
       if (centerPlaying) {
         centerGroup.position.y = 0.25 + Math.sin(t * 5.5) * 0.08;
-        centerHalo.material.opacity = 0.58 + centerWave * 0.18;
-        const centerHaloSize = 4.35 + centerWave * 0.42;
+        centerShellMaterial.opacity = 0.96;
+        centerHalo.material.opacity = 0.5 + centerWave * 0.1;
+        const centerHaloSize = 4.42 + centerWave * 0.42;
         centerHalo.scale.set(centerHaloSize, centerHaloSize, 1);
       } else {
         centerGroup.position.y = 0.25;
-        centerHalo.material.opacity = 0.42 + Math.sin(t * 1.2) * 0.05;
-        const centerHaloSize = 4.05 + Math.sin(t * 1.1) * 0.12;
+        centerShellMaterial.opacity = 1;
+        centerHalo.material.opacity = 0.42 + Math.sin(t * 1.2) * 0.04;
+        const centerHaloSize = 4.08 + Math.sin(t * 1.1) * 0.16;
         centerHalo.scale.set(centerHaloSize, centerHaloSize, 1);
       }
       if (stars) stars.rotation.y = t * 0.018;
@@ -899,28 +873,25 @@ export function SonicPresenceLandscape({
         const playWave = 0.5 + 0.5 * Math.sin(playingT);
         const peerBreathe =
           1 + Math.sin(t * 1.2 + body.phase) * 0.05 + playPulse;
-        body.shell.scale.setScalar(body.baseScale * peerBreathe);
-        body.core.scale.setScalar(body.baseScale * 0.58 * peerBreathe);
-        const shellMat = body.shell.material as THREE.MeshPhysicalMaterial;
-        const coreMat = body.core.material as THREE.MeshStandardMaterial;
+        const ringSize = body.baseScale * 2.45 * peerBreathe;
+        body.shell.scale.set(ringSize, ringSize, 1);
+        const hitSize = body.baseScale * 2.2 * peerBreathe;
+        body.core.scale.set(hitSize, hitSize, 1);
+        const ringMat = body.shell.material as THREE.SpriteMaterial;
         const haloMat = body.halo.material as THREE.SpriteMaterial;
         if (isPlaying) {
           haloMat.color.copy(body.haloPlayColor);
-          haloMat.opacity = body.haloBaseOpacity + 0.34 + playWave * 0.14;
+          haloMat.opacity = body.haloBaseOpacity + 0.12 + playWave * 0.06;
           const haloSize = body.haloBaseScale * (1.14 + playWave * 0.1);
           body.halo.scale.set(haloSize, haloSize, 1);
-          shellMat.emissiveIntensity =
-            body.shellBaseEmissive + 0.42 + playWave * 0.14;
-          coreMat.emissiveIntensity = 0.82 + playWave * 0.16;
+          ringMat.opacity = Math.min(1, body.ringBaseOpacity + 0.12);
         } else {
           haloMat.color.copy(body.haloRestColor);
           haloMat.opacity = body.haloBaseOpacity;
           body.halo.scale.set(body.haloBaseScale, body.haloBaseScale, 1);
-          shellMat.emissiveIntensity = body.shellBaseEmissive;
-          coreMat.emissiveIntensity = 0.5;
+          ringMat.opacity = body.ringBaseOpacity;
         }
-        body.shell.rotation.y += 0.004 * body.spin;
-        body.core.rotation.y += 0.006 * body.spin;
+        body.shell.material.rotation += 0.0012 * body.spin;
         body.halo.material.rotation += 0.002 * body.spin;
       }
 
@@ -943,7 +914,6 @@ export function SonicPresenceLandscape({
       container.removeEventListener("touchend", onTouchEnd);
       container.removeEventListener("touchcancel", onTouchEnd);
       container.removeChild(renderer.domElement);
-      centerTexture?.dispose();
       centerHaloTexture?.dispose();
       disposeObject(world);
       starGeometry.dispose();
