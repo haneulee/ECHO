@@ -1,3 +1,5 @@
+import { EchoGradientLoader } from "@/components/EchoGradientLoader";
+
 type LoadingPulseProps = {
   label?: string;
   className?: string;
@@ -9,9 +11,6 @@ export function LoadingPulse({
   className = "",
   size = "md",
 }: LoadingPulseProps) {
-  const dotSize = size === "sm" ? "h-1.5 w-1.5" : "h-2.5 w-2.5";
-  const gap = size === "sm" ? "gap-1.5" : "gap-2";
-
   return (
     <div
       aria-label={label}
@@ -20,18 +19,7 @@ export function LoadingPulse({
       role="status"
     >
       <span className="sr-only">{label}</span>
-      <span aria-hidden className={["flex text-current", gap].join(" ")}>
-        {[0, 1, 2].map((i) => (
-          <span
-            className={[
-              dotSize,
-              "rounded-full bg-current opacity-35 motion-safe:animate-pulse",
-            ].join(" ")}
-            key={i}
-            style={{ animationDelay: `${i * 160}ms` }}
-          />
-        ))}
-      </span>
+      <EchoGradientLoader size={size} />
     </div>
   );
 }
