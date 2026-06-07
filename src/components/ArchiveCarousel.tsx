@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { DailyMemory, Encounter } from "@/lib/types";
-import { archiveCarousel } from "@/lib/uiPoetics";
+import { encounterDayHeadline } from "@/lib/uiPoetics";
 import { AbstractMemoryVisual } from "./AbstractMemoryVisual";
 import { TodayEncounterSoundPlayer } from "./TodayEncounterSoundPlayer";
 
@@ -14,6 +14,7 @@ export type ArchiveCarouselItem = {
 };
 
 type ArchiveCarouselProps = {
+  echoName: string;
   items: ArchiveCarouselItem[];
 };
 
@@ -36,7 +37,7 @@ function useArchiveVisualSize() {
   return size;
 }
 
-export function ArchiveCarousel({ items }: ArchiveCarouselProps) {
+export function ArchiveCarousel({ echoName, items }: ArchiveCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const visualSize = useArchiveVisualSize();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -154,7 +155,7 @@ export function ArchiveCarousel({ items }: ArchiveCarouselProps) {
               )}
             </p>
             <h2 className="mt-2 font-display text-[clamp(1.5rem,6vw,2.75rem)] leading-[1.1] tracking-[-0.04em] sm:mt-3 sm:text-[40px] sm:leading-[44px] lg:text-[clamp(2.25rem,4vw,4.25rem)] lg:leading-[1.05]">
-              {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
+              {encounterDayHeadline(activeMemory.totalEncounters, echoName)}
             </h2>
           </div>
 

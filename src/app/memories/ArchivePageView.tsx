@@ -26,13 +26,17 @@ import {
   persistTimespan,
   resolveTimespan,
 } from "@/lib/timespanNavigation";
-import { archiveCarousel, archiveHero, overviewLabels } from "@/lib/uiPoetics";
+import {
+  archiveHero,
+  encounterDayHeadline,
+  overviewLabels,
+} from "@/lib/uiPoetics";
 import type { OverviewSpan } from "@/lib/zonedDayRange";
 
 type LoadState =
   | { kind: "loading" }
   | { kind: "error"; message: string }
-  | { kind: "ok"; items: ArchiveCarouselItem[] };
+  | { kind: "ok"; data: ArchiveApiResponse };
 
 const MIN_LOADING_MS = 150;
 
@@ -58,8 +62,10 @@ function encounterWindow(item: ArchiveCarouselItem) {
 }
 
 export function DesktopArchiveView({
+  echoName,
   items,
 }: {
+  echoName: string;
   items: ArchiveCarouselItem[];
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -106,7 +112,7 @@ export function DesktopArchiveView({
               {memoryDate(activeMemory.date, "long")}
             </p>
             <p className="mt-6 max-w-sm font-display text-[42px] leading-[44px] tracking-[-0.04em]">
-              {archiveCarousel.dayHeadline(activeMemory.totalEncounters)}
+              {encounterDayHeadline(activeMemory.totalEncounters, echoName)}
             </p>
             <span className="my-8 block h-px w-12 bg-text/15" />
             <div className="space-y-6 font-body text-sm text-text-muted">
@@ -153,7 +159,10 @@ export function DesktopArchiveView({
                   <span className="font-body text-sm text-text">
                     {memoryDate(item.memory.date, "short")}
                     <span className="mt-1 block text-text-muted">
-                      {archiveCarousel.dayHeadline(item.memory.totalEncounters)}
+                      {encounterDayHeadline(
+                        item.memory.totalEncounters,
+                        echoName,
+                      )}
                     </span>
                   </span>
                 </button>
@@ -217,10 +226,12 @@ function isMemoryDragBlockedTarget(target: EventTarget | null) {
 }
 
 function MemoriesListView({
+  echoName,
   items,
   span,
   timeZone,
 }: {
+  echoName: string;
   items: ArchiveCarouselItem[];
   span: OverviewSpan;
   timeZone: string;
@@ -486,7 +497,7 @@ function MemoriesListView({
             </h2>
             <p className="mt-2 font-body text-sm leading-5 text-text-muted">
               {copyMemory
-                ? archiveCarousel.dayHeadline(copyMemory.totalEncounters)
+                ? encounterDayHeadline(copyMemory.totalEncounters, echoName)
                 : null}
             </p>
           </div>
@@ -519,8 +530,12 @@ function MemoriesListView({
 
 function MemoriesLoadedView({
   dailyItems,
+  echoDevice,
+  echoName,
 }: {
   dailyItems: ArchiveCarouselItem[];
+  echoDevice: ArchiveApiResponse["device"];
+  echoName: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -544,7 +559,7 @@ function MemoriesLoadedView({
 
   return (
     <AppShell
-      backHref="/main"
+      echoDevice={echoDevice}
       fullBleed
       headerActions={
         <MemoriesTimespanSelect
@@ -557,7 +572,12 @@ function MemoriesLoadedView({
       pageTitle={archiveHero.title}
       viewportLocked
     >
-      <MemoriesListView items={items} span={span} timeZone={timeZone} />
+      <MemoriesListView
+        echoName={echoName}
+        items={items}
+        span={span}
+        timeZone={timeZone}
+      />
     </AppShell>
   );
 }
@@ -594,7 +614,7 @@ function ArchiveBody() {
       }
       const data = (await res.json()) as ArchiveApiResponse;
       await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
-      setState({ kind: "ok", items: data.items });
+      setState({ kind: "ok", data });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Network error";
       await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
@@ -616,12 +636,7 @@ function ArchiveBody() {
 
   if (state.kind === "error") {
     return (
-      <AppShell
-        backHref="/main"
-        hideChrome
-        pageTitle={archiveHero.title}
-        viewportLocked
-      >
+      <AppShell hideChrome pageTitle={archiveHero.title} viewportLocked>
         <div className="space-y-4 px-1 pt-4">
           <p className="font-body text-sm text-red-900/90">{state.message}</p>
           <button
@@ -636,26 +651,36 @@ function ArchiveBody() {
     );
   }
 
-  if (state.kind === "ok" && state.items.length === 0) {
+  if (state.kind === "ok" && state.data.items.length === 0) {
+    const echoName = state.data.device?.echoName ?? "Echo";
+
     return (
       <AppShell
-        backHref="/main"
+        echoDevice={state.data.device}
         hideChrome
         pageTitle={archiveHero.title}
         viewportLocked
       >
         <div className="space-y-5 px-1 pt-4">
           <p className="max-w-md font-body text-sm leading-6 text-text/80">
-            No sound memories have settled here yet. After Echo rests on its
-            station, days with company will begin to appear.
+            No sound memories have settled here yet. After {echoName} rests on
+            its station, days with company will begin to appear.
           </p>
         </div>
       </AppShell>
     );
   }
 
-  if (state.kind === "ok" && state.items.length > 0) {
-    return <MemoriesLoadedView dailyItems={state.items} />;
+  if (state.kind === "ok" && state.data.items.length > 0) {
+    const echoName = state.data.device?.echoName ?? "Echo";
+
+    return (
+      <MemoriesLoadedView
+        dailyItems={state.data.items}
+        echoName={echoName}
+        echoDevice={state.data.device}
+      />
+    );
   }
 
   return null;

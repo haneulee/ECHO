@@ -63,9 +63,24 @@ export const archiveHero = {
   title: "Memories",
 } as const;
 
+export function encounterDayHeadline(encounterCount: number, echoName: string) {
+  if (encounterCount === 0) {
+    return `Quiet day... ${echoName} is still holding its own color.`;
+  }
+  if (encounterCount === 1) {
+    return `Only one encounter found ${echoName}.`;
+  }
+  if (encounterCount >= 8) {
+    return `${echoName} met many echoes today.`;
+  }
+  if (encounterCount >= 4) {
+    return `${echoName} had quite a few encounters today.`;
+  }
+  return `${encounterCount} encounters around ${echoName}.`;
+}
+
 export const mainHome = {
   title: "Your daily encounters",
-  emptyToday: "Quiet day... Echo is still holding its own color.",
   encountersOverviewCta: "Encounters overview",
   memoriesCta: "Memories",
 } as const;
@@ -82,17 +97,6 @@ export const overviewLabels = {
   prev: "Previous",
   next: "Next",
   openFromMemory: "Encounters overview",
-} as const;
-
-/** Archive carousel — headline under the date */
-export const archiveCarousel = {
-  dayHeadline: (encounterCount: number) => {
-    if (encounterCount === 0) return "Quiet day...";
-    if (encounterCount === 1) return "Only one encounter.";
-    if (encounterCount >= 4) return "Quite a few encounters today.";
-    if (encounterCount >= 8) return "Wow, that’s a lot of encounters today!";
-    return `${encounterCount} encounters.`;
-  },
 } as const;
 
 export const aboutPage = {
@@ -119,7 +123,7 @@ export const aboutPage = {
       name: "Haneul Lee",
       url: "https://www.haneul-lee.com",
     },
-    school: "HEAD – Genève (Haute école d'art et de design)",
+    school: "HEAD – Genève (Haute école d’art et de design)",
     program: "Master Media Design",
     tutor: "Amaury Hamon",
     professors: [

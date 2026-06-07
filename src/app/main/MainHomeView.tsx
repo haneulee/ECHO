@@ -12,7 +12,7 @@ import {
   readPersistedTimespan,
 } from "@/lib/timespanNavigation";
 import type { DailyMemory, EchoDevice, Encounter } from "@/lib/types";
-import { mainHome } from "@/lib/uiPoetics";
+import { encounterDayHeadline, mainHome } from "@/lib/uiPoetics";
 
 type MainHomeViewProps = {
   echoDevice: EchoDevice;
@@ -76,7 +76,7 @@ export function MainHomeView({
           </button>
           {!hasTodayEncounters ? (
             <p className="mt-3 max-w-sm font-body text-sm leading-6 text-text-muted">
-              {mainHome.emptyToday}
+              {encounterDayHeadline(visualEncounters.length, echoDevice.echoName)}
             </p>
           ) : null}
           <div className="mt-4 flex flex-wrap justify-center gap-3">

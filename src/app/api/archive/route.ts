@@ -4,6 +4,7 @@ import type { ArchiveApiResponse } from "@/lib/archiveApiTypes";
 import { listArchiveForUser } from "@/lib/archiveService";
 import { getSession } from "@/lib/auth/session";
 import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
+import { echoDeviceRowToDto } from "@/lib/dbSerializers";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { mockArchivePayload } from "@/lib/mockArchivePayload";
 import { prisma } from "@/lib/prisma";
@@ -39,12 +40,19 @@ export async function GET(request: Request) {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      const payload: ArchiveApiResponse = { items: [] };
+      const payload: ArchiveApiResponse = { device: null, items: [] };
       return NextResponse.json(payload);
     }
 
+    const device = await prisma.echoDevice.findFirst({
+      where: { userId },
+      orderBy: { lastSyncedAt: "desc" },
+    });
     const items = await listArchiveForUser(userId, timeZone);
-    const payload: ArchiveApiResponse = { items };
+    const payload: ArchiveApiResponse = {
+      device: device ? echoDeviceRowToDto(device) : null,
+      items,
+    };
     return NextResponse.json(payload);
   } catch (e) {
     if (isDatabaseConnectFailure(e)) {

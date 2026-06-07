@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { AboutModal } from "@/components/AboutModal";
@@ -12,8 +13,13 @@ type AppAccountMenuProps = {
   device?: EchoDevice | null;
 };
 
+function isCurrentPath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function AppAccountMenu({ device }: AppAccountMenuProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);
@@ -67,6 +73,26 @@ export function AppAccountMenu({ device }: AppAccountMenuProps) {
                 >
                   Echo settings
                 </button>
+              ) : null}
+              {!isCurrentPath(pathname, "/main") ? (
+                <Link
+                  className="glass-menu-item block w-full px-4 py-2.5 text-left"
+                  href="/main"
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
+                >
+                  Home
+                </Link>
+              ) : null}
+              {!isCurrentPath(pathname, "/memories") ? (
+                <Link
+                  className="glass-menu-item block w-full px-4 py-2.5 text-left"
+                  href="/memories"
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
+                >
+                  Memories
+                </Link>
               ) : null}
               <button
                 className="glass-menu-item block w-full px-4 py-2.5 text-left"

@@ -107,11 +107,11 @@ function EvolutionStudy({
             Echo evolution
           </p>
           <h2 className="mt-6 max-w-xs font-display text-[44px] leading-[48px] tracking-[-0.04em] sm:text-[56px] sm:leading-[60px]">
-            Resonance changes your Echo.
+            Resonance changes {echoName}.
           </h2>
           <p className="mt-6 max-w-xs font-body text-sm leading-6 text-text-muted">
             When {echoName} stays near others, parts of their sound become part
-            of its own. This is how your Echo evolves.
+            of its own. This is how {echoName} evolves.
           </p>
         </div>
 

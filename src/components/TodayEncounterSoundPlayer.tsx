@@ -43,6 +43,7 @@ export function TodayEncounterSoundPlayer({
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
+  const melodyOwner = device?.echoName ?? "the current Echo";
 
   useEffect(() => {
     return () => {
@@ -151,7 +152,8 @@ export function TodayEncounterSoundPlayer({
       ) : null}
       <span className="sr-only">
         {plan.notes.length} deterministic notes from {encounters.length} encounters
-        over {Math.round(plan.durationSec)} seconds using the current Echo melody.
+        over {Math.round(plan.durationSec)} seconds using {melodyOwner}&apos;s
+        melody.
       </span>
     </div>
   );

@@ -9,6 +9,7 @@ function shiftDate(isoLike: string, date: string): string {
 
 export function mockArchivePayload(): ArchiveApiResponse {
   return {
+    device: localMockEchoDevice,
     items: mockArchive.map((memory, memoryIndex) => {
       const encounters = mockEncounters
         .slice(0, Math.max(3, memory.totalEncounters))
