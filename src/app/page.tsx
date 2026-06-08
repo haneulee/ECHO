@@ -9,7 +9,7 @@ import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "A sonic companion for co-presence",
+  title: "Echo, A sonic companion for co-presence",
 };
 
 const projectComponents = [
@@ -64,7 +64,7 @@ export default async function HomePage() {
         <nav className="mx-auto flex max-w-7xl items-center justify-center">
           <Image
             alt="Echo"
-            className="h-auto w-32 sm:w-40"
+            className="h-auto w-24 sm:w-28"
             height={100}
             priority
             src="/brand/echo_logo.png"
@@ -73,13 +73,10 @@ export default async function HomePage() {
         </nav>
 
         <div className="mx-auto flex max-w-7xl flex-col items-center pt-16 text-center sm:pt-20">
-          <p className="font-body text-xs uppercase tracking-[0.22em] text-text-muted">
-            Echo companion
-          </p>
-          <h1 className="mt-5 max-w-5xl font-display text-[clamp(4.1rem,12vw,10.5rem)] leading-[0.78] tracking-[-0.075em]">
+          <h1 className="mt-5 max-w-5xl font-display text-[clamp(4.1rem,6vw,10.5rem)] leading-[0.78] tracking-[-0.075em]">
             A sonic companion for co-presence
           </h1>
-          <p className="mt-8 max-w-2xl font-body text-[1.05rem] leading-8 text-text-muted sm:text-lg">
+          <p className="mt-16 max-w-2xl font-body text-[1.05rem] leading-5 text-text-muted sm:text-lg">
             Echo is a small companion device that reacts to the presence of its
             peers through sound. Released as three different types, each has its
             own temperament expressed through sonic identity.
@@ -119,11 +116,11 @@ export default async function HomePage() {
           <p className="font-body text-xs uppercase tracking-[0.2em] text-text-muted">
             Proximity becomes sound
           </p>
-          <h2 className="mt-4 font-display text-[clamp(2.8rem,7vw,6.8rem)] leading-[0.86] tracking-[-0.06em]">
-            A quiet way to sense who is near.
+          <h2 className="mt-4 font-display text-[clamp(2.8rem,6vw,6.8rem)] leading-[0.99] tracking-[-0.06em]">
+            A playful way to reflect connection
           </h2>
         </div>
-        <div className="grid content-end gap-6 font-body text-base leading-8 text-text-muted sm:text-lg">
+        <div className="grid content-end gap-6 font-body text-base leading-5 text-text-muted sm:text-lg">
           <p>
             When alone, Echo remains quiet. As two or more devices share
             proximity, they start playing sound in harmony through layered tones
@@ -163,9 +160,9 @@ export default async function HomePage() {
                 Sound memories
               </p>
               <p className="mt-5 font-display text-3xl leading-9 tracking-[-0.035em]">
-                The day returns as an abstract landscape.
+                The day returns as an abstract landscape
               </p>
-              <p className="mt-4 font-body text-sm leading-6 text-text-muted">
+              <p className="mt-4 font-body text-sm leading-5 text-text-muted">
                 Place Echo on its station to transfer moments of co-presence
                 into a digital interface, where encounters can be revisited as
                 an evolving archive of audio-reactive visual landscapes.
@@ -176,12 +173,12 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
-        <div className="mb-10 max-w-2xl">
+        <div className="mb-10 max-w-6xl">
           <p className="font-body text-xs uppercase tracking-[0.2em] text-text-muted">
             Three parts, one companion system
           </p>
-          <h2 className="mt-4 font-display text-[clamp(2.6rem,6vw,5.4rem)] leading-[0.88] tracking-[-0.06em]">
-            Object, station, interface.
+          <h2 className="mt-4 font-display text-[clamp(2.6rem,5vw,5.4rem)] leading-[0.88] tracking-[-0.06em]">
+            Companion, Station, Interface
           </h2>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
@@ -193,7 +190,7 @@ export default async function HomePage() {
               <h3 className="font-display text-3xl tracking-[-0.045em]">
                 {item.title}
               </h3>
-              <p className="mt-4 font-body text-sm leading-6 text-text-muted">
+              <p className="mt-4 font-body text-sm leading-5 text-text-muted">
                 {item.body}
               </p>
             </article>
@@ -209,10 +206,10 @@ export default async function HomePage() {
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
           <div>
             <p className="font-body text-xs uppercase tracking-[0.2em] text-text-muted">
-              How it unfolds
+              How it works
             </p>
             <h2 className="mt-4 font-display text-[clamp(2.6rem,6vw,5.4rem)] leading-[0.88] tracking-[-0.06em]">
-              The day becomes a sound memory.
+              The day becomes a sound memory
             </h2>
           </div>
           <div className="grid gap-5 sm:grid-cols-3">
@@ -224,7 +221,7 @@ export default async function HomePage() {
                 <h3 className="font-display text-3xl tracking-[-0.045em]">
                   {item.title}
                 </h3>
-                <p className="mt-3 font-body text-sm leading-6 text-text-muted">
+                <p className="mt-3 font-body text-sm leading-5 text-text-muted">
                   {item.body}
                 </p>
               </article>
@@ -245,16 +242,13 @@ export default async function HomePage() {
             />
           </figure>
           <div className="flex flex-col justify-center px-3 py-8 sm:px-6 lg:px-10">
-            <p className="font-body text-xs uppercase tracking-[0.2em] text-text-muted">
-              Echo
-            </p>
-            <h2 className="mt-4 max-w-2xl font-display text-[clamp(3rem,8vw,7rem)] leading-[0.7] tracking-[-0.07em]">
-              Carry presence.
+            <h2 className="max-w-2xl font-display text-[clamp(3rem,6vw,7rem)] leading-[0.7] tracking-[-0.07em]">
+              Carry presence
             </h2>
-            <h2 className="mt-12 max-w-2xl font-display text-[clamp(3rem,8vw,7rem)] leading-[0.7] tracking-[-0.07em]">
-              Revisit connection.
+            <h2 className="mt-12 max-w-2xl font-display text-[clamp(3rem,6vw,7rem)] leading-[0.7] tracking-[-0.07em]">
+              Revisit connection
             </h2>
-            <p className="mt-7 max-w-xl font-body text-base leading-8 text-text-muted">
+            <p className="mt-7 max-w-xl font-body text-base leading-5 text-text-muted">
               Over time, encounters leave traces within each Echo companion.
               Echo invites us to explore how subtle moments of co-presence can
               gradually become a sense of connection.
