@@ -20,9 +20,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/brand/gradation-favicon.png",
-        type: "image/png",
-        sizes: "512x512",
+        url: "/brand/echo_favicon.ico",
+        type: "image/x-icon",
+        sizes: "any",
       },
     ],
   },
