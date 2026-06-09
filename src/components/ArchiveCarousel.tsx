@@ -113,7 +113,7 @@ export function ArchiveCarousel({ echoName, items }: ArchiveCarouselProps) {
       {/* Scroll layer: full-height segments drive active memory (below overlay). */}
       <div
         ref={scrollRef}
-        className="scrollbar-none absolute inset-0 z-0 touch-pan-y overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] snap-y snap-mandatory scroll-smooth"
+        className="absolute inset-0 z-0 touch-pan-y overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] snap-y snap-mandatory scroll-smooth"
       >
         {items.map((item) => (
           <div

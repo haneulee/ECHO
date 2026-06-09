@@ -20,6 +20,9 @@ const THEME_PROPS = [
   "--pearl-pink",
   "--pearl-blue",
   "--pearl-violet",
+  "--scrollbar-thumb",
+  "--scrollbar-thumb-hover",
+  "--scrollbar-track",
 ] as const;
 
 const NEUTRAL = {
@@ -81,10 +84,31 @@ function applyBaseTheme(target: HTMLElement, accent: Rgb | null) {
       "--pearl-violet",
       `rgba(${NEUTRAL.bg.r}, ${NEUTRAL.bg.g}, ${NEUTRAL.bg.b}, 0.5)`,
     );
+    target.style.setProperty(
+      "--scrollbar-thumb",
+      `rgb(${accent.r} ${accent.g} ${accent.b} / 0.34)`,
+    );
+    target.style.setProperty(
+      "--scrollbar-thumb-hover",
+      `rgb(${accent.r} ${accent.g} ${accent.b} / 0.5)`,
+    );
+    target.style.setProperty(
+      "--scrollbar-track",
+      `rgb(${NEUTRAL.bg.r} ${NEUTRAL.bg.g} ${NEUTRAL.bg.b} / 0.35)`,
+    );
   } else {
     target.style.setProperty("--pearl-pink", "rgba(0, 0, 0, 0)");
     target.style.setProperty("--pearl-blue", "rgba(0, 0, 0, 0)");
     target.style.setProperty("--pearl-violet", "rgba(255, 255, 255, 0.4)");
+    target.style.setProperty(
+      "--scrollbar-thumb",
+      `rgb(${NEUTRAL.border.r} ${NEUTRAL.border.g} ${NEUTRAL.border.b} / 0.82)`,
+    );
+    target.style.setProperty(
+      "--scrollbar-thumb-hover",
+      `rgb(${NEUTRAL.muted.r} ${NEUTRAL.muted.g} ${NEUTRAL.muted.b} / 0.44)`,
+    );
+    target.style.setProperty("--scrollbar-track", "transparent");
   }
 }
 
