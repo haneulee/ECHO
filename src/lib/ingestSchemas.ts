@@ -13,6 +13,21 @@ const jsonObject = z.record(z.string(), z.unknown());
 
 const finite = z.number().refine((n) => Number.isFinite(n), "expected finite number");
 
+const peerMelodySemiSchema = z
+  .array(z.coerce.number())
+  .min(1)
+  .max(8)
+  .optional();
+
+export const peerProfileSnapshotIngestSchema = z
+  .object({
+    melodySemi: peerMelodySemiSchema,
+    brightness: z.coerce.number().min(0).max(1).optional(),
+    calmness: z.coerce.number().min(0).max(1).optional(),
+    densityBias: z.coerce.number().min(0).max(1).optional(),
+  })
+  .optional();
+
 export const ingestEncounterItemSchema = z.object({
   id: z.string().trim().min(1),
   deviceId: z.string().trim().min(1),
@@ -38,6 +53,8 @@ export const ingestEncounterItemSchema = z.object({
   closenessAvg: finite,
   proximityZone,
   soundProfileId: z.string().trim().min(1),
+  otherEchoProfileSnapshot: peerProfileSnapshotIngestSchema.nullish(),
+  otherEchoSonicSource: z.enum(["ble_adv", "factory_default"]).nullish(),
 });
 
 export const ingestEncountersBodySchema = z.array(ingestEncounterItemSchema);

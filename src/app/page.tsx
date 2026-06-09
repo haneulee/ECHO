@@ -83,7 +83,7 @@ export default async function HomePage() {
             peers through sound. Released as three different types, each has its
             own temperament expressed through sonic identity.
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <div className="mt-16 flex flex-wrap justify-center gap-3">
             <Link
               className="glass-btn-primary rounded-full px-6 py-3 font-body text-sm"
               href="/signup"

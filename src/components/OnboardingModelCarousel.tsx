@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
-import { SoundMemoryPlayer } from "@/components/SoundMemoryPlayer";
+import { EchoTypeSoundPlayer } from "@/components/EchoTypeSoundPlayer";
 import {
   onboardingDemoComposition,
   onboardingDemoEncounters,
@@ -51,22 +51,6 @@ function encountersForModel(type: EchoType) {
     otherEchoType: type,
   }));
 }
-
-function melodyForModel(type: EchoType): string[] {
-  const voice = onboardingDemoComposition.voices.find(
-    (v) => v.echoType === type,
-  );
-  return (
-    voice?.melody ?? onboardingDemoComposition.voices[0].melody
-  );
-}
-
-/** Slightly different pacing per model so previews feel distinct. */
-const modelTempoBpm: Record<EchoType, number> = {
-  shy: 48,
-  messy: 52,
-  bounce: 56,
-};
 
 /** Shared responsive SVG size for onboarding visuals (model pick + name steps). */
 export function useOnboardingVisualSize() {
@@ -230,10 +214,9 @@ export function OnboardingModelCarousel({
             </div>
 
             <div className="flex w-full justify-center pointer-events-auto">
-              <SoundMemoryPlayer
+              <EchoTypeSoundPlayer
+                echoType={activeType}
                 key={activeType}
-                melody={melodyForModel(activeType)}
-                tempoBpm={modelTempoBpm[activeType]}
                 title={echoTypeLabels[activeType]}
                 variant="controlRow"
               />

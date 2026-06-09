@@ -15,6 +15,7 @@ import {
   persistTimespan,
   resolveTimespan,
 } from "@/lib/timespanNavigation";
+import { ProfileFirmwareSoundPlayer } from "@/components/ProfileFirmwareSoundPlayer";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import { encounterDisplayName } from "@/lib/encounterDisplay";
 import { echoTypeLabels } from "@/lib/echoTypeMeta";
@@ -48,8 +49,6 @@ type PlayAllState = {
 type EchoTypeFilter = "all" | EchoType;
 
 const MIN_LOADING_MS = 150;
-const PLAY_ALL_STEP_MS = 2300;
-const PLAY_ALL_CLIP_SEC = 1.85;
 const ECHO_TYPE_FILTERS: EchoType[] = ["shy", "messy", "bounce"];
 const USE_TEMP_TODAY_PREVIEW_DATA = true;
 const PROXIMITY_RANK: Record<Encounter["proximityZone"], number> = {
@@ -278,16 +277,23 @@ function TodayDataBody() {
     [filteredPreviewEncounters],
   );
   const hasEncounters = filteredPreviewEncounters.length > 0;
-  const playAllEncounters = orbitEncounters;
+  const playAllEncounters = useMemo(
+    () =>
+      [...filteredPreviewEncounters].sort(
+        (a, b) =>
+          new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+      ),
+    [filteredPreviewEncounters],
+  );
   const title = null;
   const activeEncounters =
-    soundTarget?.kind === "encounter"
-      ? [soundTarget.encounter]
-      : filteredPreviewEncounters;
+    soundTarget?.kind === "encounter" ? [soundTarget.encounter] : [];
   const activeTitle =
     soundTarget?.kind === "encounter"
       ? encounterDisplayName(soundTarget.encounter)
-      : todaySoundTitle;
+      : state.kind === "ok"
+        ? state.data.device?.echoName ?? todaySoundTitle
+        : todaySoundTitle;
 
   const togglePlayAll = useCallback(() => {
     if (playAll.running) {
@@ -309,6 +315,18 @@ function TodayDataBody() {
     setSoundTarget(null);
   }, []);
 
+  const advancePlayAll = useCallback(() => {
+    setPlayAll((current) => {
+      if (!current.running) return current;
+      const nextIndex = current.index + 1;
+      if (nextIndex >= playAllEncounters.length) {
+        setSoundTarget(null);
+        return { running: false, index: 0, token: `done:${Date.now()}` };
+      }
+      return { ...current, index: nextIndex };
+    });
+  }, [playAllEncounters.length]);
+
   useEffect(() => {
     if (!playAll.running) return;
     const encounter = playAllEncounters[playAll.index];
@@ -323,19 +341,7 @@ function TodayDataBody() {
       encounter,
       token: `${playAll.token}:${playAll.index}:${encounter.id}`,
     });
-
-    const timer = window.setTimeout(() => {
-      const nextIndex = playAll.index + 1;
-      if (nextIndex >= playAllEncounters.length) {
-        setSoundTarget(null);
-        setPlayAll({ running: false, index: 0, token: `done:${Date.now()}` });
-        return;
-      }
-      setPlayAll({ ...playAll, index: nextIndex });
-    }, PLAY_ALL_STEP_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [playAll, playAllEncounters]);
+  }, [playAll.index, playAll.running, playAll.token, playAllEncounters]);
 
   if (state.kind === "loading") {
     return (
@@ -440,18 +446,27 @@ function TodayDataBody() {
           }
           playingSelf={soundTarget?.kind === "global"}
           soundControl={
-            soundTarget ? (
-              <TodayEncounterSoundPlayer
-                autoPlayKey={soundTarget.token}
-                controlsVisible={false}
-                date={date}
-                device={state.data.device}
-                encounters={activeEncounters}
-                memory={state.data.dailyMemory}
-                playbackLimitSec={playAll.running ? PLAY_ALL_CLIP_SEC : undefined}
-                stopKey={stopKey}
-                title={activeTitle}
-              />
+            soundTarget && state.data.device ? (
+              soundTarget.kind === "global" ? (
+                <ProfileFirmwareSoundPlayer
+                  autoPlayKey={soundTarget.token}
+                  controlsVisible={false}
+                  device={state.data.device}
+                  stopKey={stopKey}
+                  title={activeTitle}
+                />
+              ) : (
+                <TodayEncounterSoundPlayer
+                  autoPlayKey={soundTarget.token}
+                  controlsVisible={false}
+                  date={date}
+                  device={state.data.device}
+                  encounters={activeEncounters}
+                  onPlayEnd={playAll.running ? advancePlayAll : undefined}
+                  stopKey={stopKey}
+                  title={activeTitle}
+                />
+              )
             ) : undefined
           }
           title={title}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { buildIngestDeviceCanonicalMap } from "@/lib/ingestDevices";
@@ -49,25 +49,46 @@ export async function POST(request: Request) {
       proximityZone: item.proximityZone,
       closenessAvg: item.closenessAvg,
       soundProfileId: item.soundProfileId,
+      ...(item.otherEchoProfileSnapshot !== undefined
+        ? {
+            otherEchoProfileSnapshot:
+              item.otherEchoProfileSnapshot === null
+                ? Prisma.DbNull
+                : (item.otherEchoProfileSnapshot as Prisma.InputJsonValue),
+          }
+        : {}),
+      ...(item.otherEchoSonicSource !== undefined
+        ? { otherEchoSonicSource: item.otherEchoSonicSource }
+        : {}),
     };
+    const update: Prisma.EncounterUncheckedUpdateInput = {
+      deviceId: data.deviceId,
+      otherEchoHash: data.otherEchoHash,
+      otherEchoModelName: data.otherEchoModelName,
+      otherEchoType: data.otherEchoType,
+      startedAt: data.startedAt,
+      endedAt: data.endedAt,
+      durationSec: data.durationSec,
+      rssiAvg: data.rssiAvg,
+      rssiMin: data.rssiMin,
+      rssiMax: data.rssiMax,
+      proximityZone: data.proximityZone,
+      closenessAvg: data.closenessAvg,
+      soundProfileId: data.soundProfileId,
+    };
+    if (item.otherEchoProfileSnapshot !== undefined) {
+      update.otherEchoProfileSnapshot =
+        item.otherEchoProfileSnapshot === null
+          ? Prisma.DbNull
+          : (item.otherEchoProfileSnapshot as Prisma.InputJsonValue);
+    }
+    if (item.otherEchoSonicSource !== undefined) {
+      update.otherEchoSonicSource = item.otherEchoSonicSource;
+    }
     byId.set(data.id, {
       where: { id: data.id },
       create: data,
-      update: {
-        deviceId: data.deviceId,
-        otherEchoHash: data.otherEchoHash,
-        otherEchoModelName: data.otherEchoModelName,
-        otherEchoType: data.otherEchoType,
-        startedAt: data.startedAt,
-        endedAt: data.endedAt,
-        durationSec: data.durationSec,
-        rssiAvg: data.rssiAvg,
-        rssiMin: data.rssiMin,
-        rssiMax: data.rssiMax,
-        proximityZone: data.proximityZone,
-        closenessAvg: data.closenessAvg,
-        soundProfileId: data.soundProfileId,
-      },
+      update,
     });
   }
 

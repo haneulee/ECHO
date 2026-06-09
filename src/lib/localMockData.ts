@@ -8,9 +8,11 @@ export const localMockEchoDevice: EchoDevice = {
   echoName: "Sweet Potato",
   echoColor: "#FF9F6E",
   firmwareModelName: "ECHO_BOUNCE_001",
+  echoModelType: "bounce",
   echoType: "bounce",
   currentState: {
     melody: ["C5", "E5", "G5", "A5", "G5", "E5", "D5", "C5"],
+    melodySemi: [0, 4, 7, 9, 7, 4, 2, 0],
     brightness: 0.76,
     calmness: 0.46,
     densityBias: 0.68,

@@ -5,10 +5,12 @@ import type {
   Encounter as PrismaEncounter,
 } from "@prisma/client";
 
+import { normalizePeerProfileSnapshot } from "@/lib/peerSonicSnapshot";
 import type {
   DailyMemory,
   EchoDevice,
   EchoEvolution,
+  EchoSonicSource,
   EchoType,
   Encounter,
   ProximityZone,
@@ -39,6 +41,13 @@ function melodyFromUnknown(value: unknown): string[] | null {
   return null;
 }
 
+function melodySemiFromUnknown(value: unknown): number[] | null {
+  if (!Array.isArray(value) || !value.every((note) => typeof note === "number")) {
+    return null;
+  }
+  return value.map((note) => ((Math.round(note) % 12) + 12) % 12).slice(0, 8);
+}
+
 function numberOrFallback(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
@@ -56,6 +65,7 @@ function normalizeEchoDeviceState(
     melodyFromUnknown(state.melody) ??
     melodyFromUnknown(state.melodySemi) ??
     fallback.melody;
+  const melodySemi = melodySemiFromUnknown(state.melodySemi) ?? undefined;
   const influences =
     typeof state.influences === "object" && state.influences !== null
       ? (state.influences as Partial<EchoDevice["currentState"]["influences"]>)
@@ -63,6 +73,7 @@ function normalizeEchoDeviceState(
 
   return {
     melody,
+    ...(melodySemi ? { melodySemi } : {}),
     brightness: numberOrFallback(state.brightness, fallback.brightness),
     calmness: numberOrFallback(state.calmness, fallback.calmness),
     densityBias: numberOrFallback(state.densityBias, fallback.densityBias),
@@ -93,12 +104,14 @@ function normalizeEvolutionState(
 }
 
 export function encounterRowToDto(row: PrismaEncounter): Encounter {
+  const otherEchoType = row.otherEchoType as EchoType;
+  const sonicSource = row.otherEchoSonicSource;
   return {
     id: row.id,
     deviceId: row.deviceId,
     otherEchoHash: row.otherEchoHash,
     otherEchoModelName: row.otherEchoModelName,
-    otherEchoType: row.otherEchoType as EchoType,
+    otherEchoType,
     startedAt: row.startedAt.toISOString(),
     endedAt: row.endedAt.toISOString(),
     durationSec: row.durationSec,
@@ -108,6 +121,14 @@ export function encounterRowToDto(row: PrismaEncounter): Encounter {
     proximityZone: row.proximityZone as ProximityZone,
     closenessAvg: row.closenessAvg,
     soundProfileId: row.soundProfileId,
+    otherEchoProfileSnapshot: normalizePeerProfileSnapshot(
+      row.otherEchoProfileSnapshot,
+      otherEchoType,
+    ),
+    otherEchoSonicSource:
+      sonicSource === "ble_adv" || sonicSource === "factory_default"
+        ? (sonicSource as EchoSonicSource)
+        : null,
   };
 }
 
@@ -120,6 +141,7 @@ export function echoDeviceRowToDto(row: PrismaEchoDevice): EchoDevice {
     echoName: row.echoName,
     echoColor: row.echoColor,
     firmwareModelName: row.firmwareModelName,
+    echoModelType: row.echoModelType,
     echoType,
     currentSoundProfileId: row.currentSoundProfileId ?? "",
     currentState: normalizeEchoDeviceState(row.currentState, echoType),

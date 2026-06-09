@@ -2,6 +2,16 @@ export type EchoType = "shy" | "messy" | "bounce";
 
 export type ProximityZone = "far" | "near" | "close" | "very_close";
 
+export type EchoSonicSource = "ble_adv" | "factory_default";
+
+/** Peer profile at meet time (BLE adv or factory default). */
+export type PeerProfileSnapshot = {
+  melodySemi: number[];
+  brightness: number;
+  calmness: number;
+  densityBias: number;
+};
+
 export type EchoDevice = {
   id: string;
   userId: string;
@@ -9,10 +19,12 @@ export type EchoDevice = {
   echoName: string;
   echoColor: string;
   firmwareModelName: string | null;
+  echoModelType?: string | null;
   echoType: EchoType;
   currentSoundProfileId: string;
   currentState: {
     melody: string[];
+    melodySemi?: number[];
     brightness: number;
     calmness: number;
     densityBias: number;
@@ -84,6 +96,8 @@ export type Encounter = {
   proximityZone: ProximityZone;
   closenessAvg: number;
   soundProfileId: string;
+  otherEchoProfileSnapshot?: PeerProfileSnapshot | null;
+  otherEchoSonicSource?: EchoSonicSource | null;
 };
 
 export type DailyMemory = {

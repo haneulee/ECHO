@@ -190,6 +190,13 @@ export const mockEncounters: Encounter[] = [
     proximityZone: "close",
     closenessAvg: 0.74,
     soundProfileId: mockSoundProfile.id,
+    otherEchoProfileSnapshot: {
+      melodySemi: [0, 5, 9, 12, 9, 5, 3, 0],
+      brightness: 0.78,
+      calmness: 0.42,
+      densityBias: 0.64,
+    },
+    otherEchoSonicSource: "ble_adv",
   },
   {
     id: "enc_02",
@@ -208,6 +215,13 @@ export const mockEncounters: Encounter[] = [
     proximityZone: "near",
     closenessAvg: 0.55,
     soundProfileId: mockSoundProfile.id,
+    otherEchoProfileSnapshot: {
+      melodySemi: [0, 2, 7, 10, 14, 8, 5, 3],
+      brightness: 0.7,
+      calmness: 0.38,
+      densityBias: 0.82,
+    },
+    otherEchoSonicSource: "ble_adv",
   },
   {
     id: "enc_03",
@@ -226,6 +240,13 @@ export const mockEncounters: Encounter[] = [
     proximityZone: "very_close",
     closenessAvg: 0.91,
     soundProfileId: mockSoundProfile.id,
+    otherEchoProfileSnapshot: {
+      melodySemi: [0, 2, 4, 7, 9, 7, 4, 2],
+      brightness: 0.52,
+      calmness: 0.88,
+      densityBias: 0.3,
+    },
+    otherEchoSonicSource: "factory_default",
   },
   {
     id: "enc_04",

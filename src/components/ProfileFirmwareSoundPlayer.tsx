@@ -17,11 +17,17 @@ import { RotaryKnob } from "@/components/RotaryKnob";
 type ProfileFirmwareSoundPlayerProps = {
   device: EchoDevice;
   title: string;
+  autoPlayKey?: string | null;
+  controlsVisible?: boolean;
+  stopKey?: string | null;
 };
 
 export function ProfileFirmwareSoundPlayer({
   device,
   title,
+  autoPlayKey = null,
+  controlsVisible = true,
+  stopKey = null,
 }: ProfileFirmwareSoundPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volumePercent, setVolumePercent] = useState(62);
@@ -33,8 +39,10 @@ export function ProfileFirmwareSoundPlayer({
     () =>
       [
         device.id,
+        device.echoModelType ?? "",
         device.echoType,
-        device.currentState.melody.join(","),
+        device.currentState.melodySemi?.join(",") ??
+          device.currentState.melody.join(","),
         device.currentState.brightness,
         device.currentState.calmness,
         device.currentState.densityBias,
@@ -55,6 +63,18 @@ export function ProfileFirmwareSoundPlayer({
     stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceKey]);
+
+  useEffect(() => {
+    if (!autoPlayKey) return;
+    void play();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPlayKey]);
+
+  useEffect(() => {
+    if (!stopKey) return;
+    stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stopKey]);
 
   function ensureAudioContext() {
     if (audioContextRef.current) return audioContextRef.current;
@@ -127,22 +147,26 @@ export function ProfileFirmwareSoundPlayer({
 
   return (
     <div className="pointer-events-none flex w-full items-center justify-center gap-2">
-      <button
-        aria-label={isPlaying ? `Stop ${title}` : `Play ${title}`}
-        className="glass-btn-play pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full text-lg lg:h-16 lg:w-16"
-        onClick={toggle}
-        type="button"
-      >
-        {isPlaying ? "■" : "▶"}
-      </button>
-      <div className="glass-btn-play-muted pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full lg:h-16 lg:w-16">
-        <RotaryKnob
-          label={`${title} volume`}
-          onChange={updateVolume}
-          size={34}
-          value={volumePercent / 100}
-        />
-      </div>
+      {controlsVisible ? (
+        <button
+          aria-label={isPlaying ? `Stop ${title}` : `Play ${title}`}
+          className="glass-btn-play pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full text-lg lg:h-16 lg:w-16"
+          onClick={toggle}
+          type="button"
+        >
+          {isPlaying ? "■" : "▶"}
+        </button>
+      ) : null}
+      {controlsVisible ? (
+        <div className="glass-btn-play-muted pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full lg:h-16 lg:w-16">
+          <RotaryKnob
+            label={`${title} volume`}
+            onChange={updateVolume}
+            size={34}
+            value={volumePercent / 100}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
