@@ -2,11 +2,10 @@ import type { EchoDevice, EchoType } from "@/lib/types";
 import type { EchoNoteEvent } from "@/lib/echoAudioAnalyser";
 import {
   TYPE_PALETTES,
+  accumulateEchoNoteSamples,
   clamp,
   harmonyRatio,
   liveRootMidi,
-  piDecayEnvelope,
-  sampleForType,
 } from "@/lib/echoTypeWaveforms";
 import {
   envFromBrightness,
@@ -93,31 +92,29 @@ export function renderFirmwareEchoBuffer(
   for (let triggerIndex = 0; triggerIndex < triggerTimes.length; triggerIndex += 1) {
     const trigger = triggerFrequency(device, factoryType, semis, triggerIndex);
     const startSample = Math.floor((triggerTimes[triggerIndex] ?? 0) * sampleRate);
-    const duration = palette.decay + palette.attack + 0.06;
+    const duration = palette.decay + palette.attack + 0.14;
     const noteSamples = Math.min(
       totalSamples - startSample,
       Math.ceil(duration * sampleRate),
     );
-    let phase = 0;
-    let phase2 = 0;
-    const phaseInc = (Math.PI * 2 * trigger.freq1) / sampleRate;
-    const phase2Inc = (Math.PI * 2 * trigger.freq2) / sampleRate;
-    const pan = palette.pan;
-    const leftGain = Math.cos((pan * Math.PI) / 2);
-    const rightGain = Math.sin((pan * Math.PI) / 2);
+    const wobbleSeed = unit(`${device.id}:fw:${triggerIndex}:${trigger.semi}`);
 
-    for (let i = 0; i < noteSamples; i += 1) {
-      const sampleIndex = startSample + i;
-      if (sampleIndex >= totalSamples) break;
-      const t = i / sampleRate;
-      const env = piDecayEnvelope(factoryType, t, palette.attack, palette.decay) * amp;
-      const dry = sampleForType(factoryType, phase, phase2);
-      const sample = dry * env;
-      left[sampleIndex] += sample * leftGain;
-      right[sampleIndex] += sample * rightGain;
-      phase += phaseInc;
-      phase2 += phase2Inc;
-    }
+    accumulateEchoNoteSamples({
+      echoType: factoryType,
+      left,
+      right,
+      startSample,
+      noteSamples,
+      sampleRate,
+      frequency: trigger.freq1,
+      frequency2: trigger.freq2,
+      attack: palette.attack,
+      decay: palette.decay,
+      amp,
+      pan: palette.pan,
+      wobbleSeed,
+      totalSamples,
+    });
   }
 
   let peak = 0;

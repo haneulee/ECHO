@@ -1,9 +1,8 @@
 import {
   TYPE_PALETTES,
+  accumulateEchoNoteSamples,
   clamp,
   harmonyRatio,
-  piDecayEnvelope,
-  sampleForType,
 } from "@/lib/echoTypeWaveforms";
 import {
   frequencyFromPeerSnapshot,
@@ -203,7 +202,7 @@ function scheduleNotesForEncounter(
   const noteBudget = clamp(
     Math.round((segmentLen / Math.max(0.03, spacing)) * density + 1),
     1,
-    echoType === "messy" ? 22 : echoType === "bounce" ? 16 : 12,
+    echoType === "messy" ? 18 : echoType === "bounce" ? 14 : 11,
   );
   const ampScale = palette.amp * (0.5 + closeness * 0.7) * density;
   const richHarmony = closeness > 0.45;
@@ -219,16 +218,20 @@ function scheduleNotesForEncounter(
       encounterSeed,
       snapshot,
     );
-    const humanize = (unit(`${encounterSeed}:t:${noteIndex}`) - 0.5) * 0.04;
+    const humanize = (unit(`${encounterSeed}:t:${noteIndex}`) - 0.5) * 0.08;
     const noteTime = clamp(cursor + humanize, 0.02, timelineEnd - 0.05);
     const ratio = harmonyRatio(echoType, richHarmony);
+    const harmonyDetune =
+      richHarmony ? 1 + (unit(`${encounterSeed}:detune:${noteIndex}`) - 0.5) * 0.008 : 1;
 
     notes.push({
       time: noteTime,
       frequency,
-      frequency2: richHarmony ? frequency * ratio : undefined,
-      duration: palette.decay + palette.attack + 0.04,
-      amp: ampScale,
+      frequency2: richHarmony ? frequency * ratio * harmonyDetune : undefined,
+      duration: palette.decay + palette.attack + 0.16,
+      amp:
+        ampScale *
+        clamp(0.86 + unit(`${encounterSeed}:amp:${noteIndex}`) * 0.22, 0.72, 1.1),
       attack: palette.attack,
       decay: palette.decay,
       pan: clamp(
@@ -332,32 +335,25 @@ export function renderPiDailySoundBuffer(
   for (const note of plan.notes) {
     const startSample = Math.floor(note.time * sampleRate);
     const noteSamples = Math.ceil(note.duration * sampleRate);
-    const leftGain = Math.cos((note.pan * Math.PI) / 2);
-    const rightGain = Math.sin((note.pan * Math.PI) / 2);
-    let phase = 0;
-    let phase2 = 0;
-    const phaseInc = (Math.PI * 2 * note.frequency) / sampleRate;
-    const phase2Inc = note.frequency2
-      ? (Math.PI * 2 * note.frequency2) / sampleRate
-      : 0;
-
-    for (let i = 0; i < noteSamples; i += 1) {
-      const sampleIndex = startSample + i;
-      if (sampleIndex >= totalSamples) break;
-      const t = i / sampleRate;
-      const env =
-        piDecayEnvelope(note.sourceType, t, note.attack, note.decay) * note.amp;
-      const dry = sampleForType(
-        note.sourceType,
-        phase,
-        note.frequency2 !== undefined ? phase2 : undefined,
-      );
-      const sample = dry * env;
-      left[sampleIndex] += sample * leftGain;
-      right[sampleIndex] += sample * rightGain;
-      phase += phaseInc;
-      if (note.frequency2 !== undefined) phase2 += phase2Inc;
-    }
+    const wobbleSeed = unit(
+      `${note.encounterId ?? "preview"}:${note.time.toFixed(4)}:${note.frequency.toFixed(2)}`,
+    );
+    accumulateEchoNoteSamples({
+      echoType: note.sourceType,
+      left,
+      right,
+      startSample,
+      noteSamples,
+      sampleRate,
+      frequency: note.frequency,
+      frequency2: note.frequency2,
+      attack: note.attack,
+      decay: note.decay,
+      amp: note.amp,
+      pan: note.pan,
+      wobbleSeed,
+      totalSamples,
+    });
   }
 
   let peak = 0;

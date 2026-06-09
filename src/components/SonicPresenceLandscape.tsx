@@ -25,6 +25,8 @@ type SonicPresenceLandscapeProps = {
   playingEncounterId?: string | null;
   playingSelf?: boolean;
   variant?: "full" | "echoOnly";
+  /** Overview: no orbit play chrome; dim non-playing peers while audio plays. */
+  presencePlaybackMode?: "default" | "overview";
   /** Fill the parent box instead of the full viewport (e.g. onboarding preview). */
   embedded?: boolean;
 };
@@ -35,7 +37,7 @@ type PresenceBody = {
   shell: THREE.Sprite;
   core: THREE.Sprite;
   halo: THREE.Sprite;
-  playCenter: THREE.Sprite;
+  playCenter: THREE.Sprite | null;
   playIcon: THREE.Sprite | null;
   label: THREE.Sprite | null;
   timeLabel: THREE.Sprite | null;
@@ -415,15 +417,18 @@ export function SonicPresenceLandscape({
   playingEncounterId = null,
   playingSelf = false,
   variant = "full",
+  presencePlaybackMode = "default",
   embedded = false,
 }: SonicPresenceLandscapeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [fontReady, setFontReady] = useState(false);
   const playingEncounterIdRef = useRef(playingEncounterId);
   const playingSelfRef = useRef(playingSelf);
+  const presencePlaybackModeRef = useRef(presencePlaybackMode);
   const cameraStateRef = useRef({ yaw: 0, pitch: 0, zoom: 1 });
   playingEncounterIdRef.current = playingEncounterId;
   playingSelfRef.current = playingSelf;
+  presencePlaybackModeRef.current = presencePlaybackMode;
 
   useEffect(() => {
     let cancelled = false;
@@ -552,6 +557,8 @@ export function SonicPresenceLandscape({
           Math.min(1, 1 - Math.max(0, encounters.length - 10) * 0.035),
         );
 
+    const showOrbitPlaybackChrome = presencePlaybackMode !== "overview";
+
     const bodies: PresenceBody[] = encounters.map((encounter, index) => {
       const palette = encounterDisplayPalette(encounter);
       const [start, mid, end] = palette;
@@ -604,17 +611,21 @@ export function SonicPresenceLandscape({
       core.scale.set(size * 2.2, size * 2.2, 1);
       anchor.add(core);
 
-      const playCenter = new THREE.Sprite(
-        new THREE.SpriteMaterial({
-          map: makePlayCenterTexture(accent),
-          transparent: true,
-          opacity: 0,
-          depthWrite: false,
-        }),
-      );
-      playCenter.scale.set(size * 0.82, size * 0.82, 1);
-      playCenter.visible = false;
-      anchor.add(playCenter);
+      const playCenter = showOrbitPlaybackChrome
+        ? new THREE.Sprite(
+            new THREE.SpriteMaterial({
+              map: makePlayCenterTexture(accent),
+              transparent: true,
+              opacity: 0,
+              depthWrite: false,
+            }),
+          )
+        : null;
+      if (playCenter) {
+        playCenter.scale.set(size * 0.82, size * 0.82, 1);
+        playCenter.visible = false;
+        anchor.add(playCenter);
+      }
 
       const haloTexture = makeGlowTexture(start);
       const haloRestColor = new THREE.Color(end);
@@ -645,7 +656,8 @@ export function SonicPresenceLandscape({
         LABEL_TIME_COLOR,
         { variant: "time" },
       );
-      const playIcon = makePlayingIconSprite();
+      const playIcon =
+        showOrbitPlaybackChrome && label ? makePlayingIconSprite() : null;
       if (label) {
         const nameY = labelYAboveSphere(size, label.scale.y);
         label.position.y = nameY;
@@ -881,6 +893,9 @@ export function SonicPresenceLandscape({
 
     let frame = 0;
     const startedAt = performance.now();
+    const centerAccentColor = new THREE.Color(echoAccent);
+    const dimCenterHaloTint = new THREE.Color("#d8d4cc");
+    const inactiveDimTint = new THREE.Color("#ccc8c0");
     const animate = (now: number) => {
       const t = (now - startedAt) / 1000;
       const cameraYaw = yaw + (viewport.isMobile ? 0 : hoverX * 0.16);
@@ -906,39 +921,63 @@ export function SonicPresenceLandscape({
         motes.rotation.y = Math.sin(t * 0.06) * 0.03;
       }
       const centerPlaying = playingSelfRef.current;
-      const centerPulse = centerPlaying ? Math.sin(t * 5.5) * 0.12 : 0;
+      const overviewPlayback =
+        presencePlaybackModeRef.current === "overview";
+      const activeEncounterId = playingEncounterIdRef.current;
+      const anyPeerPlayback = activeEncounterId != null;
+      const dimCenterEcho = overviewPlayback && anyPeerPlayback;
+      const centerPulse =
+        centerPlaying && !overviewPlayback ? Math.sin(t * 5.5) * 0.12 : 0;
       const centerBreathe = 1 + Math.sin(t * 1.1) * 0.06 + centerPulse;
       const centerRingSize = 2.65 * centerBreathe;
       centerShell.scale.set(centerRingSize, centerRingSize, 1);
       const centerHitSize = 2.3 * centerBreathe;
       centerCore.scale.set(centerHitSize, centerHitSize, 1);
       const centerWave = 0.5 + 0.5 * Math.sin(t * 5.5);
-      if (centerPlaying) {
+      const centerHaloMat = centerHalo.material as THREE.SpriteMaterial;
+      if (dimCenterEcho) {
+        centerGroup.position.y = 0.25;
+        centerShellMaterial.opacity = 0.48;
+        centerHaloMat.opacity = 0.16;
+        centerHaloMat.color.copy(centerAccentColor).lerp(dimCenterHaloTint, 0.42);
+        centerHalo.scale.set(3.85, 3.85, 1);
+      } else if (centerPlaying && !overviewPlayback) {
         centerGroup.position.y = 0.25 + Math.sin(t * 5.5) * 0.08;
         centerShellMaterial.opacity = 0.96;
-        centerHalo.material.opacity = 0.5 + centerWave * 0.1;
+        centerHaloMat.opacity = 0.5 + centerWave * 0.1;
+        centerHaloMat.color.copy(centerAccentColor);
         const centerHaloSize = 4.42 + centerWave * 0.42;
         centerHalo.scale.set(centerHaloSize, centerHaloSize, 1);
       } else {
         centerGroup.position.y = 0.25;
         centerShellMaterial.opacity = 1;
-        centerHalo.material.opacity = 0.42 + Math.sin(t * 1.2) * 0.04;
+        centerHaloMat.color.copy(centerAccentColor);
+        centerHaloMat.opacity = 0.42 + Math.sin(t * 1.2) * 0.04;
         const centerHaloSize = 4.08 + Math.sin(t * 1.1) * 0.16;
         centerHalo.scale.set(centerHaloSize, centerHaloSize, 1);
       }
       if (stars) stars.rotation.y = t * 0.018;
 
+      const anyPlayback = anyPeerPlayback || centerPlaying;
+
       for (const body of bodies) {
-        const isPlaying = playingEncounterIdRef.current === body.encounter.id;
+        const isPlaying = activeEncounterId === body.encounter.id;
+        const shouldDim =
+          overviewPlayback && anyPlayback && !isPlaying;
         const playingT = t * 2.2 + body.phase;
-        const playPulse = isPlaying ? Math.sin(playingT) * 0.035 : 0;
+        const playPulse =
+          isPlaying && showOrbitPlaybackChrome
+            ? Math.sin(playingT) * 0.035
+            : 0;
         const drift = t * body.driftSpeed + body.phase;
         body.anchor.position.x =
           body.base.x + Math.cos(drift) * body.driftRadius;
         body.anchor.position.y =
           body.base.y +
           Math.sin(t * body.bob + body.phase) * 0.42 +
-          (isPlaying ? Math.sin(playingT) * 0.035 : 0);
+          (isPlaying && showOrbitPlaybackChrome
+            ? Math.sin(playingT) * 0.035
+            : 0);
         body.anchor.position.z =
           body.base.z +
           Math.sin(drift * body.driftTilt) * body.driftRadius * 0.75;
@@ -952,16 +991,35 @@ export function SonicPresenceLandscape({
         body.core.scale.set(hitSize, hitSize, 1);
         const ringMat = body.shell.material as THREE.SpriteMaterial;
         const haloMat = body.halo.material as THREE.SpriteMaterial;
-        const playCenterMat = body.playCenter.material as THREE.SpriteMaterial;
-        if (isPlaying) {
+
+        if (shouldDim) {
+          haloMat.color.copy(body.haloRestColor).lerp(inactiveDimTint, 0.52);
+          haloMat.opacity = body.haloBaseOpacity * 0.3;
+          body.halo.scale.set(
+            body.haloBaseScale * 0.94,
+            body.haloBaseScale * 0.94,
+            1,
+          );
+          ringMat.opacity = body.ringBaseOpacity * 0.38;
+          if (body.playCenter) {
+            body.playCenter.visible = false;
+            (body.playCenter.material as THREE.SpriteMaterial).opacity = 0;
+          }
+          if (body.playIcon) {
+            body.playIcon.visible = false;
+            body.playIcon.material.opacity = 0;
+          }
+          if (body.label) body.label.material.opacity = 0.38;
+        } else if (isPlaying && showOrbitPlaybackChrome) {
+          const playCenterMat = body.playCenter!.material as THREE.SpriteMaterial;
           haloMat.color.copy(body.haloRestColor);
           haloMat.opacity = Math.min(0.84, body.haloBaseOpacity + 0.1);
           body.halo.scale.set(body.haloBaseScale, body.haloBaseScale, 1);
           ringMat.opacity = 1;
-          body.playCenter.visible = true;
+          body.playCenter!.visible = true;
           playCenterMat.opacity = 0.72 + playWave * 0.2;
           const centerSize = body.baseScale * (0.76 + playWave * 0.1);
-          body.playCenter.scale.set(centerSize, centerSize, 1);
+          body.playCenter!.scale.set(centerSize, centerSize, 1);
           if (body.playIcon) {
             body.playIcon.visible = true;
             body.playIcon.material.opacity = 0.88 + playWave * 0.12;
@@ -972,8 +1030,10 @@ export function SonicPresenceLandscape({
           haloMat.opacity = body.haloBaseOpacity;
           body.halo.scale.set(body.haloBaseScale, body.haloBaseScale, 1);
           ringMat.opacity = body.ringBaseOpacity;
-          body.playCenter.visible = false;
-          playCenterMat.opacity = 0;
+          if (body.playCenter) {
+            body.playCenter.visible = false;
+            (body.playCenter.material as THREE.SpriteMaterial).opacity = 0;
+          }
           if (body.playIcon) {
             body.playIcon.visible = false;
             body.playIcon.material.opacity = 0;
@@ -1016,6 +1076,7 @@ export function SonicPresenceLandscape({
     fontReady,
     onSelectEncounter,
     onSelectSelf,
+    presencePlaybackMode,
     variant,
   ]);
 

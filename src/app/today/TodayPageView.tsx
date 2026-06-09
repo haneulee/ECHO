@@ -253,6 +253,14 @@ function TodayDataBody() {
     () => aggregateEncountersForOrbit(filteredEncounters),
     [filteredEncounters],
   );
+  const playingOrbitEncounterId = useMemo(() => {
+    if (soundTarget?.kind !== "encounter") return null;
+    const playingKey = encounterEchoKey(soundTarget.encounter);
+    const orbitMatch = orbitEncounters.find(
+      (encounter) => encounterEchoKey(encounter) === playingKey,
+    );
+    return orbitMatch?.id ?? soundTarget.encounter.id;
+  }, [orbitEncounters, soundTarget]);
   const hasEncounters = filteredEncounters.length > 0;
   const playAllEncounters = useMemo(
     () =>
@@ -416,11 +424,8 @@ function TodayDataBody() {
           encounters={orbitEncounters}
           onSelectEncounter={selectEncounter}
           onSelectSelf={selectSelf}
-          playingEncounterId={
-            soundTarget?.kind === "encounter"
-              ? soundTarget.encounter.id
-              : null
-          }
+          presencePlaybackMode="overview"
+          playingEncounterId={playingOrbitEncounterId}
           playingSelf={soundTarget?.kind === "global"}
           soundControl={
             soundTarget && state.data.device ? (
