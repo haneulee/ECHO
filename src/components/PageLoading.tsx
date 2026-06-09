@@ -12,7 +12,7 @@ export function PageLoading({
   return (
     <div
       className={[
-        "fixed inset-0 z-40 grid place-items-center gap-4 bg-transparent text-text",
+        "fixed inset-0 z-[120] grid place-items-center gap-4 bg-bg/55 text-text backdrop-blur-sm",
         className,
       ].join(" ")}
     >

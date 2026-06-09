@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { AboutModal } from "@/components/AboutModal";
 import { MenuIcon } from "@/components/MenuIcon";
+import { useAppRouter } from "@/hooks/useAppRouter";
 import type { EchoDevice } from "@/lib/types";
 
 type AppAccountMenuProps = {
@@ -17,7 +18,7 @@ function isCurrentPath(pathname: string, href: string) {
 }
 
 export function AppAccountMenu({ device }: AppAccountMenuProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);

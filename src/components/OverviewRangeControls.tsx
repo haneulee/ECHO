@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { overviewPeriodLabel } from "@/lib/memoryDate";
+import { useAppRouter } from "@/hooks/useAppRouter";
 import { shiftOverviewAnchorDate } from "@/lib/calendarPeriod";
 import {
   isMemoriesBackPath,
@@ -27,7 +28,7 @@ export function OverviewRangeControls({
   span,
   timeZone,
 }: OverviewRangeControlsProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const searchParams = useSearchParams();
 
   function push(next: { date: string }) {

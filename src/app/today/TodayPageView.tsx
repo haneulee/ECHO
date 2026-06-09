@@ -1,9 +1,10 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
+import { useRouteLoading } from "@/components/NavigationLoadingProvider";
 import { MemoriesTimespanSelect } from "@/components/MemoriesTimespanSelect";
 import { OverviewRangeControls } from "@/components/OverviewRangeControls";
 import { PageLoading } from "@/components/PageLoading";
@@ -22,6 +23,7 @@ import { echoTypeLabels } from "@/lib/echoTypeMeta";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
 import type { EchoType, Encounter } from "@/lib/types";
 import { overviewPage, todaySoundTitle } from "@/lib/uiPoetics";
+import { useAppRouter } from "@/hooks/useAppRouter";
 
 function localIsoDate(d: Date): string {
   const y = d.getFullYear();
@@ -126,7 +128,7 @@ function aggregateEncountersForOrbit(encounters: Encounter[]): Encounter[] {
 }
 
 function TodayDataBody() {
-  const router = useRouter();
+  const router = useAppRouter();
   const searchParams = useSearchParams();
   const backParam = searchParams.get("back");
   const span = resolveTimespan(searchParams.get("span"));
@@ -198,6 +200,8 @@ function TodayDataBody() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useRouteLoading(state.kind === "loading");
 
   const selectEncounter = useCallback((encounter: Encounter) => {
     setPlayAll({ running: false, index: 0, token: `manual:${Date.now()}` });
@@ -319,7 +323,7 @@ function TodayDataBody() {
   if (state.kind === "loading") {
     return (
       <AppShell pageTitle={overviewPage.title} viewportLocked>
-        <PageLoading className="min-h-0 flex-1" label="Listening for the day" />
+        <div aria-hidden className="min-h-0 flex-1" />
       </AppShell>
     );
   }

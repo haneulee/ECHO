@@ -9,13 +9,13 @@ import {
   useRef,
   useState,
 } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { type ArchiveCarouselItem } from "@/components/ArchiveCarousel";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
+import { useRouteLoading } from "@/components/NavigationLoadingProvider";
 import { MemoriesTimespanSelect } from "@/components/MemoriesTimespanSelect";
-import { PageLoading } from "@/components/PageLoading";
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import type { ArchiveApiResponse } from "@/lib/archiveApiTypes";
 import { aggregateArchiveItems } from "@/lib/aggregateArchiveItems";
@@ -31,6 +31,7 @@ import {
   encounterDayHeadline,
   overviewLabels,
 } from "@/lib/uiPoetics";
+import { useAppRouter } from "@/hooks/useAppRouter";
 import type { OverviewSpan } from "@/lib/zonedDayRange";
 
 type LoadState =
@@ -537,7 +538,7 @@ function MemoriesLoadedView({
   echoDevice: ArchiveApiResponse["device"];
   echoName: string;
 }) {
-  const router = useRouter();
+  const router = useAppRouter();
   const searchParams = useSearchParams();
   const timeZone = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -626,10 +627,12 @@ function ArchiveBody() {
     void load();
   }, [load]);
 
+  useRouteLoading(state.kind === "loading");
+
   if (state.kind === "loading") {
     return (
       <AppShell hideChrome pageTitle={archiveHero.title} viewportLocked>
-        <PageLoading className="min-h-0 flex-1" label="Loading" />
+        <div aria-hidden className="min-h-0 flex-1" />
       </AppShell>
     );
   }
@@ -691,7 +694,7 @@ export function ArchivePageView() {
     <Suspense
       fallback={
         <AppShell hideChrome pageTitle={archiveHero.title} viewportLocked>
-          <PageLoading className="min-h-0 flex-1" label="Loading" />
+          <div aria-hidden className="min-h-0 flex-1" />
         </AppShell>
       }
     >
