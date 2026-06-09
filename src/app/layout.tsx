@@ -36,8 +36,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={averia.variable} lang="en">
-      <body>
+    <html className={averia.variable} lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <NavigationLoadingProvider>{children}</NavigationLoadingProvider>
       </body>
     </html>

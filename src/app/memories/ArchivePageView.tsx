@@ -32,6 +32,7 @@ import {
   overviewLabels,
 } from "@/lib/uiPoetics";
 import { useAppRouter } from "@/hooks/useAppRouter";
+import { useClientTimeZone } from "@/hooks/useClientTimeZone";
 import type { OverviewSpan } from "@/lib/zonedDayRange";
 
 type LoadState =
@@ -54,10 +55,11 @@ function encounterWindow(item: ArchiveCarouselItem) {
   if (starts.length === 0) return "Time unknown";
   const first = starts[0]!;
   const last = starts[starts.length - 1]!;
-  const format = new Intl.DateTimeFormat("en", {
+  const format = new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: "UTC",
   });
   return `${format.format(first)} – ${format.format(last)}`;
 }
@@ -214,6 +216,9 @@ function memorySlotTransform(offset: number, isMobile: boolean) {
 
 /** Small horizontal movement switches memories. */
 const MEMORY_DRAG_THRESHOLD_PX = 4;
+const MEMORY_ORBIT_MS = 1800;
+/** Text fades out before swapping; reveal finishes with the orbit. */
+const MEMORY_COPY_HIDE_MS = 550;
 
 function isMemoryDragBlockedTarget(target: EventTarget | null) {
   return (
@@ -278,32 +283,35 @@ function MemoriesListView({
   );
 
   useEffect(() => {
-    if (safeActiveIndex === safeCopyIndex) {
+    if (!hasAnimatedVisual.current) {
+      hasAnimatedVisual.current = true;
+      setCopyIndex(safeActiveIndex);
       setCopyVisible(true);
+      setVisualVisible(true);
       return;
     }
 
     setCopyVisible(false);
+    setVisualVisible(false);
+
     const swapCopy = window.setTimeout(() => {
       setCopyIndex(safeActiveIndex);
       setCopyVisible(true);
-    }, 420);
+    }, MEMORY_COPY_HIDE_MS);
 
-    return () => window.clearTimeout(swapCopy);
-  }, [safeActiveIndex, safeCopyIndex]);
+    let cancelled = false;
+    requestAnimationFrame(() => {
+      if (cancelled) return;
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        setVisualVisible(true);
+      });
+    });
 
-  useEffect(() => {
-    if (!hasAnimatedVisual.current) {
-      hasAnimatedVisual.current = true;
-      setVisualVisible(true);
-      return;
-    }
-
-    const revealVisual = window.setTimeout(() => {
-      setVisualVisible(true);
-    }, 260);
-
-    return () => window.clearTimeout(revealVisual);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(swapCopy);
+    };
   }, [safeActiveIndex]);
 
   const canGoPrev = safeActiveIndex > 0;
@@ -322,7 +330,7 @@ function MemoriesListView({
       departingResetTimer.current = window.setTimeout(() => {
         setDepartingIndex(null);
         departingResetTimer.current = null;
-      }, 1900);
+      }, MEMORY_ORBIT_MS);
       setActiveIndex((current) =>
         Math.min(items.length - 1, Math.max(0, current + delta)),
       );
@@ -533,17 +541,15 @@ function MemoriesLoadedView({
   dailyItems,
   echoDevice,
   echoName,
+  timeZone,
 }: {
   dailyItems: ArchiveCarouselItem[];
   echoDevice: ArchiveApiResponse["device"];
   echoName: string;
+  timeZone: string;
 }) {
   const router = useAppRouter();
   const searchParams = useSearchParams();
-  const timeZone = useMemo(
-    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
-    [],
-  );
   const span = resolveTimespan(searchParams.get("span"));
   const items = useMemo(
     () => aggregateArchiveItems(dailyItems, span, timeZone),
@@ -584,14 +590,12 @@ function MemoriesLoadedView({
 }
 
 function ArchiveBody() {
-  const timeZone = useMemo(
-    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
-    [],
-  );
+  const timeZone = useClientTimeZone();
 
   const [state, setState] = useState<LoadState>({ kind: "loading" });
 
   const load = useCallback(async () => {
+    if (!timeZone) return;
     const startedAt = performance.now();
     setState({ kind: "loading" });
     try {
@@ -624,12 +628,13 @@ function ArchiveBody() {
   }, [timeZone]);
 
   useEffect(() => {
+    if (!timeZone) return;
     void load();
-  }, [load]);
+  }, [load, timeZone]);
 
-  useRouteLoading(state.kind === "loading");
+  useRouteLoading(!timeZone || state.kind === "loading");
 
-  if (state.kind === "loading") {
+  if (!timeZone || state.kind === "loading") {
     return (
       <AppShell hideChrome pageTitle={archiveHero.title} viewportLocked>
         <div aria-hidden className="min-h-0 flex-1" />
@@ -680,8 +685,9 @@ function ArchiveBody() {
     return (
       <MemoriesLoadedView
         dailyItems={state.data.items}
-        echoName={echoName}
         echoDevice={state.data.device}
+        echoName={echoName}
+        timeZone={timeZone}
       />
     );
   }

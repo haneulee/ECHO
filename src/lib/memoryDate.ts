@@ -5,7 +5,7 @@ import {
 import type { OverviewSpan } from "@/lib/zonedDayRange";
 
 export function memoryDate(date: string, style: "long" | "short") {
-  return new Date(`${date}T12:00:00`).toLocaleDateString("en", {
+  return new Date(`${date}T12:00:00`).toLocaleDateString("en-GB", {
     ...(style === "long"
       ? {
           weekday: "long" as const,

@@ -404,6 +404,19 @@ body {
 }
 
 .memory-stage {
+  --memory-orbit-duration: 1.8s;
+  --memory-reveal-opacity-duration: var(--memory-orbit-duration);
+  --memory-reveal-filter-duration: var(--memory-orbit-duration);
+  --memory-hide-opacity-duration: 220ms;
+  --memory-hide-filter-duration: 320ms;
+  --memory-copy-hide-opacity-duration: 0.55s;
+  --memory-copy-hide-filter-duration: 0.65s;
+  --memory-copy-reveal-opacity-duration: calc(
+    var(--memory-orbit-duration) - var(--memory-copy-hide-opacity-duration)
+  );
+  --memory-copy-reveal-filter-duration: calc(
+    var(--memory-orbit-duration) - var(--memory-copy-hide-filter-duration)
+  );
   position: relative;
   display: flex;
   min-height: 0;
@@ -553,9 +566,9 @@ body {
 
 .memory-stage-card {
   transition:
-    transform 1.8s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 1.8s ease,
-    filter 1.8s ease;
+    transform var(--memory-orbit-duration) cubic-bezier(0.22, 1, 0.36, 1),
+    opacity var(--memory-orbit-duration) ease,
+    filter var(--memory-orbit-duration) ease;
   will-change: transform;
 }
 
@@ -577,16 +590,16 @@ body {
   opacity: 1;
   filter: blur(0) saturate(1);
   transition:
-    opacity 2.4s ease,
-    filter 2.8s ease;
+    opacity var(--memory-reveal-opacity-duration) ease,
+    filter var(--memory-reveal-filter-duration) ease;
 }
 
 .memory-stage-visual--hidden {
   opacity: 0.35;
   filter: blur(20px) saturate(1.35);
   transition:
-    opacity 220ms ease,
-    filter 320ms ease;
+    opacity var(--memory-hide-opacity-duration) ease,
+    filter var(--memory-hide-filter-duration) ease;
 }
 
 @media (max-width: 639px) {
@@ -690,16 +703,16 @@ body {
   opacity: 1;
   filter: blur(0) saturate(1);
   transition:
-    opacity 2.1s ease,
-    filter 2.5s ease;
+    opacity var(--memory-copy-reveal-opacity-duration) ease,
+    filter var(--memory-copy-reveal-filter-duration) ease;
 }
 
 .memory-stage-copy-text--hidden {
   opacity: 0;
   filter: blur(14px) saturate(1.4);
   transition:
-    opacity 180ms ease,
-    filter 260ms ease;
+    opacity var(--memory-copy-hide-opacity-duration) ease,
+    filter var(--memory-copy-hide-filter-duration) ease;
 }
 
 .overview-period-label {
