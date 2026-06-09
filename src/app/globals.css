@@ -348,6 +348,16 @@ body {
   }
 }
 
+@keyframes memory-breathe-lite {
+  0%,
+  100% {
+    transform: scale(0.985);
+  }
+  50% {
+    transform: scale(1.015);
+  }
+}
+
 @keyframes echo-orbit {
   0% {
     transform: translate(0, 5px) scale(0.6);
@@ -430,6 +440,14 @@ body {
 
 .memory-stage--dragging {
   cursor: grabbing;
+}
+
+.memory-stage--paused .memory-breathe,
+.memory-stage--paused .memory-active-drift,
+.memory-stage--paused .memory-active-blob-drift,
+.memory-stage--paused .memory-active-blob-drift--b,
+.memory-stage--paused .memory-active-blob-drift--c {
+  animation-play-state: paused !important;
 }
 
 .memory-stage-orbit {
@@ -616,6 +634,40 @@ body {
     width: 2.2rem;
   }
 
+  .memory-stage-orbit .memory-stage-card--orbit {
+    will-change: auto;
+  }
+
+  .memory-stage-visual {
+    will-change: auto;
+  }
+
+  .memory-stage-card {
+    transition:
+      transform var(--memory-orbit-duration) cubic-bezier(0.22, 1, 0.36, 1),
+      opacity var(--memory-orbit-duration) ease;
+  }
+
+  .memory-stage-visual--visible {
+    transition: opacity var(--memory-reveal-opacity-duration) ease;
+  }
+
+  .memory-stage-visual--hidden {
+    opacity: 0.22;
+    filter: none;
+    transition: opacity var(--memory-hide-opacity-duration) ease;
+  }
+
+  .memory-stage-orbit .memory-stage-card--active .memory-active-blob-drift,
+  .memory-stage-orbit .memory-stage-card--active .memory-active-blob-drift--b,
+  .memory-stage-orbit .memory-stage-card--active .memory-active-blob-drift--c {
+    animation: none !important;
+  }
+
+  .memory-stage-orbit .memory-stage-card--active .memory-breathe {
+    animation: memory-breathe-lite 26s ease-in-out infinite;
+  }
+
   .memory-stage-orbit .memory-stage-card--active.memory-stage-card--orbit {
     top: 44%;
     bottom: auto;
@@ -671,6 +723,11 @@ body {
   .memory-stage-orbit .memory-stage-card--active .memory-stage-visual > svg {
     position: relative;
     z-index: 1;
+  }
+
+  .memory-stage--mobile .memory-active-drift,
+  .memory-stage--mobile .memory-breathe {
+    will-change: auto;
   }
 }
 
@@ -1433,6 +1490,7 @@ body {
   .memory-active-blob-drift,
   .memory-active-blob-drift--b,
   .memory-active-blob-drift--c,
+  .memory-breathe-lite,
   .landing-gradient-visual .memory-active-breathe,
   .landing-gradient-visual .memory-active-drift,
   .landing-gradient-visual .memory-active-blob-drift,

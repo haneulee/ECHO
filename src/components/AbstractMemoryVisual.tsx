@@ -23,6 +23,8 @@ export type AbstractMemoryVisualProps = {
   bleed?: boolean;
   /** Slow breathing drift for the gradient blobs (e.g. active memory on /memories). */
   gradientMotion?: boolean;
+  /** Lighter SVG for mobile / low-power devices — fewer blobs, no SVG blur filter. */
+  lowGpuCost?: boolean;
 };
 
 export function AbstractMemoryVisual({
@@ -38,23 +40,33 @@ export function AbstractMemoryVisual({
   visualId,
   bleed = false,
   gradientMotion = false,
+  lowGpuCost = false,
 }: AbstractMemoryVisualProps) {
   const random = seededRandom(seed);
   const center = svgRound(size / 2);
   const baseRadius = svgRound(size * 0.29);
   const ringThickness = svgRound(getRingThicknessFromDensity(density));
   const safeEncounters = encounters.length > 0 ? encounters : [];
+  const maxEncounters = lowGpuCost ? 6 : safeEncounters.length;
+  const visualEncounters =
+    lowGpuCost && safeEncounters.length > maxEncounters
+      ? sampleEncountersEvenly(safeEncounters, maxEncounters)
+      : safeEncounters;
   const idSuffix = visualId?.replace(/[^a-zA-Z0-9_-]/g, "-") ?? "default";
   const id = `memory-${seed}-${idSuffix}`;
   const duration = `${Math.max(9, 18 - movement * 10)}s`;
+  const useSvgBlur = !lowGpuCost;
+  const blobMotion = gradientMotion && !lowGpuCost;
 
-  const blobs = safeEncounters.flatMap((encounter, encounterIndex) => {
-    const repeats = Math.max(2, Math.round(2 + density * 4));
+  const blobs = visualEncounters.flatMap((encounter, encounterIndex) => {
+    const repeats = lowGpuCost
+      ? Math.max(1, Math.min(2, Math.round(1 + density * 1.2)))
+      : Math.max(2, Math.round(2 + density * 4));
     const palette = encounterDisplayPalette(encounter);
 
     return Array.from({ length: repeats }).map((_, repeatIndex) => {
       const progress =
-        (encounterIndex + repeatIndex / repeats) / safeEncounters.length;
+        (encounterIndex + repeatIndex / repeats) / Math.max(1, visualEncounters.length);
       const angle =
         -progress *
           Math.PI *
@@ -65,7 +77,9 @@ export function AbstractMemoryVisual({
       const x = svgRound(center + Math.cos(angle) * radius);
       const y = svgRound(center + Math.sin(angle) * radius);
       const blobRadius = svgRound(
-        getBlobSizeFromDuration(encounter.durationSec) * (0.72 + random() * 0.68),
+        getBlobSizeFromDuration(encounter.durationSec) *
+          (0.72 + random() * 0.68) *
+          (lowGpuCost ? 1.18 : 1),
       );
       const color = palette[Math.floor(random() * palette.length)];
       const secondaryColor = palette[Math.floor(random() * palette.length)];
@@ -133,8 +147,16 @@ export function AbstractMemoryVisual({
         })}
         {blobs.map((blob) => (
           <radialGradient id={`${id}-${blob.key}`} key={`${blob.key}-gradient`}>
-            <stop offset="0%" stopColor={blob.color} stopOpacity="0.86" />
-            <stop offset="46%" stopColor={blob.secondaryColor} stopOpacity="0.46" />
+            <stop
+              offset="0%"
+              stopColor={blob.color}
+              stopOpacity={lowGpuCost ? "0.78" : "0.86"}
+            />
+            <stop
+              offset="46%"
+              stopColor={blob.secondaryColor}
+              stopOpacity={lowGpuCost ? "0.34" : "0.46"}
+            />
             <stop offset="100%" stopColor={blob.secondaryColor} stopOpacity="0" />
           </radialGradient>
         ))}
@@ -202,9 +224,9 @@ export function AbstractMemoryVisual({
           </>
         ) : null}
 
-        <g filter={`url(#${id}-diffuse)`}>
+        <g filter={useSvgBlur ? `url(#${id}-diffuse)` : undefined}>
           {blobs.map((blob, blobIndex) => {
-            const driftVariant = !gradientMotion
+            const driftVariant = !blobMotion
               ? undefined
               : blobIndex % 3 === 0
                 ? "memory-active-blob-drift"
@@ -219,7 +241,7 @@ export function AbstractMemoryVisual({
                 <g
                   className={driftVariant}
                   style={
-                    gradientMotion
+                    blobMotion
                       ? {
                           animationDuration: `${driftDuration}s`,
                           animationDelay: `${driftDelay}s`,
@@ -256,4 +278,13 @@ export function AbstractMemoryVisual({
       </g>
     </svg>
   );
+}
+
+function sampleEncountersEvenly<T>(items: T[], count: number): T[] {
+  if (items.length <= count) return items;
+  const step = (items.length - 1) / Math.max(1, count - 1);
+  return Array.from({ length: count }, (_, index) => {
+    const slot = Math.min(items.length - 1, Math.round(index * step));
+    return items[slot]!;
+  });
 }

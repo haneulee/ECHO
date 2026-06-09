@@ -248,10 +248,15 @@ function MemoriesListView({
   const [visualVisible, setVisualVisible] = useState(true);
   const [departingIndex, setDepartingIndex] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [animationsPaused, setAnimationsPaused] = useState(false);
   const hasAnimatedVisual = useRef(false);
   const pointerStartX = useRef<number | null>(null);
   const departingResetTimer = useRef<number | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 639px)").matches
+      : false,
+  );
   const stageConfig = getStageConfig(isMobile);
   const safeActiveIndex =
     items.length === 0 ? 0 : Math.min(activeIndex, items.length - 1);
@@ -356,6 +361,13 @@ function MemoriesListView({
   }, []);
 
   useEffect(() => {
+    const update = () => setAnimationsPaused(document.hidden);
+    update();
+    document.addEventListener("visibilitychange", update);
+    return () => document.removeEventListener("visibilitychange", update);
+  }, []);
+
+  useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "ArrowLeft") move(-1);
       if (event.key === "ArrowRight") move(1);
@@ -414,6 +426,8 @@ function MemoriesListView({
       className={[
         "memory-stage",
         isDragging ? "memory-stage--dragging" : "",
+        animationsPaused ? "memory-stage--paused" : "",
+        isMobile ? "memory-stage--mobile" : "",
       ].join(" ")}
       onPointerDown={(event) => {
         if (event.button !== 0 || isMemoryDragBlockedTarget(event.target))
@@ -461,6 +475,7 @@ function MemoriesListView({
                     encounters={item.encounters}
                     gradientMotion={isActive}
                     gradientOnly
+                    lowGpuCost={isMobile}
                     size={stageConfig.visualSize}
                     visualId={`memory-stack-${memory.id}`}
                     {...memory.visualization}
