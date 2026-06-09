@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
+import { LandingGradientBackground } from "@/components/LandingGradientBackground";
 import { resolveSessionUser } from "@/lib/auth/resolveSessionUser";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 
@@ -59,8 +60,9 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-bg text-text">
-      <section className="pearl-surface relative isolate min-h-screen px-5 pb-16 pt-6 sm:px-8 lg:px-12">
+    <main className="relative isolate min-h-screen overflow-hidden bg-bg text-text">
+      <LandingGradientBackground />
+      <section className="relative z-10 isolate min-h-screen px-5 pb-16 pt-6 sm:px-8 lg:px-12">
         <nav className="mx-auto flex max-w-7xl items-center justify-center">
           <Image
             alt="Echo"
@@ -111,7 +113,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-5 py-20 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-12 lg:py-28">
+      <section className="relative z-10 mx-auto grid max-w-7xl gap-8 px-5 py-20 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-12 lg:py-28">
         <div>
           <p className="font-body text-xs uppercase tracking-[0.2em] text-text-muted">
             Proximity becomes sound
@@ -134,7 +136,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-12">
+      <section className="relative z-10 mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-12">
         <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
           <figure className="overflow-hidden rounded-[2rem] bg-white/40 shadow-[0_18px_70px_rgba(42,36,30,0.09)]">
             <Image
@@ -172,7 +174,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
+      <section className="relative z-10 mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
         <div className="mb-10 max-w-6xl">
           <p className="font-body text-xs uppercase tracking-[0.2em] text-text-muted">
             Three parts, one companion system
@@ -198,7 +200,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="relative mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+      <section className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
         <div
           aria-hidden
           className="absolute inset-x-8 top-1/2 -z-10 h-48 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(118,214,220,0.24),rgba(244,190,231,0.18)_50%,rgba(252,250,246,0)_72%)] blur-2xl"
@@ -230,7 +232,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="px-5 pb-24 pt-8 sm:px-8 lg:px-12">
+      <section className="relative z-10 px-5 pb-24 pt-8 sm:px-8 lg:px-12">
         <div className="mx-auto grid max-w-7xl gap-8 overflow-hidden rounded-[2.25rem] bg-white/40 p-5 shadow-[0_18px_80px_rgba(42,36,30,0.08)] backdrop-blur-md lg:grid-cols-[0.9fr_1.1fr] lg:p-8">
           <figure className="overflow-hidden rounded-[1.75rem]">
             <Image

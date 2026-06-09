@@ -1270,6 +1270,96 @@ input {
   backdrop-filter: blur(12px);
 }
 
+.landing-gradient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.landing-gradient-visual {
+  position: fixed;
+  left: 50%;
+  top: calc(22% + var(--landing-scroll) * 56%);
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  width: min(112vw, 52rem);
+  opacity: calc(0.44 + var(--landing-scroll) * 0.32);
+  transform: translate(-50%, -50%);
+  transition: opacity 220ms ease;
+}
+
+.landing-gradient-visual::before {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  width: 92%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(255 255 255 / 0.55) 0%,
+    rgb(252 250 246 / 0.42) 52%,
+    rgb(252 250 246 / 0) 70%
+  );
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.5),
+    0 0 40px 8px rgb(252 250 246 / 0.85);
+  pointer-events: none;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.landing-gradient-visual > svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.landing-gradient-visual .memory-breathe {
+  animation-duration: 26s;
+}
+
+.landing-gradient-visual .memory-active-breathe {
+  animation: memory-active-breathe 26s ease-in-out infinite;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.landing-gradient-visual .memory-active-drift {
+  animation: memory-active-drift 48s ease-in-out infinite alternate;
+  animation-duration: 48s !important;
+  will-change: transform;
+}
+
+.landing-gradient-visual .memory-active-blob-drift {
+  animation-name: memory-active-blob-drift-a;
+  animation-duration: 52s !important;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  will-change: transform;
+}
+
+.landing-gradient-visual .memory-active-blob-drift--b {
+  animation-name: memory-active-blob-drift-b;
+  animation-duration: 60s !important;
+}
+
+.landing-gradient-visual .memory-active-blob-drift--c {
+  animation-name: memory-active-blob-drift-c;
+  animation-duration: 68s !important;
+}
+
+@media (min-width: 640px) {
+  .landing-gradient-visual {
+    width: min(78vw, 58rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .echo-loader-orbit,
   .echo-loader-ring,
@@ -1284,7 +1374,12 @@ input {
   .memory-active-drift,
   .memory-active-blob-drift,
   .memory-active-blob-drift--b,
-  .memory-active-blob-drift--c {
+  .memory-active-blob-drift--c,
+  .landing-gradient-visual .memory-active-breathe,
+  .landing-gradient-visual .memory-active-drift,
+  .landing-gradient-visual .memory-active-blob-drift,
+  .landing-gradient-visual .memory-active-blob-drift--b,
+  .landing-gradient-visual .memory-active-blob-drift--c {
     animation: none !important;
   }
 
