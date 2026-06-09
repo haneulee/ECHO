@@ -4,14 +4,7 @@ import {
   echoEvolutionRowToDto,
   encounterRowToDto,
 } from "@/lib/dbSerializers";
-import { isDatabaseConnectFailure } from "@/lib/auth/resolveSessionUser";
 import { attachEncounterEchoProfiles } from "@/lib/encounterProfileLookup";
-import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
-import {
-  localMockEchoDevice,
-  localMockEvolutions,
-} from "@/lib/localMockData";
-import { mockDailyMemory, mockEncounters } from "@/lib/mockData";
 import { prisma } from "@/lib/prisma";
 import type { DailyMemory, EchoDevice, EchoEvolution, Encounter } from "@/lib/types";
 import { zonedDayRangeUtc } from "@/lib/zonedDayRange";
@@ -31,39 +24,13 @@ export async function getProfileDeviceContext(
   todayMemory: DailyMemory | null;
   todayEncounters: Encounter[];
 } | null> {
-  if (isLocalMockMode()) {
-    logDatabaseUnavailable("profile device context local mock mode");
-    const today = localIsoDate(new Date());
-    const mockIsToday = mockDailyMemory.date === today;
-    return {
-      device: localMockEchoDevice,
-      evolutions: localMockEvolutions,
-      todayMemory: mockIsToday ? mockDailyMemory : null,
-      todayEncounters: mockIsToday ? mockEncounters : [],
-    };
-  }
-  let row = null;
-  try {
-    row = await prisma.echoDevice.findFirst({
-      where: { userId },
-      orderBy: { id: "asc" },
-      include: { evolutions: { orderBy: { createdAt: "desc" } } },
-    });
-  } catch (e) {
-    if (isDatabaseConnectFailure(e)) {
-      logDatabaseUnavailable("profile device context", e);
-      const today = localIsoDate(new Date());
-      const mockIsToday = mockDailyMemory.date === today;
-      return {
-        device: localMockEchoDevice,
-        evolutions: localMockEvolutions,
-        todayMemory: mockIsToday ? mockDailyMemory : null,
-        todayEncounters: mockIsToday ? mockEncounters : [],
-      };
-    }
-    throw e;
-  }
+  const row = await prisma.echoDevice.findFirst({
+    where: { userId },
+    orderBy: { id: "asc" },
+    include: { evolutions: { orderBy: { createdAt: "desc" } } },
+  });
   if (!row) return null;
+
   const today = localIsoDate(new Date());
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const todayRange = zonedDayRangeUtc(today, timeZone);
@@ -81,6 +48,7 @@ export async function getProfileDeviceContext(
           orderBy: { startedAt: "asc" },
         })
       : [];
+
   return {
     device: echoDeviceRowToDto(row),
     evolutions: row.evolutions.map(echoEvolutionRowToDto),

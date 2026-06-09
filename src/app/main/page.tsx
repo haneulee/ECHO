@@ -7,7 +7,7 @@ import { MainHomeView } from "@/app/main/MainHomeView";
 import { getSession } from "@/lib/auth/session";
 import { isLocalMockMode } from "@/lib/localMockMode";
 import { getProfileDeviceContext } from "@/lib/profileDeviceService";
-import type { DailyMemory, EchoDevice, Encounter } from "@/lib/types";
+import type { DailyMemory, EchoDevice } from "@/lib/types";
 import { profileHero, profileNoDevice } from "@/lib/uiPoetics";
 
 export const dynamic = "force-dynamic";
@@ -47,27 +47,6 @@ function ownEchoVisualization(
   };
 }
 
-function ownEchoEncounter(device: EchoDevice): Encounter {
-  return {
-    id: `profile-own-${device.id}`,
-    deviceId: device.id,
-    otherEchoHash: device.echoName,
-    otherEchoModelName: device.firmwareModelName,
-    otherEchoName: device.echoName,
-    otherEchoColor: device.echoColor,
-    otherEchoType: device.echoType,
-    startedAt: device.lastSyncedAt,
-    endedAt: device.lastSyncedAt,
-    durationSec: 420,
-    rssiAvg: -58,
-    rssiMin: -64,
-    rssiMax: -50,
-    proximityZone: "close",
-    closenessAvg: 0.7,
-    soundProfileId: device.currentSoundProfileId,
-  };
-}
-
 export default async function MainPage() {
   const session = await getSession();
   if (!session && !isLocalMockMode()) {
@@ -101,9 +80,7 @@ export default async function MainPage() {
     hasTodayEncounters && todayMemory
       ? todayMemory.composition
       : ownEchoComposition(echoDevice);
-  const visualEncounters = hasTodayEncounters
-    ? todayEncounters
-    : [ownEchoEncounter(echoDevice)];
+  const visualEncounters = hasTodayEncounters ? todayEncounters : [];
   const visualSettings =
     hasTodayEncounters && todayMemory
       ? { ...todayMemory.visualization, movement: 0.32 }

@@ -1,0 +1,431 @@
+import type { EchoType, ProximityZone } from "@prisma/client";
+
+import { defaultStateForType } from "../../src/lib/echoDeviceDefaults";
+import { mockSoundProfile } from "../../src/lib/mockData";
+
+export const SEED_PASSWORD = "echoecho";
+
+export type SeedUserTier = "power" | "small";
+
+export type SeedUserSpec = {
+  id: string;
+  name: string;
+  tier: SeedUserTier;
+  device: {
+    id: string;
+    serialNumber: string;
+    echoName: string;
+    echoColor: string;
+    firmwareModelName: string;
+    echoType: EchoType;
+  };
+};
+
+export const SEED_USERS: SeedUserSpec[] = [
+  {
+    id: "user_haneul",
+    name: "Haneul",
+    tier: "power",
+    device: {
+      id: "echo_namu_001",
+      serialNumber: "ECHO-LS-0428",
+      echoName: "Namu",
+      echoColor: "#8FE6C4",
+      firmwareModelName: "ECHO_SHY_001",
+      echoType: "shy",
+    },
+  },
+  {
+    id: "user_mira",
+    name: "Mira",
+    tier: "power",
+    device: {
+      id: "echo_mira_001",
+      serialNumber: "ECHO-MR-1102",
+      echoName: "Spring Sky",
+      echoColor: "#FFE36E",
+      firmwareModelName: "ECHO_BOUNCE_001",
+      echoType: "bounce",
+    },
+  },
+  {
+    id: "user_jin",
+    name: "Jin",
+    tier: "small",
+    device: {
+      id: "echo_jin_001",
+      serialNumber: "ECHO-JN-0721",
+      echoName: "Happy Spill",
+      echoColor: "#FF9F6E",
+      firmwareModelName: "ECHO_MESSY_001",
+      echoType: "messy",
+    },
+  },
+  {
+    id: "user_alex",
+    name: "Alex",
+    tier: "small",
+    device: {
+      id: "echo_alex_001",
+      serialNumber: "ECHO-AX-0918",
+      echoName: "Pogo Puff",
+      echoColor: "#8FD4FF",
+      firmwareModelName: "ECHO_BOUNCE_005",
+      echoType: "bounce",
+    },
+  },
+  {
+    id: "user_sora",
+    name: "Sora",
+    tier: "small",
+    device: {
+      id: "echo_sora_001",
+      serialNumber: "ECHO-SR-0314",
+      echoName: "Quiet Bloom",
+      echoColor: "#C4A8FF",
+      firmwareModelName: "ECHO_SHY_003",
+      echoType: "shy",
+    },
+  },
+];
+
+const PROXIMITY_ZONES: ProximityZone[] = ["far", "near", "close", "very_close"];
+
+const MELODY_SEMI: Record<EchoType, number[]> = {
+  shy: [4, 7, 9, 0, 9, 7, 4, 2],
+  messy: [9, 2, 4, 2, 0, 2, 4, 7],
+  bounce: [0, 2, 4, 7, 4, 2, 0, 9],
+};
+
+function mulberry32(seed: number) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hashString(value: string): number {
+  let hash = 2166136261;
+  for (const char of value) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function eachIsoDate(start: string, end: string): string[] {
+  const dates: string[] = [];
+  const cursor = new Date(`${start}T12:00:00.000Z`);
+  const last = new Date(`${end}T12:00:00.000Z`);
+  while (cursor <= last) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
+}
+
+function pickZone(rand: () => number): ProximityZone {
+  const roll = rand();
+  if (roll < 0.12) return "far";
+  if (roll < 0.34) return "near";
+  if (roll < 0.72) return "close";
+  return "very_close";
+}
+
+function closenessForZone(zone: ProximityZone, rand: () => number): number {
+  const ranges: Record<ProximityZone, [number, number]> = {
+    far: [0.08, 0.28],
+    near: [0.34, 0.58],
+    close: [0.62, 0.84],
+    very_close: [0.86, 0.98],
+  };
+  const [min, max] = ranges[zone];
+  return min + rand() * (max - min);
+}
+
+function rssiForZone(zone: ProximityZone, rand: () => number) {
+  const avgByZone: Record<ProximityZone, number> = {
+    far: -78,
+    near: -66,
+    close: -58,
+    very_close: -50,
+  };
+  const avg = avgByZone[zone] + (rand() - 0.5) * 8;
+  return {
+    rssiAvg: avg,
+    rssiMin: Math.round(avg - 8 - rand() * 6),
+    rssiMax: Math.round(avg + 6 + rand() * 6),
+  };
+}
+
+function peerSnapshot(type: EchoType) {
+  const state = defaultStateForType(type);
+  return {
+    melodySemi: MELODY_SEMI[type],
+    brightness: state.brightness,
+    calmness: state.calmness,
+    densityBias: state.densityBias,
+  };
+}
+
+function buildComposition(
+  encounters: Array<{ otherEchoType: EchoType; closenessAvg: number }>,
+) {
+  const types: EchoType[] = ["shy", "messy", "bounce"];
+  const voices = types.map((echoType) => {
+    const matching = encounters.filter((e) => e.otherEchoType === echoType);
+    const presence = matching.length / Math.max(1, encounters.length);
+    const averageCloseness = matching.length
+      ? matching.reduce((sum, e) => sum + e.closenessAvg, 0) / matching.length
+      : 0.5;
+    return {
+      echoType,
+      presence,
+      melody: defaultStateForType(echoType).melody.slice(0, 4),
+      averageCloseness,
+    };
+  });
+  const sum = voices.reduce((total, voice) => total + voice.presence, 0) || 1;
+  return {
+    style: "Ambient proximity meditation",
+    tempoBpm: 52,
+    scale: "A minor pentatonic",
+    voices: voices.map((voice) => ({
+      ...voice,
+      presence: voice.presence / sum,
+    })),
+  };
+}
+
+function buildVisualization(date: string, deviceId: string, count: number) {
+  const seed = hashString(`${deviceId}:${date}`) % 10000;
+  return {
+    seed,
+    density: Math.min(0.92, 0.28 + count * 0.05),
+    brightness: Math.min(0.9, 0.52 + count * 0.03),
+    movement: Math.min(0.52, 0.16 + count * 0.025),
+  };
+}
+
+function dominantZone(
+  encounters: Array<{ proximityZone: ProximityZone }>,
+): ProximityZone {
+  const rank: Record<ProximityZone, number> = {
+    far: 0,
+    near: 1,
+    close: 2,
+    very_close: 3,
+  };
+  return encounters.reduce(
+    (best, encounter) =>
+      rank[encounter.proximityZone] > rank[best]
+        ? encounter.proximityZone
+        : best,
+    "far" as ProximityZone,
+  );
+}
+
+function dominantEchoType(
+  encounters: Array<{ otherEchoType: EchoType }>,
+): EchoType {
+  const counts: Record<EchoType, number> = { shy: 0, messy: 0, bounce: 0 };
+  for (const encounter of encounters) {
+    counts[encounter.otherEchoType] += 1;
+  }
+  return (Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ??
+    "shy") as EchoType;
+}
+
+export type GeneratedEncounter = {
+  id: string;
+  deviceId: string;
+  otherEchoHash: string;
+  otherEchoModelName: string;
+  otherEchoType: EchoType;
+  startedAt: Date;
+  endedAt: Date;
+  durationSec: number;
+  rssiAvg: number;
+  rssiMin: number;
+  rssiMax: number;
+  proximityZone: ProximityZone;
+  closenessAvg: number;
+  soundProfileId: string;
+  otherEchoProfileSnapshot: object;
+  otherEchoSonicSource: string;
+};
+
+export type GeneratedDailyMemory = {
+  id: string;
+  userId: string;
+  deviceId: string;
+  date: string;
+  soundProfileId: string;
+  profileSnapshot: object;
+  totalEncounters: number;
+  totalDurationSec: number;
+  dominantZone: ProximityZone;
+  dominantEchoType: EchoType;
+  composition: object;
+  visualization: object;
+  createdAt: Date;
+};
+
+export type GeneratedEvolution = {
+  id: string;
+  deviceId: string;
+  dailyMemoryId: string;
+  mutationType: string;
+  sourceEchoHash: string;
+  sourceEchoType: EchoType;
+  trigger: object;
+  beforeState: object;
+  afterState: object;
+  borrowedFragment: object;
+  createdAt: Date;
+};
+
+export type GeneratedSeedData = {
+  encounters: GeneratedEncounter[];
+  dailyMemories: GeneratedDailyMemory[];
+  evolutions: GeneratedEvolution[];
+};
+
+export function generateSeedData(
+  rangeStart = "2026-03-09",
+  rangeEnd = "2026-06-09",
+): GeneratedSeedData {
+  const encounters: GeneratedEncounter[] = [];
+  const dailyMemories: GeneratedDailyMemory[] = [];
+  const evolutions: GeneratedEvolution[] = [];
+  const dates = eachIsoDate(rangeStart, rangeEnd);
+
+  for (const user of SEED_USERS) {
+    const peers = SEED_USERS.filter((peer) => peer.id !== user.id).map(
+      (peer) => peer.device,
+    );
+    const state = defaultStateForType(user.device.echoType);
+    let encounterCounter = 0;
+
+    for (const date of dates) {
+      const rand = mulberry32(hashString(`${user.id}:${date}`));
+      const activeChance = user.tier === "power" ? 0.72 : 0.26;
+      if (rand() > activeChance) continue;
+
+      const minCount = user.tier === "power" ? 2 : 0;
+      const maxCount = user.tier === "power" ? 9 : 3;
+      const count = minCount + Math.floor(rand() * (maxCount - minCount + 1));
+      if (count === 0) continue;
+
+      const dayEncounters: GeneratedEncounter[] = [];
+      const hours = [8, 9, 11, 13, 15, 17, 19, 20, 21];
+
+      for (let index = 0; index < count; index += 1) {
+        const peer = peers[Math.floor(rand() * peers.length)]!;
+        const zone = pickZone(rand);
+        const closenessAvg = closenessForZone(zone, rand);
+        const rssi = rssiForZone(zone, rand);
+        const hour = hours[Math.min(index, hours.length - 1)] ?? 12;
+        const minute = Math.floor(rand() * 50) + 5;
+        const startedAt = new Date(
+          `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00.000Z`,
+        );
+        const durationSec = 120 + Math.floor(rand() * 780);
+        const endedAt = new Date(startedAt.getTime() + durationSec * 1000);
+        encounterCounter += 1;
+
+        dayEncounters.push({
+          id: `enc_${user.device.id}_${date.replace(/-/g, "")}_${index + 1}`,
+          deviceId: user.device.id,
+          otherEchoHash: `echo:${hashString(peer.firmwareModelName)
+            .toString(16)
+            .slice(0, 4)}`,
+          otherEchoModelName: peer.firmwareModelName,
+          otherEchoType: peer.echoType,
+          startedAt,
+          endedAt,
+          durationSec,
+          rssiAvg: rssi.rssiAvg,
+          rssiMin: rssi.rssiMin,
+          rssiMax: rssi.rssiMax,
+          proximityZone: zone,
+          closenessAvg,
+          soundProfileId: mockSoundProfile.id,
+          otherEchoProfileSnapshot: peerSnapshot(peer.echoType),
+          otherEchoSonicSource: "ble_adv",
+        });
+      }
+
+      encounters.push(...dayEncounters);
+
+      const memoryId = `memory_${user.device.id}_${date.replace(/-/g, "")}`;
+      const totalDurationSec = dayEncounters.reduce(
+        (sum, encounter) => sum + encounter.durationSec,
+        0,
+      );
+      dailyMemories.push({
+        id: memoryId,
+        userId: user.id,
+        deviceId: user.device.id,
+        date,
+        soundProfileId: mockSoundProfile.id,
+        profileSnapshot: state,
+        totalEncounters: dayEncounters.length,
+        totalDurationSec,
+        dominantZone: dominantZone(dayEncounters),
+        dominantEchoType: dominantEchoType(dayEncounters),
+        composition: buildComposition(dayEncounters),
+        visualization: buildVisualization(
+          date,
+          user.device.id,
+          dayEncounters.length,
+        ),
+        createdAt: new Date(`${date}T21:04:00.000Z`),
+      });
+
+      if (
+        user.tier === "power" &&
+        dayEncounters.some(
+          (encounter) => encounter.proximityZone === "very_close",
+        )
+      ) {
+        const source = dayEncounters.find(
+          (encounter) => encounter.proximityZone === "very_close",
+        );
+        if (source && rand() < 0.18 && evolutions.length < 24) {
+          evolutions.push({
+            id: `evo_${user.device.id}_${encounterCounter}`,
+            deviceId: user.device.id,
+            dailyMemoryId: memoryId,
+            mutationType: "melody_fragment_exchange",
+            sourceEchoHash: source.otherEchoHash,
+            sourceEchoType: source.otherEchoType,
+            trigger: {
+              proximityZone: source.proximityZone,
+              durationSec: source.durationSec,
+              closenessAvg: source.closenessAvg,
+            },
+            beforeState: {
+              melody: state.melody,
+              brightness: state.brightness - 0.06,
+              calmness: state.calmness,
+              densityBias: state.densityBias - 0.04,
+            },
+            afterState: state,
+            borrowedFragment: {
+              original: ["C5", "D5"],
+              transposed: ["D5", "A4"],
+              insertedAt: 4,
+            },
+            createdAt: new Date(`${date}T21:30:00.000Z`),
+          });
+        }
+      }
+    }
+  }
+
+  return { encounters, dailyMemories, evolutions };
+}

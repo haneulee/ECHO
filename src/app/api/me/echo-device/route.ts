@@ -10,7 +10,6 @@ import {
   normalizeFirmwareModelName,
 } from "@/lib/echoFirmwareModelName";
 import { isValidEchoUnitCode, normalizeEchoUnitCode } from "@/lib/echoUnitCode";
-import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { prisma } from "@/lib/prisma";
 import type { EchoType } from "@/lib/types";
 
@@ -20,7 +19,7 @@ const ECHO_TYPES: EchoType[] = ["shy", "messy", "bounce"];
 
 export async function POST(request: Request) {
   const session = await getSession();
-  if (!session && !isLocalMockMode()) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -70,17 +69,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid echoType." }, { status: 400 });
   }
 
-  if (isLocalMockMode()) {
-    logDatabaseUnavailable("/api/me/echo-device local mock mode");
-    return NextResponse.json({
-      ok: true,
-      deviceId: firmwareModelName,
-      updated: true,
-      mock: true,
-    });
-  }
-
-  const userId = session!.userId;
+  const userId = session.userId;
   const userExists = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true },
@@ -181,7 +170,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   const session = await getSession();
-  if (!session && !isLocalMockMode()) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -219,17 +208,7 @@ export async function PATCH(request: Request) {
     );
   }
 
-  if (isLocalMockMode()) {
-    logDatabaseUnavailable("/api/me/echo-device PATCH local mock mode");
-    return NextResponse.json({
-      ok: true,
-      deviceId: deviceId || "ECHO_BOUNCE_001",
-      updated: true,
-      mock: true,
-    });
-  }
-
-  const userId = session!.userId;
+  const userId = session.userId;
   const device = deviceId
     ? await prisma.echoDevice.findFirst({
         where: { id: deviceId, userId },

@@ -1,58 +1,54 @@
 import { PrismaClient } from "@prisma/client";
 
+import { hashPassword } from "../src/lib/auth/password";
+import { defaultStateForType } from "../src/lib/echoDeviceDefaults";
+import { mockSoundProfile, mockSoundVoices } from "../src/lib/mockData";
 import {
-  mockArchive,
-  mockEvolutions,
-  mockSoundProfile,
-  mockSoundVoices,
-} from "../src/lib/mockData";
+  generateSeedData,
+  SEED_PASSWORD,
+  SEED_USERS,
+} from "./seed/generateSeedData";
 
 const prisma = new PrismaClient();
 
-async function main() {
-  await prisma.user.upsert({
-    where: { id: "user_haneul" },
-    create: {
-      id: "user_haneul",
-      name: "Haneul",
-      passwordHash:
-        "$2b$10$WOGByRV.DhWc/yPuhsgp.OyEOSkv/syj5E0dzIBd9UnBNVE6sfpXO",
-    },
-    update: {
-      name: "Haneul",
-      passwordHash:
-        "$2b$10$WOGByRV.DhWc/yPuhsgp.OyEOSkv/syj5E0dzIBd9UnBNVE6sfpXO",
-    },
-  });
+async function wipeDatabase() {
+  await prisma.echoEvolution.deleteMany();
+  await prisma.encounter.deleteMany();
+  await prisma.dailyMemory.deleteMany();
+  await prisma.echoDevice.deleteMany();
+  await prisma.user.deleteMany();
+}
 
-  await prisma.echoDevice.upsert({
-    where: { id: "echo_namu_001" },
-    create: {
-      id: "echo_namu_001",
-      userId: "user_haneul",
-      serialNumber: "ECHO-LS-0428",
-      echoName: "Namu",
-      echoColor: "#8FE6C4",
-      firmwareModelName: "ECHO_SHY_001",
-      echoType: "shy",
-      currentSoundProfileId: "ambient3_meditation_v1",
-      currentState: {
-        melody: ["E4", "G4", "A4", "C5", "D5", "A4", "G4", "E4"],
-        brightness: 0.68,
-        calmness: 0.82,
-        densityBias: 0.44,
-        influences: { shy: 0.46, messy: 0.22, bounce: 0.32 },
+async function main() {
+  await wipeDatabase();
+
+  const passwordHash = hashPassword(SEED_PASSWORD);
+  const { encounters, dailyMemories, evolutions } = generateSeedData();
+
+  for (const user of SEED_USERS) {
+    await prisma.user.create({
+      data: {
+        id: user.id,
+        name: user.name,
+        passwordHash,
       },
-      lastSyncedAt: new Date("2026-05-06T11:48:00.000Z"),
-    },
-    update: {
-      echoName: "Namu",
-      echoColor: "#8FE6C4",
-      firmwareModelName: "ECHO_SHY_001",
-      echoType: "shy",
-      currentSoundProfileId: "ambient3_meditation_v1",
-    },
-  });
+    });
+
+    await prisma.echoDevice.create({
+      data: {
+        id: user.device.id,
+        userId: user.id,
+        serialNumber: user.device.serialNumber,
+        echoName: user.device.echoName,
+        echoColor: user.device.echoColor,
+        firmwareModelName: user.device.firmwareModelName,
+        echoType: user.device.echoType,
+        currentSoundProfileId: mockSoundProfile.id,
+        currentState: defaultStateForType(user.device.echoType),
+        lastSyncedAt: new Date("2026-06-09T11:48:00.000Z"),
+      },
+    });
+  }
 
   await prisma.soundProfile.upsert({
     where: { id: mockSoundProfile.id },
@@ -77,65 +73,30 @@ async function main() {
     },
   });
 
-  for (const m of mockArchive) {
-    await prisma.dailyMemory.upsert({
-      where: {
-        userId_deviceId_date: {
-          userId: m.userId,
-          deviceId: m.deviceId,
-          date: m.date,
-        },
-      },
-      create: {
-        id: m.id,
-        userId: m.userId,
-        deviceId: m.deviceId,
-        date: m.date,
-        soundProfileId: m.soundProfileId,
-        profileSnapshot: m.profileSnapshot as object,
-        totalEncounters: m.totalEncounters,
-        totalDurationSec: m.totalDurationSec,
-        dominantZone: m.dominantZone,
-        dominantEchoType: m.dominantEchoType,
-        composition: m.composition as object,
-        visualization: m.visualization as object,
-        createdAt: new Date(m.createdAt),
-      },
-      update: {
-        totalEncounters: m.totalEncounters,
-        totalDurationSec: m.totalDurationSec,
-        dominantZone: m.dominantZone,
-        dominantEchoType: m.dominantEchoType,
-        composition: m.composition as object,
-        visualization: m.visualization as object,
-      },
-    });
+  for (const memory of dailyMemories) {
+    await prisma.dailyMemory.create({ data: memory });
   }
 
-  const ev = mockEvolutions[0];
-  await prisma.echoEvolution.upsert({
-    where: { id: ev.id },
-    create: {
-      id: ev.id,
-      deviceId: ev.deviceId,
-      dailyMemoryId: ev.dailyMemoryId,
-      mutationType: ev.mutationType,
-      sourceEchoHash: ev.sourceEchoHash,
-      trigger: ev.trigger as object,
-      beforeState: ev.beforeState as object,
-      afterState: ev.afterState as object,
-      borrowedFragment: ev.borrowedFragment as object,
-      createdAt: new Date(ev.createdAt),
-    },
-    update: {
-      mutationType: ev.mutationType,
-      sourceEchoHash: ev.sourceEchoHash,
-      trigger: ev.trigger as object,
-      beforeState: ev.beforeState as object,
-      afterState: ev.afterState as object,
-      borrowedFragment: ev.borrowedFragment as object,
-    },
-  });
+  for (const encounter of encounters) {
+    await prisma.encounter.create({ data: encounter });
+  }
+
+  for (const evolution of evolutions) {
+    await prisma.echoEvolution.create({ data: evolution });
+  }
+
+  console.log(
+    [
+      "Seed complete.",
+      `Users: ${SEED_USERS.length} (password for all: ${SEED_PASSWORD})`,
+      `Encounters: ${encounters.length}`,
+      `Daily memories: ${dailyMemories.length}`,
+      `Evolutions: ${evolutions.length}`,
+      "",
+      "Power users: user_haneul, user_mira",
+      "Small users: user_sora, user_jin, user_alex",
+    ].join("\n"),
+  );
 }
 
 main()

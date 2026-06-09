@@ -19,7 +19,6 @@ import { ProfileFirmwareSoundPlayer } from "@/components/ProfileFirmwareSoundPla
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import { encounterDisplayName } from "@/lib/encounterDisplay";
 import { echoTypeLabels } from "@/lib/echoTypeMeta";
-import { mockEncounters } from "@/lib/mockData";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
 import type { EchoType, Encounter } from "@/lib/types";
 import { overviewPage, todaySoundTitle } from "@/lib/uiPoetics";
@@ -50,7 +49,6 @@ type EchoTypeFilter = "all" | EchoType;
 
 const MIN_LOADING_MS = 150;
 const ECHO_TYPE_FILTERS: EchoType[] = ["shy", "messy", "bounce"];
-const USE_TEMP_TODAY_PREVIEW_DATA = true;
 const PROXIMITY_RANK: Record<Encounter["proximityZone"], number> = {
   far: 0,
   near: 1,
@@ -60,31 +58,6 @@ const PROXIMITY_RANK: Record<Encounter["proximityZone"], number> = {
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function previewEncountersFor(date: string, data: TodayApiResponse) {
-  if (!USE_TEMP_TODAY_PREVIEW_DATA || data.encounters.length > 0) {
-    return data.encounters;
-  }
-
-  const deviceId = data.device?.id ?? "preview_echo";
-  const hours = [8, 10, 13, 15, 17, 19, 20, 21];
-  return mockEncounters.map((encounter, index) => {
-    const startedAt = new Date(
-      `${date}T${String(hours[index] ?? 12).padStart(2, "0")}:00:00`,
-    );
-    const endedAt = new Date(
-      startedAt.getTime() + encounter.durationSec * 1000,
-    );
-
-    return {
-      ...encounter,
-      id: `preview_${date}_${index + 1}`,
-      deviceId,
-      startedAt: startedAt.toISOString(),
-      endedAt: endedAt.toISOString(),
-    };
-  });
 }
 
 function encounterEchoKey(encounter: Encounter) {
@@ -254,36 +227,36 @@ function TodayDataBody() {
     });
   }, []);
 
-  const previewEncounters = useMemo(
-    () => (state.kind === "ok" ? previewEncountersFor(date, state.data) : []),
-    [date, state],
+  const dayEncounters = useMemo(
+    () => (state.kind === "ok" ? state.data.encounters : []),
+    [state],
   );
   const echoTypeCounts = useMemo(() => {
     const counts: Record<EchoType, number> = { shy: 0, messy: 0, bounce: 0 };
-    for (const encounter of previewEncounters) counts[encounter.otherEchoType] += 1;
+    for (const encounter of dayEncounters) counts[encounter.otherEchoType] += 1;
     return counts;
-  }, [previewEncounters]);
-  const filteredPreviewEncounters = useMemo(
+  }, [dayEncounters]);
+  const filteredEncounters = useMemo(
     () =>
       echoTypeFilter === "all"
-        ? previewEncounters
-        : previewEncounters.filter(
+        ? dayEncounters
+        : dayEncounters.filter(
             (encounter) => encounter.otherEchoType === echoTypeFilter,
           ),
-    [echoTypeFilter, previewEncounters],
+    [dayEncounters, echoTypeFilter],
   );
   const orbitEncounters = useMemo(
-    () => aggregateEncountersForOrbit(filteredPreviewEncounters),
-    [filteredPreviewEncounters],
+    () => aggregateEncountersForOrbit(filteredEncounters),
+    [filteredEncounters],
   );
-  const hasEncounters = filteredPreviewEncounters.length > 0;
+  const hasEncounters = filteredEncounters.length > 0;
   const playAllEncounters = useMemo(
     () =>
-      [...filteredPreviewEncounters].sort(
+      [...filteredEncounters].sort(
         (a, b) =>
           new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
       ),
-    [filteredPreviewEncounters],
+    [filteredEncounters],
   );
   const title = null;
   const activeEncounters =
