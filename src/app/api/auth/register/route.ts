@@ -5,8 +5,6 @@ import { createSessionToken } from "@/lib/auth/jwt";
 import { hashPassword } from "@/lib/auth/password";
 import { setSessionCookie } from "@/lib/auth/sessionCookie";
 import { isValidUserId, normalizeUserId } from "@/lib/auth/userIdRules";
-import { defaultStateForType } from "@/lib/echoDeviceDefaults";
-import { isValidEchoUnitCode, normalizeEchoUnitCode } from "@/lib/echoUnitCode";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +35,6 @@ export async function POST(request: Request) {
   const rawId = typeof o.userId === "string" ? o.userId : "";
   const password = typeof o.password === "string" ? o.password : "";
   const nameRaw = typeof o.name === "string" ? o.name.trim() : "";
-  const rawUnit = typeof o.echoUnitCode === "string" ? o.echoUnitCode : "";
 
   const userId = normalizeUserId(rawId);
   if (!isValidUserId(userId)) {
@@ -56,51 +53,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const echoUnitCode = normalizeEchoUnitCode(rawUnit);
-  if (!isValidEchoUnitCode(echoUnitCode)) {
-    return NextResponse.json(
-      {
-        error:
-          "Echo unit code must be 3–64 characters: letters, digits, hyphen, underscore (matches the code on your device).",
-      },
-      { status: 400 },
-    );
-  }
-
   const name = nameRaw.length > 0 ? nameRaw : userId;
 
-  const occupied = await prisma.echoDevice.findUnique({
-    where: { id: echoUnitCode },
-    select: { id: true },
-  });
-  if (occupied) {
-    return NextResponse.json(
-      { error: "That Echo unit code is already registered to an account." },
-      { status: 409 },
-    );
-  }
-
   try {
-    await prisma.$transaction(async (tx) => {
-      await tx.user.create({
-        data: {
-          id: userId,
-          name,
-          passwordHash: hashPassword(password),
-        },
-      });
-      await tx.echoDevice.create({
-        data: {
-          id: echoUnitCode,
-          userId,
-          serialNumber: echoUnitCode,
-          echoName: "Echo",
-          echoType: "shy",
-          currentSoundProfileId: "ambient3_meditation_v1",
-          currentState: defaultStateForType("shy"),
-          lastSyncedAt: new Date(),
-        },
-      });
+    await prisma.user.create({
+      data: {
+        id: userId,
+        name,
+        passwordHash: hashPassword(password),
+      },
     });
   } catch (e: unknown) {
     if (
@@ -108,11 +69,11 @@ export async function POST(request: Request) {
       e.code === "P2002"
     ) {
       return NextResponse.json(
-        { error: "That user id or Echo unit code is already taken." },
+        { error: "That user id is already taken." },
         { status: 409 },
       );
     }
-    console.error("[api/auth/register] create user + device:", e);
+    console.error("[api/auth/register] create user:", e);
     return NextResponse.json(
       { error: dbFailureMessage(e) },
       { status: 500 },
@@ -133,7 +94,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const res = NextResponse.json({ ok: true, userId, deviceId: echoUnitCode });
+  const res = NextResponse.json({ ok: true, userId });
   setSessionCookie(res, token);
   return res;
 }

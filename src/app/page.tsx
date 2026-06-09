@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { LandingGradientBackground } from "@/components/LandingGradientBackground";
 import { resolveSessionUser } from "@/lib/auth/resolveSessionUser";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
+import { echoJourney } from "@/lib/uiPoetics";
 
 export const dynamic = "force-dynamic";
 
@@ -25,21 +26,6 @@ const projectComponents = [
   {
     title: "Digital interface",
     body: "An archive of encounters and sound memories, visualized through audio-reactive landscapes and traces of resonance between Echoes.",
-  },
-];
-
-const journey = [
-  {
-    title: "Carry",
-    body: "A small companion with its own temperament and sonic identity, quiet until another Echo comes near.",
-  },
-  {
-    title: "Meet",
-    body: "When Echoes share proximity, layered tones and shifting rhythms emerge into a shared atmosphere.",
-  },
-  {
-    title: "Remember",
-    body: "At the end of the day, encounters become sound memories and visual landscapes in the archive.",
   },
 ];
 
@@ -215,7 +201,7 @@ export default async function HomePage() {
             </h2>
           </div>
           <div className="grid gap-5 sm:grid-cols-3">
-            {journey.map((item, index) => (
+            {echoJourney.map((item, index) => (
               <article className="relative" key={item.title}>
                 <div className="mb-4 font-display text-5xl leading-none tracking-[-0.08em] text-text/15">
                   0{index + 1}

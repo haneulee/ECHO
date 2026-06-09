@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function OnboardingPage() {
   return (
-    <AppShell hideChrome neutralTheme viewportLocked>
+    <AppShell hideChrome neutralTheme showAccountMenu={false} viewportLocked>
       <OnboardingFlow />
     </AppShell>
   );

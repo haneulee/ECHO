@@ -25,6 +25,8 @@ type SonicPresenceLandscapeProps = {
   playingEncounterId?: string | null;
   playingSelf?: boolean;
   variant?: "full" | "echoOnly";
+  /** Fill the parent box instead of the full viewport (e.g. onboarding preview). */
+  embedded?: boolean;
 };
 
 type PresenceBody = {
@@ -413,6 +415,7 @@ export function SonicPresenceLandscape({
   playingEncounterId = null,
   playingSelf = false,
   variant = "full",
+  embedded = false,
 }: SonicPresenceLandscapeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [fontReady, setFontReady] = useState(false);
@@ -1016,12 +1019,23 @@ export function SonicPresenceLandscape({
     variant,
   ]);
 
+  const shellClass = embedded
+    ? "relative isolate h-full min-h-0 w-full overflow-hidden"
+    : "relative isolate h-[100dvh] w-[100vw] overflow-hidden";
+  const canvasClass = embedded
+    ? "absolute inset-0 z-0 touch-none"
+    : "absolute inset-0 z-0 cursor-grab touch-none active:cursor-grabbing";
+
   return (
-    <section className="relative isolate h-[100dvh] w-[100vw] overflow-hidden">
+    <section className={shellClass}>
       <div
         ref={containerRef}
-        className="absolute inset-0 z-0 cursor-grab touch-none active:cursor-grabbing"
-        aria-label="A three-dimensional sonic landscape of today's co-presence"
+        className={canvasClass}
+        aria-label={
+          variant === "echoOnly"
+            ? "Echo presence glow"
+            : "A three-dimensional sonic landscape of today's co-presence"
+        }
       />
 
       {title ? (

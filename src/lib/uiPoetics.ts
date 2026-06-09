@@ -167,26 +167,35 @@ export const soundTestHero = {
 export const soundTestProfileIntro =
   "Decay like fog—no beat to chase—only a melody that waits while fifths, octaves, and shimmer gather when distance shrinks.";
 
+/** Landing “How it works” journey — also onboarding steps 2–4 (Carry → Meet → Remember). */
+export const echoJourney = [
+  {
+    title: "Carry",
+    body: "A small companion with its own temperament and sonic identity, quiet until another Echo comes near.",
+  },
+  {
+    title: "Meet",
+    body: "When Echoes share proximity, layered tones and shifting rhythms emerge into a shared atmosphere.",
+  },
+  {
+    title: "Remember",
+    body: "At the end of the day, encounters become sound memories and visual landscapes in the archive.",
+  },
+] as const;
+
 export const onboarding = {
   stepCounter: (step: number, total: number) =>
-    `Breath ${step + 1} of ${total}`,
-  welcomeTitle: "Your Echo is sleeping lightly",
-  welcomeBody:
-    "A soft creature on your wrist: still when the world forgets you, listening when it doesn’t. What grows between people need not be clever—only noticed.",
+    `Onboarding step ${step + 1} of ${total}`,
   nameFieldLabel: "Name them as you would a river",
   namePlaceholder: "Something short enough to carry",
-  howToLiveEyebrow: "Sun, nest, glass",
-  howToLiveLeadStep3:
-    "Three folds in the cloth—walk with them, lay them down, lift the edge when you want to see.",
-  primaryWelcome: "Wake them gently",
+  firmwareModelLabel: "Echo firmware ID",
+  firmwareModelPlaceholder: "ECHO_BOUNCE_001",
+  firmwareModelHelp:
+    "Matches ECHO_UNIQUE_MODEL_NAME in firmware Config.h—the same id your station uses for encounters.",
+  firmwareModelInvalid:
+    "Enter a firmware ID like ECHO_BOUNCE_001 (from Config.h on your device).",
   primaryContinue: "Further",
   primaryFinish: "Step through",
-  back: "Return",
+  back: "Back",
   nextChapter: "Onward",
-  echoUnitSignupLabel: "Echo unit code",
-  echoUnitSignupHelp:
-    "The code printed on your Echo and embedded in firmware—your station labels encounters with this id.",
-  echoUnitOnboardingLabel: "Echo unit code",
-  echoUnitOnboardingHelp:
-    "Only if this account has no device yet: enter the same code you use on the hardware (letters, digits, hyphen, underscore).",
 } as const;

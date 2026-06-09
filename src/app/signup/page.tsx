@@ -5,8 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { onboarding } from "@/lib/uiPoetics";
-
 const inputClass =
   "mt-1 w-full rounded-xl border border-border bg-white/80 px-4 py-3 font-body text-sm text-text outline-none backdrop-blur-sm transition focus:border-text/35";
 
@@ -15,7 +13,6 @@ export default function SignupPage() {
   const [userId, setUserId] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [echoUnitCode, setEchoUnitCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -36,7 +33,6 @@ export default function SignupPage() {
           userId,
           password,
           name: name.trim() || undefined,
-          echoUnitCode,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -97,21 +93,6 @@ export default function SignupPage() {
             type="password"
             value={password}
           />
-        </label>
-        <label className="block font-body text-xs text-text-muted">
-          {onboarding.echoUnitSignupLabel}
-          <input
-            autoComplete="off"
-            className={inputClass}
-            name="echoUnitCode"
-            onChange={(e) => setEchoUnitCode(e.target.value)}
-            required
-            spellCheck={false}
-            value={echoUnitCode}
-          />
-          <span className="mt-1 block font-body text-[11px] leading-4 text-text-muted/85">
-            {onboarding.echoUnitSignupHelp}
-          </span>
         </label>
         {error ? (
           <p className="font-body text-sm text-red-900/90">{error}</p>
