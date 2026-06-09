@@ -197,5 +197,5 @@ export const onboarding = {
   primaryContinue: "Further",
   primaryFinish: "Step through",
   back: "Back",
-  nextChapter: "Onward",
+  nextChapter: "Next",
 } as const;
