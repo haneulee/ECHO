@@ -44,10 +44,10 @@ export function AboutContent({
             {aboutPage.brandName}
           </h1> */}
           <Image
-            alt=""
-            aria-hidden
-            className="h-100 w-full shrink-0 object-contain"
+            alt="Echo"
+            className="about-brand-logo h-auto shrink-0 object-contain"
             height={100}
+            priority={!inModal}
             src="/brand/echo_logo.png"
             width={200}
           />

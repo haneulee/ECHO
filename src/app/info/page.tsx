@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function InfoPage() {
   return (
     <AppShell pageTitle={aboutPage.title} viewportLocked>
-      <div className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-10">
+      <div className="about-page-shell mx-auto min-h-0 w-full max-w-6xl flex-1 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-8 sm:py-12">
         <AboutContent variant="page" />
       </div>
     </AppShell>
