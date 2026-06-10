@@ -20,6 +20,7 @@ import { ProfileFirmwareSoundPlayer } from "@/components/ProfileFirmwareSoundPla
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import { encounterDisplayName } from "@/lib/encounterDisplay";
 import { echoTypeLabels } from "@/lib/echoTypeMeta";
+import { deriveSessionHarmony } from "@/lib/piDailySound";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
 import type { EchoType, Encounter } from "@/lib/types";
 import { overviewPage, todaySoundTitle } from "@/lib/uiPoetics";
@@ -270,6 +271,10 @@ function TodayDataBody() {
       ),
     [filteredEncounters],
   );
+  const playAllSessionHarmony = useMemo(() => {
+    if (!playAll.running) return null;
+    return deriveSessionHarmony(date, playAllEncounters, playAll.index);
+  }, [date, playAll.index, playAll.running, playAllEncounters]);
   const title = null;
   const activeEncounters =
     soundTarget?.kind === "encounter" ? [soundTarget.encounter] : [];
@@ -440,11 +445,14 @@ function TodayDataBody() {
               ) : (
                 <TodayEncounterSoundPlayer
                   autoPlayKey={soundTarget.token}
+                  compactRhythm={playAll.running}
+                  cohesiveVoice
                   controlsVisible={false}
                   date={date}
                   device={state.data.device}
                   encounters={activeEncounters}
                   onPlayEnd={playAll.running ? advancePlayAll : undefined}
+                  sessionHarmony={playAllSessionHarmony}
                   stopKey={stopKey}
                   title={activeTitle}
                 />

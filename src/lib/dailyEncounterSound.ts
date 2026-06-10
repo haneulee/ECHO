@@ -3,8 +3,10 @@ import {
   buildPiDailySoundPlan,
   buildPiEncounterSoundPlan,
   renderPiDailySoundBuffer,
+  type EncounterScheduleOptions,
   type PiDailySoundPlan,
   type PiEncounterInput,
+  type SessionHarmony,
 } from "@/lib/piDailySound";
 import type { DailyMemory, EchoDevice, EchoType, Encounter } from "@/lib/types";
 
@@ -76,13 +78,18 @@ export function buildEncounterSoundPlan(
   inputEncounters: EncounterSoundInput[],
   device: EchoDevice | null = null,
   memory: DailyMemory | null = null,
+  scheduleOptions: EncounterScheduleOptions = {},
 ): EncounterSoundPlan {
   void device;
   const encounters = inputEncounters;
   const dominant = dominantType(encounters);
   const piPlan =
     encounters.length === 1
-      ? buildPiEncounterSoundPlan(date, encounters[0] as PiEncounterInput)
+      ? buildPiEncounterSoundPlan(
+          date,
+          encounters[0] as PiEncounterInput,
+          scheduleOptions,
+        )
       : buildPiDailySoundPlan(date, encounters as PiEncounterInput[]);
   const rootMidi = liveRootMidi(dominant);
 

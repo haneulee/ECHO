@@ -95,23 +95,35 @@ export function notePitchMultiplier(
   t: number,
   attack: number,
   wobbleSeed: number,
+  expressiveness = 0.55,
 ): number {
+  const life = clamp(expressiveness, 0.35, 1);
   const vibratoRate =
-    echoType === "shy" ? 4.4 : echoType === "bounce" ? 6.0 : 7.4;
-  const vibratoDepth =
+    (echoType === "shy" ? 4.4 : echoType === "bounce" ? 6.0 : 7.4) *
+    (0.88 + unitFromSeed(wobbleSeed) * 0.28);
+  const vibratoDepthBase =
     echoType === "shy" ? 0.0055 : echoType === "bounce" ? 0.0105 : 0.008;
+  const vibratoDepth = vibratoDepthBase * (0.7 + life * 0.85);
   const vibratoPhase = t * vibratoRate * Math.PI * 2 + wobbleSeed * 13.7;
   const vibrato = 1 + Math.sin(vibratoPhase) * vibratoDepth;
+  const drift =
+    Math.sin(t * (1.4 + life * 1.1) + wobbleSeed * 4.2) * 0.0035 * life;
 
   let bend = 1;
   if (t < attack) {
     const progress = t / Math.max(attack, 0.0001);
-    const scoop =
+    const scoopBase =
       echoType === "bounce" ? 0.075 : echoType === "messy" ? 0.048 : 0.028;
+    const scoop = scoopBase * (0.82 + life * 0.38);
     bend = 1 + scoop * (1 - progress) ** 2;
   }
 
-  return vibrato * bend;
+  return (vibrato + drift) * bend;
+}
+
+function unitFromSeed(seed: number): number {
+  const scaled = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return scaled - Math.floor(scaled);
 }
 
 /** Per-type envelope — soft attack, brief sustain, rounded tail. */
@@ -148,6 +160,7 @@ export function accumulateEchoNoteSamples(options: {
   amp: number;
   pan: number;
   wobbleSeed: number;
+  expressiveness?: number;
   totalSamples: number;
 }): void {
   const {
@@ -164,6 +177,7 @@ export function accumulateEchoNoteSamples(options: {
     amp,
     pan,
     wobbleSeed,
+    expressiveness = 0.55,
     totalSamples,
   } = options;
   const leftGain = Math.cos((pan * Math.PI) / 2);
@@ -177,7 +191,13 @@ export function accumulateEchoNoteSamples(options: {
     const sampleIndex = startSample + i;
     if (sampleIndex >= totalSamples) break;
     const t = i / sampleRate;
-    const pitchMul = notePitchMultiplier(echoType, t, attack, wobbleSeed);
+    const pitchMul = notePitchMultiplier(
+      echoType,
+      t,
+      attack,
+      wobbleSeed,
+      expressiveness,
+    );
     const env = piDecayEnvelope(echoType, t, attack, decay) * amp;
     const dry = sampleForType(
       echoType,

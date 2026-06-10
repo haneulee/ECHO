@@ -6,6 +6,7 @@ import {
   buildEncounterSoundPlan,
   renderEncounterSoundBuffer,
 } from "@/lib/dailyEncounterSound";
+import type { SessionHarmony } from "@/lib/piDailySound";
 import type { DailyMemory, EchoDevice, Encounter } from "@/lib/types";
 import { RotaryKnob } from "@/components/RotaryKnob";
 
@@ -22,6 +23,12 @@ type TodayEncounterSoundPlayerProps = {
   playbackLimitSec?: number;
   showVolume?: boolean;
   stopKey?: string | null;
+  /** Overview play-all — trim silence between encounter clips. */
+  compactRhythm?: boolean;
+  /** Play-all sequence harmony context. */
+  sessionHarmony?: SessionHarmony | null;
+  /** Warmer overview voice — legato, glue, softer rhythm. */
+  cohesiveVoice?: boolean;
 };
 
 export function TodayEncounterSoundPlayer({
@@ -37,10 +44,18 @@ export function TodayEncounterSoundPlayer({
   playbackLimitSec,
   showVolume = true,
   stopKey = null,
+  compactRhythm = false,
+  sessionHarmony = null,
+  cohesiveVoice = true,
 }: TodayEncounterSoundPlayerProps) {
   const plan = useMemo(
-    () => buildEncounterSoundPlan(date, encounters, device, memory),
-    [date, device, encounters, memory],
+    () =>
+      buildEncounterSoundPlan(date, encounters, device, memory, {
+        compactRhythm,
+        cohesiveVoice,
+        sessionHarmony,
+      }),
+    [compactRhythm, cohesiveVoice, date, device, encounters, memory, sessionHarmony],
   );
   const [isPlaying, setIsPlaying] = useState(false);
   const [volumePercent, setVolumePercent] = useState(64);

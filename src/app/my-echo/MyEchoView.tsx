@@ -38,7 +38,6 @@ export function MyEchoView({ device: initialDevice }: MyEchoViewProps) {
           <SonicPresenceLandscape
             device={device}
             encounters={[]}
-            playingSelf={settingsOpen}
             variant="echoOnly"
           />
         </div>
