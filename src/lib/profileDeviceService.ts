@@ -6,7 +6,7 @@ import {
 } from "@/lib/dbSerializers";
 import { attachEncounterEchoProfiles } from "@/lib/encounterProfileLookup";
 import { prisma } from "@/lib/prisma";
-import type { DailyMemory, EchoDevice, EchoEvolution, Encounter } from "@/lib/types";
+import type { DailyMemory, EchoDevice, EchoEvolution, EchoType, Encounter } from "@/lib/types";
 import { zonedDayRangeUtc } from "@/lib/zonedDayRange";
 
 function localIsoDate(date: Date): string {
@@ -51,7 +51,9 @@ export async function getProfileDeviceContext(
 
   return {
     device: echoDeviceRowToDto(row),
-    evolutions: row.evolutions.map(echoEvolutionRowToDto),
+    evolutions: row.evolutions.map((evolution) =>
+      echoEvolutionRowToDto(evolution, row.echoType as EchoType),
+    ),
     todayMemory,
     todayEncounters: await attachEncounterEchoProfiles(
       prisma,

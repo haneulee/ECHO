@@ -4,9 +4,14 @@ import type { CSSProperties } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { getSession } from "@/lib/auth/session";
+import {
+  evolutionMelodyNotes,
+  evolutionSourceLabel,
+  formatBorrowedFragment,
+} from "@/lib/evolutionDisplay";
 import { isLocalMockMode } from "@/lib/localMockMode";
 import { getProfileDeviceContext } from "@/lib/profileDeviceService";
-import type { EchoEvolution } from "@/lib/types";
+import type { EchoEvolution, EchoType } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -94,15 +99,28 @@ function FieldDots({
 
 function EvolutionStudy({
   echoName,
+  deviceEchoType,
   evolution,
 }: {
   echoName: string;
+  deviceEchoType: EchoType;
   evolution: EchoEvolution;
 }) {
-  const borrowed = evolution.borrowedFragment;
-  const original = borrowed?.original ?? evolution.beforeState.melody.slice(0, 2);
+  const beforeMelody = evolutionMelodyNotes(evolution.beforeState, deviceEchoType);
+  const afterMelody = evolutionMelodyNotes(evolution.afterState, deviceEchoType);
+  const borrowed = formatBorrowedFragment(
+    evolution.borrowedFragment,
+    evolution.sourceEchoType,
+    deviceEchoType,
+  );
+  const original =
+    borrowed.original.length > 0
+      ? borrowed.original
+      : beforeMelody.slice(0, 2);
   const transposed =
-    borrowed?.transposed ?? evolution.afterState.melody.slice(0, 2);
+    borrowed.transposed.length > 0
+      ? borrowed.transposed
+      : afterMelody.slice(0, 2);
 
   return (
     <section className="grid gap-12 lg:grid-cols-[0.34fr_0.66fr] lg:items-start">
@@ -115,8 +133,9 @@ function EvolutionStudy({
             Resonance changes {echoName}.
           </h2>
           <p className="mt-6 max-w-xs font-body text-sm leading-6 text-text-muted">
-            When {echoName} stays near others, parts of their sound become part
-            of its own. This is how {echoName} evolves.
+            When {echoName} stays near another Echo for a minute or more, one
+            melody slot borrows from the peer&apos;s type motif—not their live
+            sound—and accumulates on {echoName}&apos;s own profile.
           </p>
         </div>
 
@@ -165,7 +184,7 @@ function EvolutionStudy({
             <p className="mt-2 font-body text-sm text-text-muted">
               Original melody
             </p>
-            <FieldDots melody={evolution.beforeState.melody} tone="before" />
+            <FieldDots melody={beforeMelody} tone="before" />
           </div>
           <div className="hidden px-2 pt-14 font-display text-4xl text-text-muted lg:block">
             →
@@ -177,7 +196,7 @@ function EvolutionStudy({
             <p className="mt-2 font-body text-sm text-text-muted">
               After resonance
             </p>
-            <FieldDots melody={evolution.afterState.melody} tone="after" />
+            <FieldDots melody={afterMelody} tone="after" />
           </div>
         </div>
 
@@ -191,7 +210,7 @@ function EvolutionStudy({
             <span className="text-[#A64D77]">{transposed.join(" · ")}</span>
           </div>
           <p className="mt-4 font-body text-sm text-text-muted">
-            Residue carried forward from {evolution.sourceEchoHash}.
+            Residue carried forward from {evolutionSourceLabel(evolution)}.
           </p>
         </div>
       </div>
@@ -230,7 +249,11 @@ export default async function EvolutionPage() {
           No evolutions recorded yet.
         </p>
       ) : (
-        <EvolutionStudy echoName={device.echoName} evolution={latestEvolution} />
+        <EvolutionStudy
+          deviceEchoType={device.echoType}
+          echoName={device.echoName}
+          evolution={latestEvolution}
+        />
       )}
     </AppShell>
   );

@@ -59,24 +59,46 @@ export const ingestEncounterItemSchema = z.object({
 
 export const ingestEncountersBodySchema = z.array(ingestEncounterItemSchema);
 
-export const ingestEvolutionItemSchema = z.object({
-  id: z.string().trim().min(1),
-  deviceId: z.string().trim().min(1),
-  mutationType: z
-    .string()
-    .trim()
-    .min(1)
-    .optional()
-    .transform((v) => v ?? "melody_fragment_exchange"),
-  sourceEchoHash: z.string().trim().min(1),
-  trigger: jsonObject,
-  beforeState: jsonObject,
-  afterState: jsonObject,
-  createdAt: coerce.date(),
-  borrowedFragment: jsonObject.nullish(),
-  dailyMemoryId: z.string().trim().min(1).nullish(),
-  sourceEchoType: echoType.nullish(),
-});
+export const ingestEvolutionItemSchema = z
+  .object({
+    v: z.coerce.number().optional(),
+    id: z.string().trim().min(1),
+    deviceId: z.string().trim().min(1),
+    mutationType: z
+      .string()
+      .trim()
+      .min(1)
+      .optional()
+      .transform((v) => v ?? "melody_fragment_exchange"),
+    sourceEchoHash: z.string().trim().min(1).optional(),
+    sourceTarget: z.string().trim().min(1).optional(),
+    trigger: jsonObject,
+    beforeState: jsonObject,
+    afterState: jsonObject,
+    createdAt: coerce.date().optional(),
+    createdAtMs: z.coerce.number().optional(),
+    borrowedFragment: jsonObject.nullish(),
+    dailyMemoryId: z.string().trim().min(1).nullish(),
+    sourceEchoType: echoType.nullish(),
+  })
+  .transform((item) => ({
+    id: item.id,
+    deviceId: item.deviceId,
+    mutationType: item.mutationType,
+    sourceEchoHash: item.sourceEchoHash ?? item.sourceTarget ?? "",
+    trigger: item.trigger,
+    beforeState: item.beforeState,
+    afterState: item.afterState,
+    createdAt:
+      item.createdAt ??
+      (item.createdAtMs != null ? new Date(item.createdAtMs) : new Date()),
+    borrowedFragment: item.borrowedFragment,
+    dailyMemoryId: item.dailyMemoryId,
+    sourceEchoType: item.sourceEchoType,
+  }))
+  .refine((item) => item.sourceEchoHash.length > 0, {
+    message: "sourceEchoHash or sourceTarget is required",
+  });
 
 export const ingestEvolutionsBodySchema = z.array(ingestEvolutionItemSchema);
 

@@ -147,19 +147,21 @@ export type EchoEvolution = {
   };
   beforeState: {
     melody: string[];
+    melodySemi?: number[];
     brightness: number;
     calmness: number;
     densityBias: number;
   };
   afterState: {
     melody: string[];
+    melodySemi?: number[];
     brightness: number;
     calmness: number;
     densityBias: number;
   };
   borrowedFragment: {
-    original: string[];
-    transposed: string[];
+    original: Array<string | number>;
+    transposed: Array<string | number>;
     insertedAt: number;
   } | null;
   createdAt: string;

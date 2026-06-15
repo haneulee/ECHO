@@ -23,7 +23,8 @@ async function main() {
   await wipeDatabase();
 
   const passwordHash = hashPassword(SEED_PASSWORD);
-  const { encounters, dailyMemories, evolutions } = generateSeedData();
+  const { encounters, dailyMemories, evolutions, deviceStateOverrides } =
+    generateSeedData();
 
   for (const user of SEED_USERS) {
     await prisma.user.create({
@@ -34,6 +35,7 @@ async function main() {
       },
     });
 
+    const override = deviceStateOverrides[user.device.id];
     await prisma.echoDevice.create({
       data: {
         id: user.device.id,
@@ -46,7 +48,7 @@ async function main() {
         echoModelType: user.device.echoType,
         uniqueDeviceName: user.device.firmwareModelName,
         currentSoundProfileId: mockSoundProfile.id,
-        currentState: defaultStateForType(user.device.echoType),
+        currentState: override ?? defaultStateForType(user.device.echoType),
         lastSyncedAt: new Date("2026-06-09T11:48:00.000Z"),
       },
     });

@@ -2,11 +2,13 @@ import { DateTime } from "luxon";
 import type { EchoType, ProximityZone } from "@prisma/client";
 
 import { defaultStateForType } from "../../src/lib/echoDeviceDefaults";
+import { factoryStateForType, melodyNotesFromSemi } from "../../src/lib/echoFactoryProfile";
 import {
   peerEchoHash,
   peersForOwner,
   type MockPeerEcho,
 } from "../../src/lib/mockPeerEchoes";
+import { factoryPeerProfileSnapshot } from "../../src/lib/peerSonicSnapshot";
 import { mockSoundProfile } from "../../src/lib/mockData";
 
 export const SEED_PASSWORD = "echoecho";
@@ -73,11 +75,69 @@ export const SEED_USERS: SeedUserSpec[] = [
 
 const PROXIMITY_ZONES: ProximityZone[] = ["far", "near", "close", "very_close"];
 
-const MELODY_SEMI: Record<EchoType, number[]> = {
-  shy: [4, 7, 9, 0, 9, 7, 4, 2],
-  messy: [9, 2, 4, 2, 0, 2, 4, 7],
-  bounce: [0, 2, 4, 7, 4, 2, 0, 9],
-};
+function peerSnapshot(type: EchoType) {
+  return factoryPeerProfileSnapshot(type);
+}
+
+function appendShyCumulativeEvolutions(
+  evolutions: GeneratedEvolution[],
+  memoryId: string,
+  createdAt: Date,
+) {
+  const shyFactory = factoryStateForType("shy");
+  const afterMessySemi = [0, 3, 1, 7, 5, 3, 0, 0] as const;
+  const afterMessy = {
+    melodySemi: [...afterMessySemi],
+    melody: melodyNotesFromSemi("shy", [...afterMessySemi]),
+    brightness: 0.39,
+    calmness: 0.9,
+    densityBias: 0.28,
+  };
+  const finalSemi = [0, 3, 1, 6, 5, 4, 0, 0] as const;
+  const finalState = {
+    melodySemi: [...finalSemi],
+    melody: melodyNotesFromSemi("shy", [...finalSemi]),
+    brightness: 0.41,
+    calmness: 0.84,
+    densityBias: 0.33,
+    influences: { shy: 0.58, messy: 0.21, bounce: 0.22 },
+  };
+
+  evolutions.push({
+    id: "evo_ECHO_SHY_001_messy",
+    deviceId: "ECHO_SHY_001",
+    dailyMemoryId: memoryId,
+    mutationType: "melody_fragment_exchange",
+    sourceEchoHash: "ECHO_MESSY_001",
+    sourceEchoType: "messy",
+    trigger: { durationSec: 72, closenessAvg: 0.58 },
+    beforeState: {
+      melodySemi: shyFactory.melodySemi,
+      brightness: shyFactory.brightness,
+      calmness: shyFactory.calmness,
+      densityBias: shyFactory.densityBias,
+    },
+    afterState: afterMessy,
+    borrowedFragment: { original: [0, 1], transposed: [1, 1], insertedAt: 2 },
+    createdAt,
+  });
+
+  evolutions.push({
+    id: "evo_ECHO_SHY_001_bounce",
+    deviceId: "ECHO_SHY_001",
+    dailyMemoryId: memoryId,
+    mutationType: "melody_fragment_exchange",
+    sourceEchoHash: "ECHO_BOUNCE_001",
+    sourceEchoType: "bounce",
+    trigger: { durationSec: 81, closenessAvg: 0.62 },
+    beforeState: afterMessy,
+    afterState: finalState,
+    borrowedFragment: { original: [4, 7], transposed: [5, 7], insertedAt: 3 },
+    createdAt: new Date(createdAt.getTime() + 60_000),
+  });
+
+  return finalState;
+}
 
 function mulberry32(seed: number) {
   let state = seed >>> 0;
@@ -150,16 +210,6 @@ function rssiForZone(zone: ProximityZone, rand: () => number) {
     rssiAvg: avg,
     rssiMin: Math.round(avg - 8 - rand() * 6),
     rssiMax: Math.round(avg + 6 + rand() * 6),
-  };
-}
-
-function peerSnapshot(type: EchoType) {
-  const state = defaultStateForType(type);
-  return {
-    melodySemi: MELODY_SEMI[type],
-    brightness: state.brightness,
-    calmness: state.calmness,
-    densityBias: state.densityBias,
   };
 }
 
@@ -288,6 +338,7 @@ export type GeneratedSeedData = {
   encounters: GeneratedEncounter[];
   dailyMemories: GeneratedDailyMemory[];
   evolutions: GeneratedEvolution[];
+  deviceStateOverrides: Record<string, object>;
 };
 
 export function generateSeedData(
@@ -297,6 +348,7 @@ export function generateSeedData(
   const encounters: GeneratedEncounter[] = [];
   const dailyMemories: GeneratedDailyMemory[] = [];
   const evolutions: GeneratedEvolution[] = [];
+  const deviceStateOverrides: Record<string, object> = {};
   const dates = eachIsoDate(rangeStart, rangeEnd);
 
   for (const user of SEED_USERS) {
@@ -378,6 +430,7 @@ export function generateSeedData(
 
       if (
         user.tier === "power" &&
+        user.device.id !== "ECHO_SHY_001" &&
         dayEncounters.some(
           (encounter) => encounter.proximityZone === "very_close",
         )
@@ -399,15 +452,20 @@ export function generateSeedData(
               closenessAvg: source.closenessAvg,
             },
             beforeState: {
-              melody: state.melody,
+              melodySemi: state.melodySemi,
               brightness: state.brightness - 0.06,
               calmness: state.calmness,
               densityBias: state.densityBias - 0.04,
             },
-            afterState: state,
+            afterState: {
+              melodySemi: state.melodySemi,
+              brightness: state.brightness,
+              calmness: state.calmness,
+              densityBias: state.densityBias,
+            },
             borrowedFragment: {
-              original: ["C5", "D5"],
-              transposed: ["D5", "A4"],
+              original: [0, 2],
+              transposed: [1, 2],
               insertedAt: 4,
             },
             createdAt: encounterTimestamp(date, 21, 30),
@@ -417,5 +475,17 @@ export function generateSeedData(
     }
   }
 
-  return { encounters, dailyMemories, evolutions };
+  const shyMemory = dailyMemories.find(
+    (memory) => memory.deviceId === "ECHO_SHY_001" && memory.date === rangeEnd,
+  );
+  if (shyMemory) {
+    const finalState = appendShyCumulativeEvolutions(
+      evolutions,
+      shyMemory.id,
+      encounterTimestamp(rangeEnd, 21, 30),
+    );
+    deviceStateOverrides.ECHO_SHY_001 = finalState;
+  }
+
+  return { encounters, dailyMemories, evolutions, deviceStateOverrides };
 }

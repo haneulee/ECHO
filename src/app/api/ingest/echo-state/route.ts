@@ -49,13 +49,20 @@ export async function POST(request: Request) {
 
   const deviceId = toCanonicalId.get(item.deviceId.trim())!;
 
+  const existing = await prisma.echoDevice.findUnique({
+    where: { id: deviceId },
+    select: { echoModelType: true },
+  });
+
   await prisma.echoDevice.update({
     where: { id: deviceId },
     data: {
       currentSoundProfileId: item.soundProfileId,
       currentState: item.profileSnapshot as Prisma.InputJsonValue,
       lastSyncedAt: item.lastSyncedAt,
-      ...(item.echoModelType !== undefined ? { echoModelType: item.echoModelType } : {}),
+      ...(item.echoModelType !== undefined && !existing?.echoModelType?.trim()
+        ? { echoModelType: item.echoModelType }
+        : {}),
       ...(item.uniqueDeviceName !== undefined ? { uniqueDeviceName: item.uniqueDeviceName } : {}),
     },
   });

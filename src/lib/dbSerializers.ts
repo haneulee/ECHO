@@ -6,6 +6,8 @@ import type {
 } from "@prisma/client";
 
 import { normalizePeerProfileSnapshot } from "@/lib/peerSonicSnapshot";
+import { defaultStateForType } from "@/lib/echoDeviceDefaults";
+import { melodyNotesFromSemi } from "@/lib/echoFactoryProfile";
 import type {
   DailyMemory,
   EchoDevice,
@@ -15,37 +17,19 @@ import type {
   Encounter,
   ProximityZone,
 } from "@/lib/types";
-import { defaultStateForType } from "@/lib/echoDeviceDefaults";
-
-const SEMITONE_NOTES = [
-  "C4",
-  "C#4",
-  "D4",
-  "D#4",
-  "E4",
-  "F4",
-  "F#4",
-  "G4",
-  "G#4",
-  "A4",
-  "A#4",
-  "B4",
-];
-
-function melodyFromUnknown(value: unknown): string[] | null {
-  if (!Array.isArray(value)) return null;
-  if (value.every((note) => typeof note === "string")) return value;
-  if (value.every((note) => typeof note === "number")) {
-    return value.map((note) => SEMITONE_NOTES[((Math.round(note) % 12) + 12) % 12]);
-  }
-  return null;
-}
 
 function melodySemiFromUnknown(value: unknown): number[] | null {
   if (!Array.isArray(value) || !value.every((note) => typeof note === "number")) {
     return null;
   }
   return value.map((note) => ((Math.round(note) % 12) + 12) % 12).slice(0, 8);
+}
+
+function melodyFromNoteNames(value: unknown): string[] | null {
+  if (!Array.isArray(value) || !value.every((note) => typeof note === "string")) {
+    return null;
+  }
+  return value;
 }
 
 function numberOrFallback(value: unknown, fallback: number): number {
@@ -61,11 +45,10 @@ function normalizeEchoDeviceState(
     typeof value === "object" && value !== null
       ? (value as Record<string, unknown>)
       : {};
-  const melody =
-    melodyFromUnknown(state.melody) ??
-    melodyFromUnknown(state.melodySemi) ??
-    fallback.melody;
   const melodySemi = melodySemiFromUnknown(state.melodySemi) ?? undefined;
+  const melody =
+    melodyFromNoteNames(state.melody) ??
+    (melodySemi ? melodyNotesFromSemi(echoType, melodySemi) : fallback.melody);
   const influences =
     typeof state.influences === "object" && state.influences !== null
       ? (state.influences as Partial<EchoDevice["currentState"]["influences"]>)
@@ -87,19 +70,20 @@ function normalizeEchoDeviceState(
 
 function normalizeEvolutionState(
   value: unknown,
-  echoType: EchoType,
+  deviceEchoType: EchoType,
 ): EchoEvolution["beforeState"] {
-  const fallback = normalizeEchoDeviceState(value, echoType);
+  const normalized = normalizeEchoDeviceState(value, deviceEchoType);
   const state =
     typeof value === "object" && value !== null
       ? (value as Record<string, unknown>)
       : {};
 
   return {
-    melody: fallback.melody,
-    brightness: numberOrFallback(state.brightness, fallback.brightness),
-    calmness: numberOrFallback(state.calmness, fallback.calmness),
-    densityBias: numberOrFallback(state.densityBias, fallback.densityBias),
+    melody: normalized.melody,
+    ...(normalized.melodySemi ? { melodySemi: normalized.melodySemi } : {}),
+    brightness: numberOrFallback(state.brightness, normalized.brightness),
+    calmness: numberOrFallback(state.calmness, normalized.calmness),
+    densityBias: numberOrFallback(state.densityBias, normalized.densityBias),
   };
 }
 
@@ -149,9 +133,11 @@ export function echoDeviceRowToDto(row: PrismaEchoDevice): EchoDevice {
   };
 }
 
-export function echoEvolutionRowToDto(row: PrismaEchoEvolution): EchoEvolution {
+export function echoEvolutionRowToDto(
+  row: PrismaEchoEvolution,
+  deviceEchoType: EchoType,
+): EchoEvolution {
   const sourceEchoType = row.sourceEchoType as EchoType | null | undefined;
-  const stateEchoType = sourceEchoType ?? "shy";
   return {
     id: row.id,
     deviceId: row.deviceId,
@@ -160,8 +146,8 @@ export function echoEvolutionRowToDto(row: PrismaEchoEvolution): EchoEvolution {
     sourceEchoHash: row.sourceEchoHash,
     sourceEchoType,
     trigger: row.trigger as EchoEvolution["trigger"],
-    beforeState: normalizeEvolutionState(row.beforeState, stateEchoType),
-    afterState: normalizeEvolutionState(row.afterState, stateEchoType),
+    beforeState: normalizeEvolutionState(row.beforeState, deviceEchoType),
+    afterState: normalizeEvolutionState(row.afterState, deviceEchoType),
     borrowedFragment: row.borrowedFragment as EchoEvolution["borrowedFragment"],
     createdAt: row.createdAt.toISOString(),
   };

@@ -45,6 +45,13 @@ export const FACTORY_MELODY_SEMI: Record<EchoType, number[]> = {
   messy: [...FACTORY_PROFILE.messy.melodySemi],
 };
 
+/** Peer-type motif pools for evolution borrowing (EchoState.cpp) — MESSY ≠ factory melody. */
+export const EVOLUTION_PEER_POOLS: Record<EchoType, number[]> = {
+  bounce: [0, 4, 7, 4, 9, 7, 4, 0],
+  shy: [0, 3, 5, 7, 5, 3, 0, 0],
+  messy: [0, 1, 3, 6, 10, 8, 5, 2],
+};
+
 /** Pre-refactor shared melody note names (all echo types). */
 export const LEGACY_UNIVERSAL_MELODY = [
   "E4",
@@ -82,8 +89,12 @@ function midiToNoteName(midi: number): string {
 }
 
 export function factoryMelodyNotes(echoType: EchoType): string[] {
+  return melodyNotesFromSemi(echoType, FACTORY_PROFILE[echoType].melodySemi);
+}
+
+export function melodyNotesFromSemi(echoType: EchoType, semis: number[]): string[] {
   const root = liveRootMidi(echoType);
-  return FACTORY_PROFILE[echoType].melodySemi.map((semi) => midiToNoteName(root + semi));
+  return semis.map((semi) => midiToNoteName(root + semi));
 }
 
 export function factoryStateForType(t: EchoType) {

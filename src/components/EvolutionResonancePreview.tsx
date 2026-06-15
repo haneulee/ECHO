@@ -1,6 +1,11 @@
 import type { CSSProperties } from "react";
 
 import type { EchoEvolution, EchoType } from "@/lib/types";
+import {
+  evolutionMelodyNotes,
+  evolutionSourceLabel,
+  formatBorrowedFragment,
+} from "@/lib/evolutionDisplay";
 import { getEchoColorPalette } from "@/lib/visualRules";
 
 type EvolutionResonancePreviewProps = {
@@ -84,10 +89,21 @@ export function EvolutionResonancePreview({
   echoType,
   evolution,
 }: EvolutionResonancePreviewProps) {
+  const beforeMelody = evolutionMelodyNotes(evolution.beforeState, echoType);
+  const afterMelody = evolutionMelodyNotes(evolution.afterState, echoType);
+  const borrowed = formatBorrowedFragment(
+    evolution.borrowedFragment,
+    evolution.sourceEchoType,
+    echoType,
+  );
   const original =
-    evolution.borrowedFragment?.original ?? evolution.beforeState.melody.slice(0, 2);
+    borrowed.original.length > 0
+      ? borrowed.original
+      : beforeMelody.slice(0, 2);
   const transposed =
-    evolution.borrowedFragment?.transposed ?? evolution.afterState.melody.slice(0, 2);
+    borrowed.transposed.length > 0
+      ? borrowed.transposed
+      : afterMelody.slice(0, 2);
   const [, shiftColor] = getEchoColorPalette(echoType);
 
   return (
@@ -102,7 +118,7 @@ export function EvolutionResonancePreview({
           </p>
           <MelodyField
             echoType={echoType}
-            melody={evolution.beforeState.melody}
+            melody={beforeMelody}
             tone="before"
           />
         </div>
@@ -118,7 +134,7 @@ export function EvolutionResonancePreview({
           </p>
           <MelodyField
             echoType={echoType}
-            melody={evolution.afterState.melody}
+            melody={afterMelody}
             tone="after"
           />
         </div>
@@ -135,7 +151,7 @@ export function EvolutionResonancePreview({
         </div>
         <p className="mt-4 font-body text-sm text-text-muted">
           {evolution.trigger.durationSec} seconds near{" "}
-          {evolution.sourceEchoHash}.
+          {evolutionSourceLabel(evolution)}.
         </p>
       </div>
     </article>

@@ -25,17 +25,18 @@ export const localMockEvolutions: EchoEvolution[] = mockEvolutions.map(
   (evolution) => ({
     ...evolution,
     deviceId: localMockEchoDevice.id,
-    sourceEchoType: localMockEchoDevice.echoType,
+    sourceEchoType: "messy" as const,
     beforeState: {
-      melody: ["C5", "E5", "G5", "E5", "D5", "C5", "D5", "E5"],
+      melodySemi: [0, 4, 7, 9, 7, 4, 2, 0],
+      melody: ["C5", "E5", "G5", "A5", "G5", "E5", "D5", "C5"],
       brightness: 0.62,
       calmness: 0.58,
       densityBias: 0.52,
     },
     afterState: localMockEchoDevice.currentState,
     borrowedFragment: {
-      original: ["G5", "E5"],
-      transposed: ["A5", "G5"],
+      original: [4, 7],
+      transposed: [5, 7],
       insertedAt: 3,
     },
   }),
