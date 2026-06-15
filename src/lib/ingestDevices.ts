@@ -13,15 +13,22 @@ export async function buildIngestDeviceCanonicalMap(
 
   const devices = await prisma.echoDevice.findMany({
     where: {
-      OR: [{ id: { in: unique } }, { serialNumber: { in: unique } }],
+      OR: [
+        { id: { in: unique } },
+        { serialNumber: { in: unique } },
+        { firmwareModelName: { in: unique } },
+      ],
     },
-    select: { id: true, serialNumber: true },
+    select: { id: true, serialNumber: true, firmwareModelName: true },
   });
 
   const toCanonicalId = new Map<string, string>();
   for (const d of devices) {
     toCanonicalId.set(d.id, d.id);
     toCanonicalId.set(d.serialNumber, d.id);
+    if (d.firmwareModelName) {
+      toCanonicalId.set(d.firmwareModelName, d.id);
+    }
   }
 
   const missing = unique.filter((k) => !toCanonicalId.has(k));

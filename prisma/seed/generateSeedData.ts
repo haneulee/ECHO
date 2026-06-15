@@ -27,8 +27,8 @@ export const SEED_USERS: SeedUserSpec[] = [
     name: "Haneul",
     tier: "power",
     device: {
-      id: "echo_namu_001",
-      serialNumber: "ECHO-LS-0428",
+      id: "ECHO_SHY_001",
+      serialNumber: "ECHO_SHY_001",
       echoName: "Namu",
       echoColor: "#8FE6C4",
       firmwareModelName: "ECHO_SHY_001",
@@ -40,8 +40,8 @@ export const SEED_USERS: SeedUserSpec[] = [
     name: "Mira",
     tier: "power",
     device: {
-      id: "echo_mira_001",
-      serialNumber: "ECHO-MR-1102",
+      id: "ECHO_BOUNCE_001",
+      serialNumber: "ECHO_BOUNCE_001",
       echoName: "Spring Sky",
       echoColor: "#FFE36E",
       firmwareModelName: "ECHO_BOUNCE_001",
@@ -53,8 +53,8 @@ export const SEED_USERS: SeedUserSpec[] = [
     name: "Jin",
     tier: "small",
     device: {
-      id: "echo_jin_001",
-      serialNumber: "ECHO-JN-0721",
+      id: "ECHO_MESSY_001",
+      serialNumber: "ECHO_MESSY_001",
       echoName: "Happy Spill",
       echoColor: "#FF9F6E",
       firmwareModelName: "ECHO_MESSY_001",

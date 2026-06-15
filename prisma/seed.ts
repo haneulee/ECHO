@@ -43,6 +43,8 @@ async function main() {
         echoColor: user.device.echoColor,
         firmwareModelName: user.device.firmwareModelName,
         echoType: user.device.echoType,
+        echoModelType: user.device.echoType,
+        uniqueDeviceName: user.device.firmwareModelName,
         currentSoundProfileId: mockSoundProfile.id,
         currentState: defaultStateForType(user.device.echoType),
         lastSyncedAt: new Date("2026-06-09T11:48:00.000Z"),

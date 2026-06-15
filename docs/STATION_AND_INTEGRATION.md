@@ -35,7 +35,8 @@
 **인제스트 시 `deviceId` 해석:**
 
 - `EchoDevice.id`와 같거나
-- `EchoDevice.serialNumber`와 같으면  
+- `EchoDevice.serialNumber`와 같거나
+- `EchoDevice.firmwareModelName`과 같으면 (펌웨어 스티커 코드, 예: `ECHO_SHY_001`)  
   내부적으로 **`EchoDevice.id`로 치환**한 뒤 `Encounter`에 저장합니다.
 
 따라서 스테이션은 **펌웨어와 동일한 스티커/유닛 문자열**을 `deviceId`에 넣으면 됩니다. (등록되지 않은 값은 400 + `missing` 배열.)
@@ -110,7 +111,7 @@
 ### curl 예시 (Pi / 개발 PC에서 테스트)
 
 ```bash
-export APP_URL="https://your-app.vercel.app"
+export APP_URL="https://myecho.ch"
 export INGEST_SECRET="your-ingest-secret"
 
 curl -sS -X POST "$APP_URL/api/ingest/encounters" \

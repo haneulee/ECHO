@@ -1,3 +1,4 @@
+import { defaultStateForType } from "./echoDeviceDefaults";
 import type {
   DailyMemory,
   EchoDevice,
@@ -16,25 +17,15 @@ export const mockUser: MockUser = {
 };
 
 export const mockEchoDevice: EchoDevice = {
-  id: "echo_namu_001",
+  id: "ECHO_SHY_001",
   userId: mockUser.id,
-  serialNumber: "ECHO-LS-0428",
+  serialNumber: "ECHO_SHY_001",
   echoName: "Namu",
   echoColor: "#8FE6C4",
   firmwareModelName: "ECHO_SHY_001",
   echoType: "shy",
   currentSoundProfileId: "ambient3_meditation_v1",
-  currentState: {
-    melody: ["E4", "G4", "A4", "C5", "D5", "A4", "G4", "E4"],
-    brightness: 0.68,
-    calmness: 0.82,
-    densityBias: 0.44,
-    influences: {
-      shy: 0.46,
-      messy: 0.22,
-      bounce: 0.32,
-    },
-  },
+  currentState: defaultStateForType("shy"),
   lastSyncedAt: "2026-05-06T20:48:00+09:00",
 };
 

@@ -4,21 +4,33 @@ import {
   liveRootMidi,
   type TypePalette,
 } from "@/lib/echoTypeWaveforms";
+import {
+  FACTORY_MELODY_SEMI,
+  FACTORY_PROFILE,
+} from "@/lib/echoFactoryProfile";
 import type { EchoType, PeerProfileSnapshot } from "@/lib/types";
 
-const DEFAULT_MELODY_SEMI: Record<EchoType, number[]> = {
-  bounce: [0, 4, 7, 9, 7, 4, 2, 0],
-  shy: [0, 2, 4, 7, 4, 2, 0, 0],
-  messy: [0, 1, 5, 7, 10, 3, 8, 2],
-};
+const DEFAULT_MELODY_SEMI = FACTORY_MELODY_SEMI;
 
 const DEFAULT_TRAITS: Record<
   EchoType,
   Pick<PeerProfileSnapshot, "brightness" | "calmness" | "densityBias">
 > = {
-  shy: { brightness: 0.58, calmness: 0.78, densityBias: 0.38 },
-  bounce: { brightness: 0.68, calmness: 0.48, densityBias: 0.58 },
-  messy: { brightness: 0.62, calmness: 0.42, densityBias: 0.72 },
+  shy: {
+    brightness: FACTORY_PROFILE.shy.brightness,
+    calmness: FACTORY_PROFILE.shy.calmness,
+    densityBias: FACTORY_PROFILE.shy.densityBias,
+  },
+  bounce: {
+    brightness: FACTORY_PROFILE.bounce.brightness,
+    calmness: FACTORY_PROFILE.bounce.calmness,
+    densityBias: FACTORY_PROFILE.bounce.densityBias,
+  },
+  messy: {
+    brightness: FACTORY_PROFILE.messy.brightness,
+    calmness: FACTORY_PROFILE.messy.calmness,
+    densityBias: FACTORY_PROFILE.messy.densityBias,
+  },
 };
 
 function numberIn01(value: unknown, fallback: number): number {

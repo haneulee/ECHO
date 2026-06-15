@@ -1,6 +1,9 @@
 import { echoTypeFromFirmwareModelName } from "@/lib/echoFirmwareModelName";
+import { FACTORY_MELODY_SEMI } from "@/lib/echoFactoryProfile";
 import { liveRootMidi } from "@/lib/echoTypeWaveforms";
 import type { EchoDevice, EchoType } from "@/lib/types";
+
+export { FACTORY_MELODY_SEMI as DEFAULT_MELODY_SEMI } from "@/lib/echoFactoryProfile";
 
 export const PROXIMITY_BLEND_MAX = 0.12;
 
@@ -58,12 +61,6 @@ export const FIRMWARE_VOICES: Record<EchoType, FirmwareVoice> = {
     scale: [0, 2, 3, 5, 7, 9, 10, 12, 14],
     progression: [0, 5, 10, 7, 3],
   },
-};
-
-export const DEFAULT_MELODY_SEMI: Record<EchoType, number[]> = {
-  bounce: [0, 4, 7, 9, 7, 4, 2, 0],
-  shy: [0, 2, 4, 7, 4, 2, 0, 0],
-  messy: [0, 1, 5, 7, 10, 3, 8, 2],
 };
 
 export function clamp(value: number, min: number, max: number): number {
@@ -149,7 +146,7 @@ export function melodySemiFromProfile(
     .filter((midi): midi is number => midi !== null)
     .map((midi) => ((Math.round(midi - root) % 12) + 12) % 12);
 
-  return semis.length > 0 ? semis.slice(0, 8) : DEFAULT_MELODY_SEMI[factoryType];
+  return semis.length > 0 ? semis.slice(0, 8) : FACTORY_MELODY_SEMI[factoryType];
 }
 
 export function melodySemiFromDevice(device: EchoDevice): number[] {

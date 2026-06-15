@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Unknown deviceId(s). Send EchoDevice.id (the registered unit code), or a serialNumber that matches exactly one device. Unregistered units are rejected.",
+          "Unknown deviceId(s). Send EchoDevice.id, serialNumber, or firmwareModelName (registered unit code). Unregistered units are rejected.",
         missing,
       },
       { status: 400 },
