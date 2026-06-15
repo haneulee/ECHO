@@ -17,6 +17,8 @@ type OverviewRangeControlsProps = {
   date: string;
   hasNextPeriod: boolean;
   hasPrevPeriod: boolean;
+  nextPeriodDate?: string | null;
+  prevPeriodDate?: string | null;
   span: OverviewSpan;
   timeZone: string;
 };
@@ -25,6 +27,8 @@ export function OverviewRangeControls({
   date,
   hasNextPeriod,
   hasPrevPeriod,
+  nextPeriodDate = null,
+  prevPeriodDate = null,
   span,
   timeZone,
 }: OverviewRangeControlsProps) {
@@ -48,8 +52,10 @@ export function OverviewRangeControls({
     [date, span, timeZone],
   );
 
-  const prevDate = shiftOverviewAnchorDate(date, span, -1, timeZone);
-  const nextDate = shiftOverviewAnchorDate(date, span, 1, timeZone);
+  const prevDate =
+    prevPeriodDate ?? shiftOverviewAnchorDate(date, span, -1, timeZone);
+  const nextDate =
+    nextPeriodDate ?? shiftOverviewAnchorDate(date, span, 1, timeZone);
 
   return (
     <div className="overview-range-controls pointer-events-auto absolute inset-x-4 bottom-[max(3.25rem,calc(env(safe-area-inset-bottom)+3rem))] z-30 flex flex-wrap items-center justify-center gap-2 sm:inset-x-8">

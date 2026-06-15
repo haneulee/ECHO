@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AbstractMemoryVisual } from "@/components/AbstractMemoryVisual";
 import { AppShell } from "@/components/AppShell";
 import { NavigateWithLoader } from "@/components/NavigateWithLoader";
+import { aggregateEncountersByPeer } from "@/lib/aggregateEncountersByPeer";
 import {
   memoriesPath,
   overviewPath,
@@ -41,7 +42,9 @@ export function MainHomeView({
 
   const overviewHref = overviewPath({ span: timespan, back: "/main" });
   const memoriesHref = memoriesPath(timespan);
-  const todayEncounterCount = hasTodayEncounters ? visualEncounters.length : 0;
+  const todayEncounterCount = hasTodayEncounters
+    ? aggregateEncountersByPeer(visualEncounters).length
+    : 0;
 
   return (
     <AppShell
@@ -68,11 +71,9 @@ export function MainHomeView({
           <p className="whitespace-nowrap font-display text-[clamp(0.8rem,5vw,2rem)] leading-none tracking-[-0.045em]">
             {today}
           </p>
-          {!hasTodayEncounters ? (
-            <p className="mt-3 max-w-[calc(100vw-2rem)] whitespace-nowrap font-body text-[clamp(0.72rem,3.2vw,0.875rem)] leading-6 text-text-muted">
-              {encounterDayHeadline(todayEncounterCount, echoDevice.echoName)}
-            </p>
-          ) : null}
+          <p className="mt-3 max-w-[calc(100vw-2rem)] whitespace-nowrap font-body text-[clamp(0.72rem,3.2vw,0.875rem)] leading-6 text-text-muted">
+            {encounterDayHeadline(todayEncounterCount, echoDevice.echoName)}
+          </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <NavigateWithLoader
               className="glass-btn-primary whitespace-nowrap rounded-full px-6 py-3 font-body text-sm"

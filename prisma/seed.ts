@@ -95,8 +95,7 @@ async function main() {
       `Daily memories: ${dailyMemories.length}`,
       `Evolutions: ${evolutions.length}`,
       "",
-      "Power users: user_haneul, user_mira",
-      "Small users: user_sora, user_jin, user_alex",
+      "Accounts: user_haneul (ECHO_SHY_001), user_mira (ECHO_BOUNCE_001), user_jin (ECHO_MESSY_001)",
     ].join("\n"),
   );
 }

@@ -6,4 +6,6 @@ export type TodayApiResponse = {
   device: EchoDevice | null;
   hasPrevPeriod: boolean;
   hasNextPeriod: boolean;
+  prevPeriodDate: string | null;
+  nextPeriodDate: string | null;
 };

@@ -1,101 +1,67 @@
-import { DateTime } from "luxon";
-
 import {
   periodBoundsForDate,
-  shiftOverviewAnchorDate,
 } from "@/lib/calendarPeriod";
 import {
-  mockArchive,
-  mockDailyMemory,
-  mockEncounters,
-} from "@/lib/mockData";
+  periodAnchorsFromIsoDates,
+  resolveOverviewPeriodNavigation,
+} from "@/lib/encounterPeriodAvailability";
+import { mockArchivePayload } from "@/lib/mockArchivePayload";
 import { localMockEchoDevice } from "@/lib/localMockData";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
+import type { Encounter } from "@/lib/types";
 import type { OverviewSpan } from "@/lib/zonedDayRange";
 
-function timePart(isoLike: string): string {
-  const match = /T(\d{2}:\d{2}:\d{2})/.exec(isoLike);
-  return match?.[1] ?? "12:00:00";
-}
-
-function mockPeriodHasData(
-  anchorDate: string,
+function encountersInPeriod(
+  encounters: Encounter[],
+  date: string,
   span: OverviewSpan,
   timeZone: string,
-): boolean {
-  const bounds = periodBoundsForDate(anchorDate, span, timeZone);
-  if (!bounds) return false;
+): Encounter[] {
+  const bounds = periodBoundsForDate(date, span, timeZone);
+  if (!bounds) return [];
 
-  return mockArchive.some(
-    (memory) =>
-      memory.date >= bounds.periodStart && memory.date <= bounds.periodEnd,
-  );
+  return encounters.filter((encounter) => {
+    const localDate = new Date(encounter.startedAt).toLocaleDateString("en-CA", {
+      timeZone,
+    });
+    return (
+      localDate >= bounds.periodStart && localDate <= bounds.periodEnd
+    );
+  });
 }
 
 export function mockTodayPayload(
   date: string,
   span: OverviewSpan = "daily",
-  timeZone = "UTC",
+  timeZone = "Asia/Seoul",
 ): TodayApiResponse {
-  const device = {
-    ...localMockEchoDevice,
-    lastSyncedAt: `${date}T14:45:00.000Z`,
-  };
+  const archive = mockArchivePayload();
+  const allEncounters = archive.items.flatMap((item) => item.encounters);
+  const encounters = encountersInPeriod(allEncounters, date, span, timeZone).sort(
+    (a, b) =>
+      new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+  );
 
-  const hasDataForDate = mockPeriodHasData(date, span, timeZone);
-  const encounters =
-    hasDataForDate && date === mockDailyMemory.date
-      ? mockEncounters.map((encounter, index) => {
-          const start = `${date}T${timePart(encounter.startedAt)}.000Z`;
-          const end = `${date}T${timePart(encounter.endedAt)}.000Z`;
-          return {
-            ...encounter,
-            id: `mock_today_${String(index + 1).padStart(2, "0")}`,
-            deviceId: device.id,
-            startedAt: start,
-            endedAt: end,
-          };
-        })
-      : [];
-
-  const prevAnchor = shiftOverviewAnchorDate(date, span, -1, timeZone);
-  const nextAnchor = shiftOverviewAnchorDate(date, span, 1, timeZone);
-  const today = DateTime.now().setZone(timeZone).startOf("day");
-  const nextBounds = nextAnchor
-    ? periodBoundsForDate(nextAnchor, span, timeZone)
-    : null;
-  const nextInFuture =
-    nextBounds !== null &&
-    DateTime.fromISO(nextBounds.periodStart, { zone: timeZone }).startOf(
-      "day",
-    ) > today;
+  const dailyItem = archive.items.find((item) => item.memory.date === date);
+  const periodAnchors = periodAnchorsFromIsoDates(
+    archive.items.map((item) => item.memory.date),
+    span,
+    timeZone,
+  );
+  const navigation = resolveOverviewPeriodNavigation(
+    periodAnchors,
+    date,
+    span,
+    timeZone,
+  );
 
   return {
     encounters,
-    dailyMemory:
-      hasDataForDate && date === mockDailyMemory.date
-        ? {
-            ...mockDailyMemory,
-            id: `mock_memory_${date.replaceAll("-", "_")}`,
-            userId: device.userId,
-            deviceId: device.id,
-            date,
-            profileSnapshot: device.currentState,
-            totalEncounters: encounters.length,
-            totalDurationSec: encounters.reduce(
-              (sum, encounter) => sum + encounter.durationSec,
-              0,
-            ),
-            createdAt: `${date}T21:04:00.000Z`,
-          }
-        : null,
-    device,
-    hasPrevPeriod: prevAnchor
-      ? mockPeriodHasData(prevAnchor, span, timeZone)
-      : false,
-    hasNextPeriod:
-      nextAnchor && !nextInFuture
-        ? mockPeriodHasData(nextAnchor, span, timeZone)
-        : false,
+    dailyMemory: dailyItem?.memory ?? null,
+    device: localMockEchoDevice,
+    hasPrevPeriod: navigation.hasPrev,
+    hasNextPeriod: navigation.hasNext,
+    prevPeriodDate: navigation.prevPeriodDate,
+    nextPeriodDate: navigation.nextPeriodDate,
   };
 }

@@ -8,7 +8,11 @@ import {
 } from "@/lib/dbSerializers";
 import { getSession } from "@/lib/auth/session";
 import { attachEncounterEchoProfiles } from "@/lib/encounterProfileLookup";
-import { adjacentPeriodAvailability } from "@/lib/encounterPeriodAvailability";
+import {
+  encounterLocalIsoDates,
+  periodAnchorsFromIsoDates,
+  resolveOverviewPeriodNavigation,
+} from "@/lib/encounterPeriodAvailability";
 import { prisma } from "@/lib/prisma";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
 import {
@@ -74,41 +78,69 @@ export async function GET(request: Request) {
       orderBy: { id: "asc" },
     });
   }
-  const deviceIds = deviceRows.map((d) => d.id);
+  const deviceIds = new Set(deviceRows.map((d) => d.id));
   const primaryDevice = deviceRows[0] ?? null;
+  const encounterDeviceIds = deviceRows.map((d) => d.id);
 
-  if (deviceIds.length === 0) {
+  const memoryWhere = deviceId ? { userId, deviceId } : { userId };
+  const memoryDeviceRows = await prisma.dailyMemory.findMany({
+    where: memoryWhere,
+    select: { deviceId: true },
+    distinct: ["deviceId"],
+  });
+  for (const row of memoryDeviceRows) {
+    deviceIds.add(row.deviceId);
+  }
+  const navigationDeviceIds = [...deviceIds];
+
+  if (encounterDeviceIds.length === 0) {
     const payload: TodayApiResponse = {
       encounters: [],
       dailyMemory: null,
       device: null,
       hasPrevPeriod: false,
       hasNextPeriod: false,
+      prevPeriodDate: null,
+      nextPeriodDate: null,
     };
     return NextResponse.json(payload);
   }
 
-  const countEncounters = async (periodRange: { start: Date; end: Date }) =>
-    prisma.encounter.count({
-      where: {
-        deviceId: { in: deviceIds },
-        startedAt: { gte: periodRange.start, lt: periodRange.end },
-      },
-    });
-
-  const [{ hasPrev, hasNext }, encounters] = await Promise.all([
-    adjacentPeriodAvailability(countEncounters, dateStr, span, timeZone),
+  const [encounterRows, memoryRows, encounters] = await Promise.all([
+    prisma.encounter.findMany({
+      where: { deviceId: { in: navigationDeviceIds } },
+      select: { startedAt: true },
+    }),
+    prisma.dailyMemory.findMany({
+      where: memoryWhere,
+      select: { date: true },
+    }),
     prisma.encounter.findMany({
       where: {
-        deviceId: { in: deviceIds },
+        deviceId: { in: encounterDeviceIds },
         startedAt: { gte: range.start, lt: range.end },
       },
       orderBy: { startedAt: "asc" },
     }),
   ]);
 
+  const isoDates = [
+    ...encounterLocalIsoDates(
+      encounterRows.map((row) => row.startedAt),
+      timeZone,
+    ),
+    ...memoryRows.map((row) => row.date),
+  ];
+  const periodAnchors = periodAnchorsFromIsoDates(isoDates, span, timeZone);
+  const navigation = resolveOverviewPeriodNavigation(
+    periodAnchors,
+    dateStr,
+    span,
+    timeZone,
+  );
+
   let dailyMemoryRow = null;
-  if (deviceId && deviceIds.length > 0) {
+  if (deviceId && encounterDeviceIds.length > 0) {
     dailyMemoryRow = await prisma.dailyMemory.findFirst({
       where: { deviceId, userId, date: dateStr },
       orderBy: { createdAt: "desc" },
@@ -127,8 +159,10 @@ export async function GET(request: Request) {
     ),
     dailyMemory: dailyMemoryRow ? dailyMemoryRowToDto(dailyMemoryRow) : null,
     device: primaryDevice ? echoDeviceRowToDto(primaryDevice) : null,
-    hasPrevPeriod: hasPrev,
-    hasNextPeriod: hasNext,
+    hasPrevPeriod: navigation.hasPrev,
+    hasNextPeriod: navigation.hasNext,
+    prevPeriodDate: navigation.prevPeriodDate,
+    nextPeriodDate: navigation.nextPeriodDate,
   };
 
   return NextResponse.json(payload);

@@ -10,8 +10,13 @@ export function getEchoColorPalette(echoType: EchoType) {
   return palettes[echoType];
 }
 
-export function getBlobSizeFromDuration(durationSec: number) {
-  return Math.min(92, Math.max(24, 18 + Math.sqrt(durationSec) * 3.1));
+export function getBlobSizeFromDuration(
+  durationSec: number,
+  meetingCount = 1,
+) {
+  const countBoost = 1 + Math.log1p(Math.max(0, meetingCount - 1)) * 0.22;
+  const scaledDuration = Math.max(0, durationSec) * countBoost;
+  return Math.min(92, Math.max(24, 18 + Math.sqrt(scaledDuration) * 3.1));
 }
 
 export function getOpacityFromCloseness(closenessAvg: number) {

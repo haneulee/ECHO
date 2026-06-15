@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 
+import { getPresenceWeight } from "@/lib/aggregateEncountersByPeer";
 import {
   encounterDisplayName,
   encounterDisplayPalette,
@@ -562,7 +563,10 @@ export function SonicPresenceLandscape({
     const bodies: PresenceBody[] = encounters.map((encounter, index) => {
       const palette = encounterDisplayPalette(encounter);
       const [start, mid, end] = palette;
-      const durationWeight = Math.min(1, Math.log1p(encounter.durationSec) / 8);
+      const durationWeight = getPresenceWeight(
+        encounter.durationSec,
+        encounter.meetingCount ?? 1,
+      );
       const angle =
         index * 2.399963229728653 + hashUnit(`${encounter.id}:angle`) * 0.8;
       const radius =

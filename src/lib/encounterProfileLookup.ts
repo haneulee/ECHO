@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { mockPeerByModelName } from "@/lib/mockPeerEchoes";
 import type { Encounter } from "@/lib/types";
 
 export async function attachEncounterEchoProfiles(
@@ -30,14 +31,24 @@ export async function attachEncounterEchoProfiles(
   );
 
   return encounters.map((encounter) => {
-    const profile = encounter.otherEchoModelName
-      ? byModelName.get(encounter.otherEchoModelName)
-      : null;
-    if (!profile) return encounter;
+    if (!encounter.otherEchoModelName) return encounter;
+
+    const registered = byModelName.get(encounter.otherEchoModelName);
+    if (registered) {
+      return {
+        ...encounter,
+        otherEchoName: registered.echoName,
+        otherEchoColor: registered.echoColor,
+      };
+    }
+
+    const catalog = mockPeerByModelName(encounter.otherEchoModelName);
+    if (!catalog) return encounter;
+
     return {
       ...encounter,
-      otherEchoName: profile.echoName,
-      otherEchoColor: profile.echoColor,
+      otherEchoName: catalog.echoName,
+      otherEchoColor: catalog.echoColor,
     };
   });
 }

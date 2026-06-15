@@ -1,3 +1,4 @@
+import { aggregateEncountersByPeer } from "@/lib/aggregateEncountersByPeer";
 import { encounterDisplayPalette } from "@/lib/encounterDisplay";
 import type { DailyMemory, Encounter } from "@/lib/types";
 import {
@@ -47,11 +48,12 @@ export function AbstractMemoryVisual({
   const baseRadius = svgRound(size * 0.29);
   const ringThickness = svgRound(getRingThicknessFromDensity(density));
   const safeEncounters = encounters.length > 0 ? encounters : [];
-  const maxEncounters = lowGpuCost ? 6 : safeEncounters.length;
+  const peerEncounters = aggregateEncountersByPeer(safeEncounters);
+  const maxEncounters = lowGpuCost ? 6 : peerEncounters.length;
   const visualEncounters =
-    lowGpuCost && safeEncounters.length > maxEncounters
-      ? sampleEncountersEvenly(safeEncounters, maxEncounters)
-      : safeEncounters;
+    lowGpuCost && peerEncounters.length > maxEncounters
+      ? sampleEncountersEvenly(peerEncounters, maxEncounters)
+      : peerEncounters;
   const idSuffix = visualId?.replace(/[^a-zA-Z0-9_-]/g, "-") ?? "default";
   const id = `memory-${seed}-${idSuffix}`;
   const duration = `${Math.max(9, 18 - movement * 10)}s`;
@@ -77,7 +79,10 @@ export function AbstractMemoryVisual({
       const x = svgRound(center + Math.cos(angle) * radius);
       const y = svgRound(center + Math.sin(angle) * radius);
       const blobRadius = svgRound(
-        getBlobSizeFromDuration(encounter.durationSec) *
+        getBlobSizeFromDuration(
+          encounter.durationSec,
+          encounter.meetingCount ?? 1,
+        ) *
           (0.72 + random() * 0.68) *
           (lowGpuCost ? 1.18 : 1),
       );

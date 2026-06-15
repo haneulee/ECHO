@@ -1,9 +1,16 @@
+import { DateTime } from "luxon";
 import type { EchoType, ProximityZone } from "@prisma/client";
 
 import { defaultStateForType } from "../../src/lib/echoDeviceDefaults";
+import {
+  peerEchoHash,
+  peersForOwner,
+  type MockPeerEcho,
+} from "../../src/lib/mockPeerEchoes";
 import { mockSoundProfile } from "../../src/lib/mockData";
 
 export const SEED_PASSWORD = "echoecho";
+export const SEED_TIME_ZONE = "Asia/Seoul";
 
 export type SeedUserTier = "power" | "small";
 
@@ -21,6 +28,7 @@ export type SeedUserSpec = {
   };
 };
 
+/** One account per canonical firmware unit — ECHO_SHY_001, ECHO_BOUNCE_001, ECHO_MESSY_001 only. */
 export const SEED_USERS: SeedUserSpec[] = [
   {
     id: "user_haneul",
@@ -51,7 +59,7 @@ export const SEED_USERS: SeedUserSpec[] = [
   {
     id: "user_jin",
     name: "Jin",
-    tier: "small",
+    tier: "power",
     device: {
       id: "ECHO_MESSY_001",
       serialNumber: "ECHO_MESSY_001",
@@ -59,32 +67,6 @@ export const SEED_USERS: SeedUserSpec[] = [
       echoColor: "#FF9F6E",
       firmwareModelName: "ECHO_MESSY_001",
       echoType: "messy",
-    },
-  },
-  {
-    id: "user_alex",
-    name: "Alex",
-    tier: "small",
-    device: {
-      id: "echo_alex_001",
-      serialNumber: "ECHO-AX-0918",
-      echoName: "Pogo Puff",
-      echoColor: "#8FD4FF",
-      firmwareModelName: "ECHO_BOUNCE_005",
-      echoType: "bounce",
-    },
-  },
-  {
-    id: "user_sora",
-    name: "Sora",
-    tier: "small",
-    device: {
-      id: "echo_sora_001",
-      serialNumber: "ECHO-SR-0314",
-      echoName: "Quiet Bloom",
-      echoColor: "#C4A8FF",
-      firmwareModelName: "ECHO_SHY_003",
-      echoType: "shy",
     },
   },
 ];
@@ -125,6 +107,16 @@ function eachIsoDate(start: string, end: string): string[] {
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return dates;
+}
+
+function encounterTimestamp(date: string, hour: number, minute: number): Date {
+  const [year, month, day] = date.split("-").map(Number);
+  return DateTime.fromObject(
+    { year, month, day, hour, minute, second: 0, millisecond: 0 },
+    { zone: SEED_TIME_ZONE },
+  )
+    .toUTC()
+    .toJSDate();
 }
 
 function pickZone(rand: () => number): ProximityZone {
@@ -169,6 +161,10 @@ function peerSnapshot(type: EchoType) {
     calmness: state.calmness,
     densityBias: state.densityBias,
   };
+}
+
+function pickPeer(rand: () => number, peers: MockPeerEcho[]): MockPeerEcho {
+  return peers[Math.floor(rand() * peers.length)]!;
 }
 
 function buildComposition(
@@ -304,35 +300,31 @@ export function generateSeedData(
   const dates = eachIsoDate(rangeStart, rangeEnd);
 
   for (const user of SEED_USERS) {
-    const peers = SEED_USERS.filter((peer) => peer.id !== user.id).map(
-      (peer) => peer.device,
-    );
+    const peers = peersForOwner(user.device.firmwareModelName);
     const state = defaultStateForType(user.device.echoType);
     let encounterCounter = 0;
 
     for (const date of dates) {
       const rand = mulberry32(hashString(`${user.id}:${date}`));
-      const activeChance = user.tier === "power" ? 0.72 : 0.26;
+      const activeChance = user.tier === "power" ? 0.82 : 0.26;
       if (rand() > activeChance) continue;
 
-      const minCount = user.tier === "power" ? 2 : 0;
-      const maxCount = user.tier === "power" ? 9 : 3;
+      const minCount = user.tier === "power" ? 4 : 0;
+      const maxCount = user.tier === "power" ? 14 : 3;
       const count = minCount + Math.floor(rand() * (maxCount - minCount + 1));
       if (count === 0) continue;
 
       const dayEncounters: GeneratedEncounter[] = [];
-      const hours = [8, 9, 11, 13, 15, 17, 19, 20, 21];
+      const hours = [8, 9, 10, 11, 13, 14, 15, 17, 18, 19, 20, 21];
 
       for (let index = 0; index < count; index += 1) {
-        const peer = peers[Math.floor(rand() * peers.length)]!;
+        const peer = pickPeer(rand, peers);
         const zone = pickZone(rand);
         const closenessAvg = closenessForZone(zone, rand);
         const rssi = rssiForZone(zone, rand);
         const hour = hours[Math.min(index, hours.length - 1)] ?? 12;
         const minute = Math.floor(rand() * 50) + 5;
-        const startedAt = new Date(
-          `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00.000Z`,
-        );
+        const startedAt = encounterTimestamp(date, hour, minute);
         const durationSec = 120 + Math.floor(rand() * 780);
         const endedAt = new Date(startedAt.getTime() + durationSec * 1000);
         encounterCounter += 1;
@@ -340,9 +332,7 @@ export function generateSeedData(
         dayEncounters.push({
           id: `enc_${user.device.id}_${date.replace(/-/g, "")}_${index + 1}`,
           deviceId: user.device.id,
-          otherEchoHash: `echo:${hashString(peer.firmwareModelName)
-            .toString(16)
-            .slice(0, 4)}`,
+          otherEchoHash: peerEchoHash(peer.firmwareModelName),
           otherEchoModelName: peer.firmwareModelName,
           otherEchoType: peer.echoType,
           startedAt,
@@ -383,7 +373,7 @@ export function generateSeedData(
           user.device.id,
           dayEncounters.length,
         ),
-        createdAt: new Date(`${date}T21:04:00.000Z`),
+        createdAt: encounterTimestamp(date, 21, 4),
       });
 
       if (
@@ -420,7 +410,7 @@ export function generateSeedData(
               transposed: ["D5", "A4"],
               insertedAt: 4,
             },
-            createdAt: new Date(`${date}T21:30:00.000Z`),
+            createdAt: encounterTimestamp(date, 21, 30),
           });
         }
       }

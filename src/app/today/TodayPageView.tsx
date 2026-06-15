@@ -20,6 +20,10 @@ import { ProfileFirmwareSoundPlayer } from "@/components/ProfileFirmwareSoundPla
 import { TodayEncounterSoundPlayer } from "@/components/TodayEncounterSoundPlayer";
 import { encounterDisplayName } from "@/lib/encounterDisplay";
 import { echoTypeLabels } from "@/lib/echoTypeMeta";
+import {
+  aggregateEncountersByPeer,
+  peerEchoKey,
+} from "@/lib/aggregateEncountersByPeer";
 import { deriveSessionHarmony } from "@/lib/piDailySound";
 import type { TodayApiResponse } from "@/lib/todayApiTypes";
 import type { EchoType, Encounter } from "@/lib/types";
@@ -52,80 +56,9 @@ type EchoTypeFilter = "all" | EchoType;
 
 const MIN_LOADING_MS = 150;
 const ECHO_TYPE_FILTERS: EchoType[] = ["shy", "messy", "bounce"];
-const PROXIMITY_RANK: Record<Encounter["proximityZone"], number> = {
-  far: 0,
-  near: 1,
-  close: 2,
-  very_close: 3,
-};
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function encounterEchoKey(encounter: Encounter) {
-  return (
-    encounter.otherEchoModelName?.trim() ||
-    encounter.otherEchoHash.trim() ||
-    encounter.id
-  );
-}
-
-function aggregateEncountersForOrbit(encounters: Encounter[]): Encounter[] {
-  const groups = new Map<string, Encounter[]>();
-  for (const encounter of encounters) {
-    const key = encounterEchoKey(encounter);
-    groups.set(key, [...(groups.get(key) ?? []), encounter]);
-  }
-
-  return [...groups.entries()]
-    .map(([key, items]) => {
-      const sorted = [...items].sort(
-        (a, b) =>
-          new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
-      );
-      const first = sorted[0]!;
-      const last = sorted.reduce((latest, item) =>
-        new Date(item.endedAt).getTime() > new Date(latest.endedAt).getTime()
-          ? item
-          : latest,
-      );
-      const totalDuration = sorted.reduce(
-        (sum, item) => sum + Math.max(0, item.durationSec),
-        0,
-      );
-      const weightSum = sorted.reduce(
-        (sum, item) => sum + Math.max(1, item.durationSec),
-        0,
-      );
-      const weighted = (pick: (item: Encounter) => number) =>
-        sorted.reduce(
-          (sum, item) => sum + pick(item) * Math.max(1, item.durationSec),
-          0,
-        ) / weightSum;
-      const strongest = sorted.reduce((best, item) =>
-        PROXIMITY_RANK[item.proximityZone] > PROXIMITY_RANK[best.proximityZone]
-          ? item
-          : best,
-      );
-
-      return {
-        ...first,
-        id: `orbit_${key.replace(/[^a-zA-Z0-9_-]/g, "_")}`,
-        startedAt: first.startedAt,
-        endedAt: last.endedAt,
-        durationSec: totalDuration,
-        rssiAvg: weighted((item) => item.rssiAvg),
-        rssiMin: Math.min(...sorted.map((item) => item.rssiMin)),
-        rssiMax: Math.max(...sorted.map((item) => item.rssiMax)),
-        proximityZone: strongest.proximityZone,
-        closenessAvg: weighted((item) => item.closenessAvg),
-      };
-    })
-    .sort(
-      (a, b) =>
-        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
-    );
 }
 
 function TodayDataBody() {
@@ -251,16 +184,16 @@ function TodayDataBody() {
     [dayEncounters, echoTypeFilter],
   );
   const orbitEncounters = useMemo(
-    () => aggregateEncountersForOrbit(filteredEncounters),
+    () => aggregateEncountersByPeer(filteredEncounters),
     [filteredEncounters],
   );
   const playingOrbitEncounterId = useMemo(() => {
     if (soundTarget?.kind !== "encounter") return null;
-    const playingKey = encounterEchoKey(soundTarget.encounter);
+    const playingKey = peerEchoKey(soundTarget.encounter);
     const orbitMatch = orbitEncounters.find(
-      (encounter) => encounterEchoKey(encounter) === playingKey,
+      (encounter) => peerEchoKey(encounter) === playingKey,
     );
-    return orbitMatch?.id ?? soundTarget.encounter.id;
+    return orbitMatch?.id ?? null;
   }, [orbitEncounters, soundTarget]);
   const hasEncounters = filteredEncounters.length > 0;
   const playAllEncounters = useMemo(
@@ -406,6 +339,8 @@ function TodayDataBody() {
           date={date}
           hasNextPeriod={state.data.hasNextPeriod}
           hasPrevPeriod={state.data.hasPrevPeriod}
+          nextPeriodDate={state.data.nextPeriodDate}
+          prevPeriodDate={state.data.prevPeriodDate}
           span={span}
           timeZone={timeZone}
         />

@@ -98,6 +98,8 @@ export type Encounter = {
   soundProfileId: string;
   otherEchoProfileSnapshot?: PeerProfileSnapshot | null;
   otherEchoSonicSource?: EchoSonicSource | null;
+  /** Set when peer meetings are merged for orbit / gradient display. */
+  meetingCount?: number;
 };
 
 export type DailyMemory = {
