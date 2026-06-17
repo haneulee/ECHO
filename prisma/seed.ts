@@ -6,7 +6,9 @@ import { mockSoundProfile, mockSoundVoices } from "../src/lib/mockData";
 import {
   generateSeedData,
   SEED_PASSWORD,
+  SEED_TIME_ZONE,
   SEED_USERS,
+  seedShowcaseDates,
 } from "./seed/generateSeedData";
 
 const prisma = new PrismaClient();
@@ -23,6 +25,7 @@ async function main() {
   await wipeDatabase();
 
   const passwordHash = hashPassword(SEED_PASSWORD);
+  const showcase = seedShowcaseDates();
   const { encounters, dailyMemories, evolutions, deviceStateOverrides } =
     generateSeedData();
 
@@ -49,7 +52,7 @@ async function main() {
         uniqueDeviceName: user.device.firmwareModelName,
         currentSoundProfileId: mockSoundProfile.id,
         currentState: override ?? defaultStateForType(user.device.echoType),
-        lastSyncedAt: new Date("2026-06-09T11:48:00.000Z"),
+        lastSyncedAt: new Date(),
       },
     });
   }
@@ -93,6 +96,7 @@ async function main() {
     [
       "Seed complete.",
       `Users: ${SEED_USERS.length} (password for all: ${SEED_PASSWORD})`,
+      `Showcase day: ${showcase.today} (${showcase.rangeStart} → ${showcase.rangeEnd}, ${SEED_TIME_ZONE})`,
       `Encounters: ${encounters.length}`,
       `Daily memories: ${dailyMemories.length}`,
       `Evolutions: ${evolutions.length}`,

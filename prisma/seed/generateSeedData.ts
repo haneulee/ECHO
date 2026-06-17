@@ -12,7 +12,7 @@ import { factoryPeerProfileSnapshot } from "../../src/lib/peerSonicSnapshot";
 import { mockSoundProfile } from "../../src/lib/mockData";
 
 export const SEED_PASSWORD = "echoecho";
-export const SEED_TIME_ZONE = "Asia/Seoul";
+export const SEED_TIME_ZONE = "Europe/Zurich";
 
 export type SeedUserTier = "power" | "small";
 
@@ -341,15 +341,28 @@ export type GeneratedSeedData = {
   deviceStateOverrides: Record<string, object>;
 };
 
+/** Today in seed timezone — main page always has rich data after re-seed. */
+export function seedShowcaseDates() {
+  const now = DateTime.now().setZone(SEED_TIME_ZONE);
+  const today = now.toISODate()!;
+  const rangeStart = now.minus({ days: 90 }).toISODate()!;
+  return { rangeStart, rangeEnd: today, today };
+}
+
 export function generateSeedData(
-  rangeStart = "2026-03-09",
-  rangeEnd = "2026-06-09",
+  rangeStart?: string,
+  rangeEnd?: string,
 ): GeneratedSeedData {
+  const showcase = seedShowcaseDates();
+  const start = rangeStart ?? showcase.rangeStart;
+  const end = rangeEnd ?? showcase.rangeEnd;
+  const { today: todayIso } = showcase;
+
   const encounters: GeneratedEncounter[] = [];
   const dailyMemories: GeneratedDailyMemory[] = [];
   const evolutions: GeneratedEvolution[] = [];
   const deviceStateOverrides: Record<string, object> = {};
-  const dates = eachIsoDate(rangeStart, rangeEnd);
+  const dates = eachIsoDate(start, end);
 
   for (const user of SEED_USERS) {
     const peers = peersForOwner(user.device.firmwareModelName);
@@ -358,12 +371,18 @@ export function generateSeedData(
 
     for (const date of dates) {
       const rand = mulberry32(hashString(`${user.id}:${date}`));
-      const activeChance = user.tier === "power" ? 0.82 : 0.26;
-      if (rand() > activeChance) continue;
+      const isShowcaseDay = date === todayIso;
+
+      if (!isShowcaseDay) {
+        const activeChance = user.tier === "power" ? 0.82 : 0.26;
+        if (rand() > activeChance) continue;
+      }
 
       const minCount = user.tier === "power" ? 4 : 0;
       const maxCount = user.tier === "power" ? 14 : 3;
-      const count = minCount + Math.floor(rand() * (maxCount - minCount + 1));
+      const count = isShowcaseDay
+        ? 12 + Math.floor(rand() * 5)
+        : minCount + Math.floor(rand() * (maxCount - minCount + 1));
       if (count === 0) continue;
 
       const dayEncounters: GeneratedEncounter[] = [];
@@ -475,14 +494,18 @@ export function generateSeedData(
     }
   }
 
-  const shyMemory = dailyMemories.find(
-    (memory) => memory.deviceId === "ECHO_SHY_001" && memory.date === rangeEnd,
-  );
+  const shyMemory =
+    dailyMemories.find(
+      (memory) => memory.deviceId === "ECHO_SHY_001" && memory.date === todayIso,
+    ) ??
+    dailyMemories.find(
+      (memory) => memory.deviceId === "ECHO_SHY_001" && memory.date === end,
+    );
   if (shyMemory) {
     const finalState = appendShyCumulativeEvolutions(
       evolutions,
       shyMemory.id,
-      encounterTimestamp(rangeEnd, 21, 30),
+      encounterTimestamp(shyMemory.date, 21, 30),
     );
     deviceStateOverrides.ECHO_SHY_001 = finalState;
   }
