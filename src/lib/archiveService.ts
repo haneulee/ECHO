@@ -12,6 +12,16 @@ export type ArchiveItemDto = {
   encounters: Encounter[];
 };
 
+function encounterInRange(
+  encounter: Encounter,
+  deviceId: string,
+  range: { start: Date; end: Date },
+): boolean {
+  if (encounter.deviceId !== deviceId) return false;
+  const startedAt = new Date(encounter.startedAt).getTime();
+  return startedAt >= range.start.getTime() && startedAt < range.end.getTime();
+}
+
 export async function listArchiveForUser(
   userId: string,
   timeZone: string,
@@ -20,27 +30,52 @@ export async function listArchiveForUser(
     where: { userId },
     orderBy: { date: "desc" },
   });
+  if (memories.length === 0) return [];
 
-  const items: ArchiveItemDto[] = [];
-  for (const m of memories) {
-    const range = zonedDayRangeUtc(m.date, timeZone);
-    const encRows =
+  const memoryRanges = memories.map((memory) => ({
+    memory,
+    range: zonedDayRangeUtc(memory.date, timeZone),
+  }));
+
+  const boundedRanges = memoryRanges.filter(
+    (entry): entry is { memory: (typeof memories)[number]; range: { start: Date; end: Date } } =>
+      entry.range !== null,
+  );
+  if (boundedRanges.length === 0) {
+    return memories.map((memory) => ({
+      memory: dailyMemoryRowToDto(memory),
+      encounters: [],
+    }));
+  }
+
+  const deviceIds = [...new Set(memories.map((memory) => memory.deviceId))];
+  let minStart = boundedRanges[0]!.range.start;
+  let maxEnd = boundedRanges[0]!.range.end;
+  for (const { range } of boundedRanges) {
+    if (range.start < minStart) minStart = range.start;
+    if (range.end > maxEnd) maxEnd = range.end;
+  }
+
+  const encounterRows = await prisma.encounter.findMany({
+    where: {
+      deviceId: { in: deviceIds },
+      startedAt: { gte: minStart, lt: maxEnd },
+    },
+    orderBy: { startedAt: "asc" },
+  });
+
+  const allEncounters = await attachEncounterEchoProfiles(
+    prisma,
+    encounterRows.map(encounterRowToDto),
+  );
+
+  return memoryRanges.map(({ memory, range }) => ({
+    memory: dailyMemoryRowToDto(memory),
+    encounters:
       range === null
         ? []
-        : await prisma.encounter.findMany({
-            where: {
-              deviceId: m.deviceId,
-              startedAt: { gte: range.start, lt: range.end },
-            },
-            orderBy: { startedAt: "asc" },
-          });
-    items.push({
-      memory: dailyMemoryRowToDto(m),
-      encounters: await attachEncounterEchoProfiles(
-        prisma,
-        encRows.map(encounterRowToDto),
-      ),
-    });
-  }
-  return items;
+        : allEncounters.filter((encounter) =>
+            encounterInRange(encounter, memory.deviceId, range),
+          ),
+  }));
 }

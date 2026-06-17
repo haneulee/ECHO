@@ -5,8 +5,15 @@ import { redirect } from "next/navigation";
 
 import { LandingGradientBackground } from "@/components/LandingGradientBackground";
 import { resolveSessionUser } from "@/lib/auth/resolveSessionUser";
+import {
+  ECHO_TYPE_PAGE_ORDER,
+  echoTypePageContent,
+  echoTypePagePath,
+} from "@/lib/echoTypePageContent";
+import { echoTypeDescriptions } from "@/lib/echoTypeMeta";
 import { isLocalMockMode, logDatabaseUnavailable } from "@/lib/localMockMode";
 import { echoJourney } from "@/lib/uiPoetics";
+import { getEchoColorPalette } from "@/lib/visualRules";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +76,38 @@ export default async function HomePage() {
             peers through sound. Released as three different types, each has its
             own temperament expressed through sonic identity.
           </p>
+
+          <div className="mt-12 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
+            {ECHO_TYPE_PAGE_ORDER.map((type) => {
+              const item = echoTypePageContent[type];
+              const palette = getEchoColorPalette(type);
+              return (
+                <Link
+                  className="glass-panel rounded-[1.5rem] p-5 text-left transition-transform hover:scale-[1.02]"
+                  href={echoTypePagePath(type)}
+                  key={type}
+                >
+                  <div className="flex gap-1.5">
+                    {palette.map((color) => (
+                      <span
+                        aria-hidden
+                        className="h-3 w-3 rounded-full border border-text/10"
+                        key={color}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-4 font-display text-2xl tracking-[-0.04em]">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 font-body text-sm leading-5 text-text-muted">
+                    {echoTypeDescriptions[type]}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+
           <div className="mt-16 flex flex-wrap justify-center gap-3">
             <Link
               className="glass-btn-primary rounded-full px-6 py-3 font-body text-sm"

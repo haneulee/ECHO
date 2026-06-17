@@ -2,7 +2,7 @@ import type { EchoType } from "./types";
 
 export function getEchoColorPalette(echoType: EchoType) {
   const palettes = {
-    shy: ["#8FE6C4", "#6ECDE8", "#9AD8FF"],
+    shy: ["#6ECDE8", "#9AD8FF", "#5BAED4"],
     messy: ["#F39AC1", "#D99AEF", "#AFA7FF"],
     bounce: ["#FFE36E", "#FFC45C", "#FF9F6E"],
   } satisfies Record<EchoType, string[]>;

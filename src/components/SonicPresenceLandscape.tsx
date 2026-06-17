@@ -8,6 +8,10 @@ import {
   encounterDisplayName,
   encounterDisplayPalette,
 } from "@/lib/encounterDisplay";
+import {
+  ensureDisplayFontsLoaded,
+  resolveDisplayFontFamily,
+} from "@/lib/displayFont";
 import type { EchoDevice, Encounter } from "@/lib/types";
 
 const DEFAULT_ECHO_ACCENT = "#FF9F6E";
@@ -228,7 +232,8 @@ function makeTextSprite(
   if (!ctx) return null;
 
   const fontSize = variant === "time" ? 22 : compact ? 30 : 38;
-  ctx.font = `${fontSize}px "Averia Serif Libre", serif`;
+  const family = resolveDisplayFontFamily();
+  ctx.font = `400 ${fontSize}px ${family}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = color;
@@ -433,14 +438,7 @@ export function SonicPresenceLandscape({
 
   useEffect(() => {
     let cancelled = false;
-    if (typeof document === "undefined" || !("fonts" in document)) {
-      setFontReady(true);
-      return;
-    }
-    void document.fonts
-      .load('38px "Averia Serif Libre"')
-      .then(() => document.fonts.load('30px "Averia Serif Libre"'))
-      .then(() => document.fonts.load('22px "Averia Serif Libre"'))
+    void ensureDisplayFontsLoaded()
       .catch(() => null)
       .finally(() => {
         if (!cancelled) setFontReady(true);

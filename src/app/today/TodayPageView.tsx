@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -8,7 +9,6 @@ import { useRouteLoading } from "@/components/NavigationLoadingProvider";
 import { MemoriesTimespanSelect } from "@/components/MemoriesTimespanSelect";
 import { OverviewRangeControls } from "@/components/OverviewRangeControls";
 import { PageLoading } from "@/components/PageLoading";
-import { SonicPresenceLandscape } from "@/components/SonicPresenceLandscape";
 import type { OverviewSpan } from "@/lib/zonedDayRange";
 import {
   isMemoriesBackPath,
@@ -54,12 +54,18 @@ type PlayAllState = {
 
 type EchoTypeFilter = "all" | EchoType;
 
-const MIN_LOADING_MS = 150;
 const ECHO_TYPE_FILTERS: EchoType[] = ["shy", "messy", "bounce"];
 
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const SonicPresenceLandscape = dynamic(
+  () =>
+    import("@/components/SonicPresenceLandscape").then((mod) => ({
+      default: mod.SonicPresenceLandscape,
+    })),
+  {
+    ssr: false,
+    loading: () => <div aria-hidden className="min-h-0 flex-1" />,
+  },
+);
 
 function TodayDataBody() {
   const router = useAppRouter();
@@ -99,7 +105,6 @@ function TodayDataBody() {
   const [stopKey, setStopKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const startedAt = performance.now();
     setState({ kind: "loading" });
     try {
       const qs = new URLSearchParams({ date, timeZone, span });
@@ -112,9 +117,6 @@ function TodayDataBody() {
         const errBody = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
-        await wait(
-          Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)),
-        );
         setState({
           kind: "error",
           message: errBody?.error ?? `Request failed (${res.status})`,
@@ -122,11 +124,9 @@ function TodayDataBody() {
         return;
       }
       const data = (await res.json()) as TodayApiResponse;
-      await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
       setState({ kind: "ok", data });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Network error";
-      await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
       setState({ kind: "error", message });
     }
   }, [date, deviceId, span, timeZone]);

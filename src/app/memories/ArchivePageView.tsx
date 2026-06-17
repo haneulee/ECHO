@@ -32,19 +32,12 @@ import {
   overviewLabels,
 } from "@/lib/uiPoetics";
 import { useAppRouter } from "@/hooks/useAppRouter";
-import { useClientTimeZone } from "@/hooks/useClientTimeZone";
 import type { OverviewSpan } from "@/lib/zonedDayRange";
 
 type LoadState =
   | { kind: "loading" }
   | { kind: "error"; message: string }
   | { kind: "ok"; data: ArchiveApiResponse };
-
-const MIN_LOADING_MS = 150;
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function encounterWindow(item: ArchiveCarouselItem) {
   if (item.encounters.length === 0) return "The day stayed quiet";
@@ -469,17 +462,19 @@ function MemoriesListView({
                       : "",
                   ].join(" ")}
                 >
-                  <AbstractMemoryVisual
-                    bleed
-                    composition={memory.composition}
-                    encounters={item.encounters}
-                    gradientMotion={isActive}
-                    gradientOnly
-                    lowGpuCost={isMobile}
-                    size={stageConfig.visualSize}
-                    visualId={`memory-stack-${memory.id}`}
-                    {...memory.visualization}
-                  />
+                  {isActive ? (
+                    <AbstractMemoryVisual
+                      bleed
+                      composition={memory.composition}
+                      encounters={item.encounters}
+                      gradientMotion
+                      gradientOnly
+                      lowGpuCost
+                      size={stageConfig.visualSize}
+                      visualId={`memory-stack-${memory.id}`}
+                      {...memory.visualization}
+                    />
+                  ) : null}
                 </div>
               </article>
             );
@@ -605,13 +600,14 @@ function MemoriesLoadedView({
 }
 
 function ArchiveBody() {
-  const timeZone = useClientTimeZone();
+  const timeZone = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    [],
+  );
 
   const [state, setState] = useState<LoadState>({ kind: "loading" });
 
   const load = useCallback(async () => {
-    if (!timeZone) return;
-    const startedAt = performance.now();
     setState({ kind: "loading" });
     try {
       const qs = new URLSearchParams({ timeZone });
@@ -623,9 +619,6 @@ function ArchiveBody() {
         const errBody = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
-        await wait(
-          Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)),
-        );
         setState({
           kind: "error",
           message: errBody?.error ?? `Request failed (${res.status})`,
@@ -633,23 +626,20 @@ function ArchiveBody() {
         return;
       }
       const data = (await res.json()) as ArchiveApiResponse;
-      await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
       setState({ kind: "ok", data });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Network error";
-      await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - startedAt)));
       setState({ kind: "error", message });
     }
   }, [timeZone]);
 
   useEffect(() => {
-    if (!timeZone) return;
     void load();
-  }, [load, timeZone]);
+  }, [load]);
 
-  useRouteLoading(!timeZone || state.kind === "loading");
+  useRouteLoading(state.kind === "loading");
 
-  if (!timeZone || state.kind === "loading") {
+  if (state.kind === "loading") {
     return (
       <AppShell hideChrome pageTitle={archiveHero.title} viewportLocked>
         <div aria-hidden className="min-h-0 flex-1" />

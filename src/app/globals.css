@@ -1475,6 +1475,31 @@ body {
   }
 }
 
+.echo-type-gradient-visual {
+  width: min(152vw, 92rem);
+  opacity: calc(0.58 + var(--landing-scroll) * 0.28);
+}
+
+.echo-type-gradient-visual::before {
+  width: 112%;
+  background: radial-gradient(
+    circle at 50% 48%,
+    color-mix(in srgb, var(--echo-type-a, #6ecde8) 36%, transparent) 0%,
+    color-mix(in srgb, var(--echo-type-b, #9ad8ff) 24%, transparent) 44%,
+    color-mix(in srgb, var(--echo-type-c, #5baed4) 14%, transparent) 62%,
+    transparent 80%
+  );
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.35),
+    0 0 100px 28px color-mix(in srgb, var(--echo-type-a, #6ecde8) 22%, transparent);
+}
+
+@media (min-width: 640px) {
+  .echo-type-gradient-visual {
+    width: min(124vw, 96rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .echo-loader-orbit,
   .echo-loader-ring,

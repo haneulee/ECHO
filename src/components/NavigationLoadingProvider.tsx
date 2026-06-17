@@ -15,7 +15,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { EchoGradientLoader } from "@/components/EchoGradientLoader";
 
-const MIN_NAV_LOADING_MS = 480;
+const MIN_NAV_LOADING_MS = 0;
 
 type NavTarget = {
   pathname: string;
