@@ -96,7 +96,7 @@ async function main() {
     [
       "Seed complete.",
       `Users: ${SEED_USERS.length} (password for all: ${SEED_PASSWORD})`,
-      `Showcase day: ${showcase.today} (${showcase.rangeStart} → ${showcase.rangeEnd}, ${SEED_TIME_ZONE})`,
+      `Showcase days: ${showcase.showcaseDays.join(", ")} (${showcase.rangeStart} → ${showcase.rangeEnd}, ${SEED_TIME_ZONE})`,
       `Encounters: ${encounters.length}`,
       `Daily memories: ${dailyMemories.length}`,
       `Evolutions: ${evolutions.length}`,

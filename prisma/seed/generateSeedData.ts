@@ -13,6 +13,8 @@ import { mockSoundProfile } from "../../src/lib/mockData";
 
 export const SEED_PASSWORD = "echoecho";
 export const SEED_TIME_ZONE = "Europe/Zurich";
+/** Always rich mock data on these calendar days (YYYY-MM-DD in seed timezone). */
+export const PINNED_SHOWCASE_DATES = ["2026-06-18"] as const;
 
 export type SeedUserTier = "power" | "small";
 
@@ -341,12 +343,16 @@ export type GeneratedSeedData = {
   deviceStateOverrides: Record<string, object>;
 };
 
-/** Today in seed timezone — main page always has rich data after re-seed. */
+/** Today + pinned days in seed timezone — main/overview get rich data after re-seed. */
 export function seedShowcaseDates() {
   const now = DateTime.now().setZone(SEED_TIME_ZONE);
   const today = now.toISODate()!;
+  const showcaseDays = Array.from(
+    new Set<string>([today, ...PINNED_SHOWCASE_DATES]),
+  ).sort();
   const rangeStart = now.minus({ days: 90 }).toISODate()!;
-  return { rangeStart, rangeEnd: today, today };
+  const rangeEnd = showcaseDays[showcaseDays.length - 1]!;
+  return { rangeStart, rangeEnd, today, showcaseDays };
 }
 
 export function generateSeedData(
@@ -356,7 +362,8 @@ export function generateSeedData(
   const showcase = seedShowcaseDates();
   const start = rangeStart ?? showcase.rangeStart;
   const end = rangeEnd ?? showcase.rangeEnd;
-  const { today: todayIso } = showcase;
+  const { today: todayIso, showcaseDays } = showcase;
+  const showcaseDaySet = new Set(showcaseDays);
 
   const encounters: GeneratedEncounter[] = [];
   const dailyMemories: GeneratedDailyMemory[] = [];
@@ -371,7 +378,7 @@ export function generateSeedData(
 
     for (const date of dates) {
       const rand = mulberry32(hashString(`${user.id}:${date}`));
-      const isShowcaseDay = date === todayIso;
+      const isShowcaseDay = showcaseDaySet.has(date);
 
       if (!isShowcaseDay) {
         const activeChance = user.tier === "power" ? 0.82 : 0.26;

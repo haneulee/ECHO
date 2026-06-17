@@ -410,7 +410,11 @@ function MemoriesListView({
   }
 
   const visibleItems = items
-    .map((item, index) => ({ item, index, offset: index - safeActiveIndex }))
+    .map((item, index) => ({
+      item,
+      index,
+      offset: safeActiveIndex - index,
+    }))
     .filter(({ offset }) => Math.abs(offset) <= 1);
 
   return (
