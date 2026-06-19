@@ -14,7 +14,11 @@ import { mockSoundProfile } from "../../src/lib/mockData";
 export const SEED_PASSWORD = "echoecho";
 export const SEED_TIME_ZONE = "Europe/Zurich";
 /** Always rich mock data on these calendar days (YYYY-MM-DD in seed timezone). */
-export const PINNED_SHOWCASE_DATES = ["2026-06-18"] as const;
+export const PINNED_SHOWCASE_DATES = [
+  "2026-06-18",
+  "2026-06-19",
+  "2026-06-22",
+] as const;
 
 export type SeedUserTier = "power" | "small";
 
