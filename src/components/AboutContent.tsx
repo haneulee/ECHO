@@ -1,8 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { AboutCanvasGlow } from "@/components/AboutCanvasGlow";
 import { aboutPage } from "@/lib/uiPoetics";
-import Image from "next/image";
 
 type AboutContentVariant = "page" | "modal";
 
@@ -38,11 +38,10 @@ export function AboutContent({
       {!inModal ? <AboutCanvasGlow scope="page" /> : null}
 
       <div className="about-layout">
-        <div className="about-hero-head">
-          <p className="about-eyebrow">{aboutPage.title}</p>
-          {/* <h1 className="about-title font-display tracking-[-0.055em]" id={id}>
-            {aboutPage.brandName}
-          </h1> */}
+        <header className="about-hero-head">
+          {inModal ? (
+            <p className="about-eyebrow">{aboutPage.title}</p>
+          ) : null}
           <Image
             alt="Echo"
             className="about-brand-logo h-auto shrink-0 object-contain"
@@ -51,53 +50,63 @@ export function AboutContent({
             src="/brand/echo_logo.png"
             width={200}
           />
-          <p className="about-tagline font-body text-text-muted">
-            {aboutPage.tagline}
-          </p>
-        </div>
+          {inModal ? (
+            <h1
+              className="about-title font-display tracking-[-0.07em]"
+              id={id}
+            >
+              {aboutPage.tagline}
+            </h1>
+          ) : (
+            <p className="about-title font-display tracking-[-0.07em]">
+              {aboutPage.tagline}
+            </p>
+          )}
+        </header>
 
         {lead ? (
-          <p className="about-lead about-column--lead font-body text-text/88">
-            {lead}
-          </p>
+          <p className="about-lead about-column--lead font-body">{lead}</p>
         ) : null}
 
-        <div className="about-column about-column--story space-y-10 sm:space-y-12">
-          {aboutParagraphs.length > 0 ? (
-            <section className="about-block">
-              {sections.about ? (
-                <h2 className="about-section-title">{sections.about}</h2>
-              ) : null}
-              <div
-                className={
-                  sections.about
-                    ? "about-prose"
-                    : "about-prose about-prose--leadless"
-                }
+        {aboutParagraphs.length > 0 ? (
+          <div className="about-column about-column--story">
+            {aboutParagraphs.map((paragraph, index) => (
+              <section
+                className={[
+                  "about-block",
+                  index % 2 === 0
+                    ? "about-story-block--origin"
+                    : "about-story-block--shift",
+                ].join(" ")}
+                key={paragraph.slice(0, 48)}
               >
-                {aboutParagraphs.map((paragraph) => (
-                  <p key={paragraph.slice(0, 48)}>{paragraph}</p>
-                ))}
-              </div>
-            </section>
-          ) : null}
-          {reflection ? (
-            <section className="about-block">
-              {sections.reflection ? (
-                <h2 className="about-section-title">{sections.reflection}</h2>
-              ) : null}
-              <div
-                className={
-                  sections.reflection
-                    ? "about-prose"
-                    : "about-prose about-prose--leadless"
-                }
-              >
-                <p>{reflection}</p>
-              </div>
-            </section>
-          ) : null}
-        </div>
+                {index === 0 && sections.about ? (
+                  <h2 className="about-section-title">{sections.about}</h2>
+                ) : null}
+                <div
+                  className={
+                    index === 0 && sections.about
+                      ? "about-prose"
+                      : "about-prose about-prose--leadless"
+                  }
+                >
+                  <p>{paragraph}</p>
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : null}
+
+        {reflection ? (
+          <section className="about-reflection">
+            {sections.reflection ? (
+              <h2 className="about-section-title">{sections.reflection}</h2>
+            ) : null}
+            <p className="about-reflection-text font-display tracking-[-0.055em]">
+              {reflection}
+            </p>
+          </section>
+        ) : null}
 
         <aside className="about-column about-column--meta">
           <section className="about-meta-group">

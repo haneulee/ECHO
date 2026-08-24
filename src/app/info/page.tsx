@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function InfoPage() {
   return (
-    <AppShell pageTitle={aboutPage.title} viewportLocked>
-      <div className="about-page-shell mx-auto min-h-0 w-full max-w-6xl flex-1 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-8 sm:py-12">
+    <AppShell fullBleed pageTitle={aboutPage.title} viewportLocked>
+      <div className="about-page-shell mx-auto min-h-0 w-full max-w-[92rem] flex-1 px-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-10 sm:pb-20 lg:px-16">
         <AboutContent variant="page" />
       </div>
     </AppShell>
